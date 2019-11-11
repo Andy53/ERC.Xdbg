@@ -73,6 +73,11 @@
     <Compile Include="SDK\TitanEngine.cs" />
     <Compile Include="SDK\WAPI.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\ERC\ERC\ERC.Net.csproj">
+      <Project>{118c331f-8fc1-4ba6-b5b1-da397e623cfe}</Project>
+      <Name>ERC.Net</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

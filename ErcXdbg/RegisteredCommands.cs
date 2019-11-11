@@ -34,15 +34,12 @@ namespace ErcXdbg
                 {
                     return true;
                 }
-
-                if(true)
-                {
-                    //ERC.ErcCore core = new ERC.ErcCore();
-                    //PLog.WriteLine("Working Directory: {0}", core.WorkingDirectory);
-                    //ERC.ProcessInfo pi = new ERC.ProcessInfo(core, hProcess);
-                    //PLog.WriteLine("Process Name: {0}", pi.ProcessName);
-                }
-
+                
+                ERC.ErcCore core = new ERC.ErcCore();
+                PLog.WriteLine("Working Directory: {0}", core.WorkingDirectory);
+                ERC.ProcessInfo pi = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
+                PLog.WriteLine("Process Name: {0}", pi.ProcessName);
+                
                 //This is the code for a popup box
                 /*
                 string Left = Interaction.InputBox("Enter value pls", "NetTest", "", -1, -1);
@@ -52,16 +49,16 @@ namespace ErcXdbg
                     PLog.WriteLine("[TEST] line: {0}", Left);
                 */
                 PLog.WriteLine("Exiting plugin");
-                return true;
             }
             catch(Exception e)
             {
                 PLog.WriteLine(e.Message);
                 return true;
             }
+            return true;
         }
 
-        public static void PrintHelp(string errorMessage = null)
+        private static void PrintHelp(string errorMessage = null)
         {
             PLog.WriteLine("    __________   ______  ");
             PLog.WriteLine("   / ____ / __\\ / ____/ ");
@@ -94,7 +91,7 @@ namespace ErcXdbg
             PLog.WriteLine(help);
         }
 
-        public static List<string> ParseCommand(string command)
+        private static List<string> ParseCommand(string command)
         {
             List<string> parameters = new List<string>(command.Split(' '));
             parameters.RemoveAt(0);

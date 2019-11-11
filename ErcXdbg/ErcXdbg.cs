@@ -13,7 +13,10 @@ namespace ErcXdbg
         public static bool PluginInit(Plugins.PLUG_INITSTRUCT initStruct)
         {
             if (!Plugins._plugin_registercommand(Plugins.pluginHandle, "ERC", RegisteredCommands.ErcCommand, false))
+            {
                 PLog.WriteLine("[ERC] error registering the \"ERC\" command!");
+            }
+
             return true;
         }
 
