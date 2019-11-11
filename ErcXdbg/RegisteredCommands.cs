@@ -34,6 +34,7 @@ namespace ErcXdbg
                 {
                     return true;
                 }
+
                 ERC.ErcCore core = new ERC.ErcCore();
                 ERC.ProcessInfo pi = new ERC.ProcessInfo(core, hProcess);
 
