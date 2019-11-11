@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>x64</PlatformTarget>
+    <DocumentationFile>..\..\ERC.net\ERC\ERC.Net.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Reloaded.Assembler" Version="1.0.5" />
+    <PackageReference Include="SharpDisasm" Version="1.1.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Fasm.NET">
+      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Fasm.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="Reloaded.Assembler">
+      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Reloaded.Assembler.dll</HintPath>
+    </Reference>
+    <Reference Include="Reloaded.Memory">
+      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Reloaded.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="Reloaded.Memory.Buffers">
+      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Reloaded.Memory.Buffers.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="Payloads.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="Thread_Info.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="ERCException.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="RopChainGenerator32.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="RopChainGenerator64.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="PtrRemover.cs" />
+  </ItemGroup>
+
+</Project>

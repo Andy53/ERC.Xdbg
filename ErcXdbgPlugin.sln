@@ -1,0 +1,60 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29503.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Managed.x64dbg", "Managed.x64dbg\Managed.x64dbg.csproj", "{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ErcXdbgPlugin", "ErcXdbg\ErcXdbgPlugin.csproj", "{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ERC.Net", "ERC\ERC\ERC.Net.csproj", "{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Debug|x64.ActiveCfg = Debug|x64
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Debug|x64.Build.0 = Debug|x64
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Debug|x86.ActiveCfg = Debug|x86
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Debug|x86.Build.0 = Debug|x86
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Release|Any CPU.ActiveCfg = Release|x86
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Release|x64.ActiveCfg = Release|x64
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Release|x64.Build.0 = Release|x64
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Release|x86.ActiveCfg = Release|x86
+		{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}.Release|x86.Build.0 = Release|x86
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Debug|x64.ActiveCfg = Debug|x64
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Debug|x64.Build.0 = Debug|x64
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Debug|x86.ActiveCfg = Debug|x86
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Debug|x86.Build.0 = Debug|x86
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Release|Any CPU.ActiveCfg = Release|x86
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Release|x64.ActiveCfg = Release|x64
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Release|x64.Build.0 = Release|x64
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Release|x86.ActiveCfg = Release|x86
+		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Release|x86.Build.0 = Release|x86
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x64.Build.0 = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x86.Build.0 = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|x64.ActiveCfg = Release|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|x64.Build.0 = Release|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|x86.ActiveCfg = Release|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {04FC09BA-059D-44FA-A886-0B8E3C34B00F}
+	EndGlobalSection
+EndGlobal
