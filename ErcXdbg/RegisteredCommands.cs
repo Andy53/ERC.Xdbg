@@ -35,8 +35,13 @@ namespace ErcXdbg
                     return true;
                 }
 
-                ERC.ErcCore core = new ERC.ErcCore();
-                ERC.ProcessInfo pi = new ERC.ProcessInfo(core, hProcess);
+                if(true)
+                {
+                    //ERC.ErcCore core = new ERC.ErcCore();
+                    //PLog.WriteLine("Working Directory: {0}", core.WorkingDirectory);
+                    //ERC.ProcessInfo pi = new ERC.ProcessInfo(core, hProcess);
+                    //PLog.WriteLine("Process Name: {0}", pi.ProcessName);
+                }
 
                 //This is the code for a popup box
                 /*
@@ -92,17 +97,8 @@ namespace ErcXdbg
         public static List<string> ParseCommand(string command)
         {
             List<string> parameters = new List<string>(command.Split(' '));
-            PLog.WriteLine("Parameters lenght = {0}", parameters.Count);
-            foreach(string s in parameters)
-            {
-                PLog.WriteLine(s);
-            }
             parameters.RemoveAt(0);
-            PLog.WriteLine("Parameters lenght = {0}", parameters.Count);
-            foreach (string s in parameters)
-            {
-                PLog.WriteLine(s);
-            }
+
             int commands = 0;
             string option = "";
             
