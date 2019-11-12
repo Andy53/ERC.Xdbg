@@ -20,6 +20,12 @@ namespace ErcXdbg
             return true;
         }
 
+        public static bool PluginStart()
+        {
+            Plugins._plugin_registercommand(Plugins.pluginHandle, "ERC", RegisteredCommands.ErcCommand, false);        
+            return true;
+        }
+
         public static void PluginStop()
         {
             Plugins._plugin_unregistercallback(Plugins.pluginHandle, Plugins.CBTYPE.CB_INITDEBUG);

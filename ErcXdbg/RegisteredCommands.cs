@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Managed.x64dbg.SDK;
 
 
@@ -28,18 +29,16 @@ namespace ErcXdbg
                     return true;
                 }
 
+                ERC.ErcCore core = new ERC.ErcCore();
+                ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
+
                 //Check the command was properly formed.
-                List<string> command = ParseCommand(argv[0]);
+                List<string> command = ParseCommand(argv[0], core, info);
                 if (command == null)
                 {
                     return true;
                 }
-                
-                ERC.ErcCore core = new ERC.ErcCore();
-                PLog.WriteLine("Working Directory: {0}", core.WorkingDirectory);
-                ERC.ProcessInfo pi = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
-                PLog.WriteLine("Process Name: {0}", pi.ProcessName);
-                
+
                 //This is the code for a popup box
                 /*
                 string Left = Interaction.InputBox("Enter value pls", "NetTest", "", -1, -1);
@@ -48,6 +47,8 @@ namespace ErcXdbg
                 else
                     PLog.WriteLine("[TEST] line: {0}", Left);
                 */
+                ErcXdbg.PluginStop();
+                ErcXdbg.PluginStart();
                 PLog.WriteLine("Exiting plugin");
             }
             catch(Exception e)
@@ -91,7 +92,7 @@ namespace ErcXdbg
             PLog.WriteLine(help);
         }
 
-        private static List<string> ParseCommand(string command)
+        private static List<string> ParseCommand(string command, ERC.ErcCore core, ERC.ProcessInfo info)
         {
             List<string> parameters = new List<string>(command.Split(' '));
             parameters.RemoveAt(0);
@@ -120,6 +121,7 @@ namespace ErcXdbg
                 switch (option)
                 {
                     case "--config":
+                        OptionConfig(parameters, core);
                         break;
                     case "--pattern":
                         break;
@@ -153,6 +155,96 @@ namespace ErcXdbg
                 }
             }
             return parameters;
+        }
+
+        private static string OptionConfig(List<string> parameters, ERC.ErcCore core)
+        {
+            for(int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            switch (parameters[0].ToLower())
+            {
+                case "getworkingdirectory":
+                    PLog.WriteLine("Working Directory = {0}", core.WorkingDirectory);
+                    return core.WorkingDirectory;
+                case "getversion":
+                    PLog.WriteLine("ERC Version = {0}", core.ErcVersion);
+                    return core.ErcVersion;
+                case "getauthor":
+                    PLog.WriteLine("Author = {0}", core.Author);
+                    return core.Author;
+                case "geterrorlogpath":
+                    PLog.WriteLine("Error Log File = {0}", core.SystemErrorLogPath);
+                    return core.SystemErrorLogPath;
+                case "getstandardpattern":
+                    PLog.WriteLine("Standard Pattern Location = {0}", core.PatternStandardPath);
+                    return core.PatternStandardPath;
+                case "getextendedpattern":
+                    PLog.WriteLine("Standard Pattern Location = {0}", core.PatternExtendedPath);
+                    return core.PatternExtendedPath;
+                case "setworkingdirectory":
+                    if(parameters.Count == 2)
+                    {
+                        core.SetWorkingDirectory(parameters[1]);
+                        PLog.WriteLine("New Working Directory = {0}", core.WorkingDirectory);
+                    }
+                    else
+                    {
+                        PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetWorkingDirectory <PATH>");
+                    }
+                    return core.WorkingDirectory;
+                case "setauthor":
+                    if (parameters.Count == 2)
+                    {
+                        core.SetAuthor(parameters[1]);
+                        PLog.WriteLine("New Author = {0}", core.Author);
+                    }
+                    else
+                    {
+                        PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetAuthor <Author>");
+                    }
+                    return core.Author;
+                case "seterrorlogpath":
+                    if (parameters.Count == 2)
+                    {
+                        core.SetErrorFile(parameters[1]);
+                        PLog.WriteLine("New Error Log File = {0}", core.SystemErrorLogPath);
+                    }
+                    else
+                    {
+                        PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetErrorLogPath <PATH>");
+                    }
+                    return core.SystemErrorLogPath;
+                case "setstandardpattern":
+                    if (parameters.Count == 2)
+                    {
+                        core.SetPatternStandardPath(parameters[1]);
+                        PLog.WriteLine("New standard pattern from file = {0}", core.PatternStandardPath);
+                    }
+                    else
+                    {
+                        PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetStandardPattern <PATH>");
+                    }
+                    return core.PatternStandardPath;
+                case "setextendedpattern":
+                    if (parameters.Count == 2)
+                    {
+                        core.SetPatternExtendedPath(parameters[1]);
+                        PLog.WriteLine("New extended pattern from file = {0}", core.PatternExtendedPath);
+                    }
+                    else
+                    {
+                        PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetExtendedPattern <PATH>");
+                    }
+                    return core.PatternExtendedPath;
+                default:
+                    return null;
+            }
         }
     }
 }
