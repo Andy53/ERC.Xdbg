@@ -121,7 +121,11 @@ namespace ErcXdbg
                 switch (option)
                 {
                     case "--config":
-                        OptionConfig(parameters, core);
+                        var returnVar = OptionConfig(parameters, core);
+                        if(returnVar == null)
+                        {
+                            PLog.WriteLine("An error has occured in the OptionConfig method.");
+                        }
                         break;
                     case "--pattern":
                         break;
@@ -134,6 +138,7 @@ namespace ErcXdbg
                     case "--disassemble":
                         break;
                     case "--listprocesses":
+                        ListProcesses();
                         break;
                     case "--processinfo":
                         break;
@@ -144,6 +149,17 @@ namespace ErcXdbg
                     case "--seh":
                         break;
                     case "--egghunters":
+                        if(parameters.Count <= 2)
+                        {
+                            if(parameters.Count == 1)
+                            {
+                                EggHunters(core);
+                            }
+                            else
+                            {
+                                EggHunters(core, parameters[1]);
+                            }
+                        }
                         break;
                     case "--findnrp":
                         break;
@@ -244,6 +260,27 @@ namespace ErcXdbg
                     return core.PatternExtendedPath;
                 default:
                     return null;
+            }
+        }
+
+        private static void ListProcesses()
+        {
+            PLog.WriteLine(ERC.DisplayOutput.ListLocalProcesses());
+        }
+
+        private static void EggHunters(ERC.ErcCore core = null, string tag = null)
+        {
+            string holder = ERC.DisplayOutput.GenerateEggHunters(core, tag);
+            string[] lines = holder.Split(
+                new[] { Environment.NewLine },
+                StringSplitOptions.None
+            );
+            foreach(string s in lines)
+            {
+                if (!s.Contains("{") && !s.Contains("}"))
+                {
+                    PLog.WriteLine(s);
+                }
             }
         }
     }
