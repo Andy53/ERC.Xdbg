@@ -31,7 +31,7 @@ namespace ERC.Utilities
 
             if (extended == true)
             {
-                digits += ": ,.;+=-_!&()#@'({})[]%";
+                digits += ": ,.;+=-_!&()#@'{}[]%";
                 if(length > 66923)
                 {
                     result.Error = new ERCException("User input error: Pattern length must be less that 66923");

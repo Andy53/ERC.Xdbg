@@ -384,7 +384,6 @@ namespace ERC
         public static List<string> GetSEHJumps(ProcessInfo info, List<string> excludes = null)
         {
             List<string> ret = new List<string>();
-            //ret = new List<string>();
             ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes);
 
             string sehFilename = GetFilePath(info.WorkingDirectory, "SEH_jumps_", ".txt");
