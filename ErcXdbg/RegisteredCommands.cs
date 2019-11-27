@@ -13,6 +13,7 @@ namespace ErcXdbg
     {
         public static bool ErcCommand(int argc, string[] argv)
         {
+            GC.Collect();
             try
             {
                 //Get the handle of the attached process
@@ -35,24 +36,8 @@ namespace ErcXdbg
                 ERC.ErcCore core = new ERC.ErcCore();
                 ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
 
-                //Check the command was properly formed.
-                List<string> command = ParseCommand(argv[0], core, info);
-                if (command == null)
-                {
-                    ErcXdbg.PluginStop();
-                    ErcXdbg.PluginStart();
-                    PLog.WriteLine("Exiting plugin");
-                    return true;
-                }
+                ParseCommand(argv[0], core, info);
 
-                //This is the code for a popup box
-                /*
-                string Left = Interaction.InputBox("Enter value pls", "NetTest", "", -1, -1);
-                if (Left == null | Operators.CompareString(Left, "", false) == 0)
-                    PLog.WriteLine("[TEST] cancel pressed!");
-                else
-                    PLog.WriteLine("[TEST] line: {0}", Left);
-                */
                 ErcXdbg.PluginStop();
                 ErcXdbg.PluginStart();
                 PLog.WriteLine("Exiting plugin");
@@ -82,6 +67,8 @@ namespace ErcXdbg
             }
             string help = "";
             help += "Usage:       \n";
+            help += "   --Help        |\n";
+            help += "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg";
             help += "   --Config        |\n";
             help += "       Takes any of the following arguments, Get requests take no additional parameters, Set requests take a directory\n";
             help += "       which will be set as the new value.\n";
@@ -97,6 +84,11 @@ namespace ErcXdbg
             help += "           SetAuthor           (ERC --config SetAuthor author)\n";
             help += "           SetErrorFilePath    (ERC --config SetErrorFilePath file)\n";
             help += "   --Pattern       |\n";
+            help += "       Generates a non repeating pattern. A pattern of pure ASCII characters can be generated up to 20277 and up to  \n";
+            help += "       66923 if special characters are used. The offset of a particular string can be found inside the pattern by \n";
+            help += "       providing a search string (must be at least 3 chars long).\n";
+            help += "           Pattern create: ERC --pattern <create | c> <length>\n";
+            help += "           Pattern offset: ERC --pattern <offset | o> <search string>\n";
             help += "   --Bytearray     |\n";
             help += "       Generates a bytearray which is saved to the working directory and displayed in the application log tab. An set \n";
             help += "       hex characters can be provided which will be excluded from the bytearray.";
@@ -138,7 +130,7 @@ namespace ErcXdbg
             PLog.WriteLine(help);
         }
 
-        private static List<string> ParseCommand(string command, ERC.ErcCore core, ERC.ProcessInfo info)
+        private static void ParseCommand(string command, ERC.ErcCore core, ERC.ProcessInfo info)
         {
             List<string> parameters = new List<string>(command.Split(' '));
             parameters.RemoveAt(0);
@@ -160,34 +152,37 @@ namespace ErcXdbg
             if(commands != 1)
             {
                 PrintHelp("One option and it's parameters must be executed at a time (options start with --)");
-                return null;
+                return;
             }
             else
             {
                 bool writeToFile = true;
                 switch (option)
                 {
+                    case "--help":
+                        PrintHelp();
+                        return;
                     case "--config":
                         Config(parameters, core);
-                        break;
+                        return;
                     case "--pattern":
                         Pattern(core, parameters);
-                        break;
+                        return;
                     case "--bytearray":
                         ByteArray(parameters, core);
-                        break;
+                        return;
                     case "--compare":
                         Compare(info, parameters);
-                        break;
+                        return;
                     case "--assemble":
                         Assemble(info, parameters);
-                        break;
+                        return;
                     case "--disassemble":
                         Disassemble(info, parameters);
-                        break;
+                        return;
                     case "--listprocesses":
                         PLog.WriteLine(ERC.DisplayOutput.ListLocalProcesses());
-                        break;
+                        return;
                     case "--processinfo":
                         if(parameters.Count == 2)
                         {
@@ -197,7 +192,7 @@ namespace ErcXdbg
                             }
                         }
                         PLog.WriteLine("\n" + ERC.DisplayOutput.DisplayProcessInfo(info, writeToFile));
-                        break;
+                        return;
                     case "--moduleinfo":
                         if (parameters.Count == 2)
                         {
@@ -207,7 +202,7 @@ namespace ErcXdbg
                             }
                         }
                         PLog.WriteLine("\n" + ERC.DisplayOutput.GenerateModuleInfoTable(info, writeToFile));
-                        break;
+                        return;
                     case "--threadinfo":
                         if (parameters.Count == 2)
                         {
@@ -217,7 +212,7 @@ namespace ErcXdbg
                             }
                         }
                         PLog.WriteLine("\n" + ERC.DisplayOutput.DisplayThreadInfo(info, writeToFile));
-                        break;
+                        return;
                     case "--seh":
                         SEH(parameters, info);
                         break;
@@ -233,18 +228,19 @@ namespace ErcXdbg
                                 EggHunters(core, parameters[1]);
                             }
                         }
-                        break;
+                        return;
                     case "--findnrp":
                         FindNRP(info, parameters);
-                        break; 
+                        return;
                     case "--rop":
-                        break;
+                        rop(info);
+                        return;
                     default:
                         PrintHelp("The command was not structured correctly: Option is not supported. ERC <option> <parameters>");
-                        return null;
+                        return;
                 }
             }
-            return parameters;
+            return;
         }
 
         private static void Config(List<string> parameters, ERC.ErcCore core)
@@ -446,7 +442,6 @@ namespace ErcXdbg
                     {
                         if (int.TryParse(parameters[i], out patternLength))
                         {
-                            //patternLength = Int32.Parse(parameters[i]);
                             if (patternLength > 20277 && patternLength < 66923)
                             {
                                 extended = true;
@@ -465,7 +460,7 @@ namespace ErcXdbg
                     }
                 }
                 var result = ERC.DisplayOutput.GeneratePattern(patternLength, core, extended);
-                PLog.Write(result);
+                PLog.Write(result + "\n");
             }
             else if(offset == true)
             {
@@ -483,6 +478,14 @@ namespace ErcXdbg
                     else
                     {
                         search = parameters[i];
+                    }
+                }
+                string extendedCharSet = ": ,.;+= -_! & ()#@'*^[]%$?";
+                foreach (char c in search)
+                {
+                    if (extendedCharSet.Contains(c))
+                    {
+                        extended = true;
                     }
                 }
                 var result = ERC.Utilities.PatternTools.PatternOffset(search, core, extended);
@@ -703,12 +706,6 @@ namespace ErcXdbg
                 return;
             }
 
-            foreach(string s in parameters)
-            {
-                PLog.WriteLine(s);
-            }
-            
-
             int n = -1;
             for (int i = 0; i < parameters.Count; i++)
             {
@@ -726,7 +723,6 @@ namespace ErcXdbg
                 }               
             }
 
-            PLog.WriteLine("n = {0}", n);
             if(n == -1)
             {
                 if(info.ProcessMachineType == ERC.MachineType.I386)
@@ -742,35 +738,24 @@ namespace ErcXdbg
             string[] assembled = null;
             try
             {
-                List<string> testList = new List<string>();
-                testList.Add("nop");
-                testList.Add("nop");
-                testList.Add("nop");
-                var testResult = ERC.Utilities.OpcodeAssembler.AssembleOpcodes(testList, ERC.MachineType.x64);
-                PLog.WriteLine(BitConverter.ToString(testResult.ReturnValue));
-                //assembled = ERC.DisplayOutput.AssembleOpcodes(testList.ToArray(), 1);
+                assembled = ERC.DisplayOutput.AssembleOpcodes(parameters.ToArray(), (uint)n);
+                string combindedString = string.Join(" ", parameters.ToArray());
+
+                PLog.WriteLine("ERC assembled opcodes = {0}:", combindedString);
+                for (int i = 0; i < assembled.Length; i++)
+                {
+                    PLog.WriteLine("Instruction {0} = {1}", i, assembled[i]);
+                }
+                PLog.WriteLine("Assembly completed at {0} by {1}", DateTime.Now, info.Author);
             }
             catch(Exception e)
             {
-                PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1:0] <mnemonics>.", e.Message);
+                PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1|0] <mnemonics>.", e.Message);
             }
-            
-            if(assembled != null)
+            finally
             {
-                foreach (string s in assembled)
-                {
-                    PLog.WriteLine(s);
-                }
+                GC.Collect();
             }
-            
-            assembled = new string[2] { "a", "b" };
-            string combindedString = string.Join(" ", parameters.ToArray());
-            byte[] bytes = Encoding.UTF8.GetBytes(combindedString);
-            PLog.WriteLine("Decoded in ASCII = {0}", Encoding.ASCII.GetString(bytes));
-            PLog.WriteLine("Decoded in Unicode = {0}", Encoding.Unicode.GetString(bytes));
-            PLog.WriteLine("Decoded in UTF-8 = {0}", Encoding.UTF8.GetString(bytes));
-            PLog.WriteLine("Decoded in UTF-32 = {0}", Encoding.UTF32.GetString(bytes));
-            PLog.WriteLine("Exiting assemble method.");
             //return new List<string>(assembled);
             return;
         }
@@ -787,7 +772,7 @@ namespace ErcXdbg
 
             if (parameters.Count <= 0)
             {
-                PLog.WriteLine("No parameters provided. Disassemble must be run: ERC --Disassemble [1:0] <opcodes>");
+                PLog.WriteLine("No parameters provided. Disassemble must be run: ERC --Disassemble [1|0] <opcodes>");
                 //return null;
                 return;
             }
@@ -845,10 +830,12 @@ namespace ErcXdbg
             }
 
             var disassembled = ERC.DisplayOutput.DisassembleOpcodes(bytes, (uint)n);
+            PLog.WriteLine("ERC Disassebled Instructions:");
             foreach (string s in disassembled)
             {
                 PLog.WriteLine(s);
             }
+            PLog.WriteLine("Disassembly completed at {0} by {1}", DateTime.Now, info.Author);
             //return new List<string>(disassembled);
             return;
         }
@@ -963,6 +950,26 @@ namespace ErcXdbg
                 PLog.WriteLine(s);
             }
             //return nrpInfo;
+            return;
+        }
+
+        private static void rop(ERC.ProcessInfo info)
+        {
+            try
+            {
+                PLog.WriteLine("Generating ROP chain files, this could take some time...");
+                ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
+                RCG.GenerateRopChain64();
+                PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
+            }
+            catch(Exception e)
+            {
+                PrintHelp(e.Message);
+            }
+            finally
+            {
+                GC.Collect();
+            }
             return;
         }
 
