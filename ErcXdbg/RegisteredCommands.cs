@@ -738,6 +738,7 @@ namespace ErcXdbg
             try
             {
                 assembled = ERC.DisplayOutput.AssembleOpcodes(parameters.ToArray(), (uint)n);
+                PLog.WriteLine("assmbled type = {0}", assembled.GetType());
                 string combindedString = string.Join(" ", parameters.ToArray());
 
                 PLog.WriteLine("ERC assembled opcodes = {0}:", combindedString);
@@ -950,10 +951,10 @@ namespace ErcXdbg
 
         private static void rop(ERC.ProcessInfo info)
         {
+            ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
             try
             {
                 PLog.WriteLine("Generating ROP chain files, this could take some time...");
-                ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
                 RCG.GenerateRopChain64();             //Uncomment if 64 bit
                 //RCG.GenerateRopChain32();             //Uncomment if 32 bit
                 PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
@@ -962,6 +963,12 @@ namespace ErcXdbg
             {
                 PrintHelp(e.Message);
             }
+            finally
+            {
+                RCG = null;
+                GC.Collect();
+            }
+            
             return;
         }
 
