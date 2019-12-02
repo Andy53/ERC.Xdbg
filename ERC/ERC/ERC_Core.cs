@@ -349,6 +349,8 @@ namespace ERC
                         singleNode = ErcConfig.DocumentElement.SelectNodes("//Error_Log_File");
                         SystemErrorLogPath = singleNode[0].InnerText;
                         configRead = true;
+                        ErcConfig = null;
+                        GC.Collect();
                     }
                     catch (Exception e)
                     {

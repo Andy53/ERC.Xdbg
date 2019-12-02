@@ -56,6 +56,7 @@ namespace ERC.Utilities
                 asm.Dispose();
                 return result;
             }
+            GC.Collect();
             return result;
         }
 

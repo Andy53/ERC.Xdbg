@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using Managed.x64dbg.SDK;
 
 
@@ -752,10 +751,6 @@ namespace ErcXdbg
             {
                 PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1|0] <mnemonics>.", e.Message);
             }
-            finally
-            {
-                GC.Collect();
-            }
             //return new List<string>(assembled);
             return;
         }
@@ -959,16 +954,13 @@ namespace ErcXdbg
             {
                 PLog.WriteLine("Generating ROP chain files, this could take some time...");
                 ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
-                RCG.GenerateRopChain64();
+                RCG.GenerateRopChain64();             //Uncomment if 64 bit
+                //RCG.GenerateRopChain32();             //Uncomment if 32 bit
                 PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
             }
             catch(Exception e)
             {
                 PrintHelp(e.Message);
-            }
-            finally
-            {
-                GC.Collect();
             }
             return;
         }
