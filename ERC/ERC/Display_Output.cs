@@ -82,7 +82,7 @@ namespace ERC
             string asciiPattern = " ";
             string[] hexArray = hexPattern.Split('-');
 
-            for (int i = 1; i < hexArray.Length; i++)
+            for (int i = 0; i < hexArray.Length; i++)
             {
                 asciiPattern += pattern[i];
 
@@ -95,7 +95,7 @@ namespace ERC
             }
 
             hexPattern = " ";
-            for (int i = 1; i < hexArray.Length; i++)
+            for (int i = 0; i < hexArray.Length; i++)
             {
                 hexPattern += "\\x" + hexArray[i];
 
@@ -454,7 +454,7 @@ namespace ERC
             fs1.Close();
 
             string outputString = "---------------------------------------------------------------------------------------" + Environment.NewLine;
-            if(unwantedBytes != null)
+            if (unwantedBytes != null)
             {
                 outputString += "Byte Array generated at:" + DateTime.Now + "  Omitted values: " + BitConverter.ToString(unwantedBytes).Replace("-", ", ") + Environment.NewLine;
             }
@@ -467,26 +467,55 @@ namespace ERC
             outputString += "Raw:" + Environment.NewLine;
 
             string raw = "\\x" + BitConverter.ToString(byteArray).Replace("-", "\\x");
-            var rawlist = Enumerable
-                .Range(0, raw.Length / 48)
-                .Select(i => raw.Substring(i * 48, 48))
-                .ToList();
-            raw = string.Join(Environment.NewLine, rawlist);
-            outputString += raw;
+            string formattedHex = "";
+            for (int i = 0; i < raw.Length; i++)
+            {
+                if (i == 0)
+                {
+                    formattedHex += raw[i];
+                }
+                else if (i % 48 == 0)
+                {
+                    formattedHex += "\n" + raw[i];
+                }
+                else
+                {
+                    formattedHex += raw[i];
+                }
+
+            }
+
+            outputString += formattedHex;
 
             outputString += Environment.NewLine + Environment.NewLine + "C#:" + Environment.NewLine;
             string CSharp = "byte[] buf = new byte[]" + Environment.NewLine + "{" + Environment.NewLine;
             string CSharpTemp = "0x" + BitConverter.ToString(byteArray).Replace("-", ", 0x");
-            var list = Enumerable
-                .Range(0, CSharpTemp.Length / 48)
-                .Select(i => CSharpTemp.Substring(i * 48, 48))
-                .ToList();
-            for (int i = 0; i < list.Count; i++)
+            string CSharpFormatted = "";
+            int counter = 0;
+            for (int i = 0; i < CSharpTemp.Length; i++)
             {
-                list[i] = "    " + list[i];
+                if (i == 0)
+                {
+                    CSharpFormatted += "    " + CSharpTemp[i];
+                    counter++;
+                }
+                else if (CSharpTemp[i] == ',' && counter % 8 == 0 && counter != 0)
+                {
+                    CSharpFormatted += CSharpTemp[i] + "\n    ";
+                    i++;
+                    counter++;
+                }
+                else if (CSharpTemp[i] == ',')
+                {
+                    counter++;
+                    CSharpFormatted += CSharpTemp[i];
+                }
+                else
+                {
+                    CSharpFormatted += CSharpTemp[i];
+                }
             }
-            CSharp += string.Join(Environment.NewLine, list) + Environment.NewLine + "}";
-            outputString += CSharp;
+            outputString += CSharp + CSharpFormatted + Environment.NewLine + "}";
             File.WriteAllText(byteFilename.Substring(0, (byteFilename.Length - 4)) + ".txt", outputString);
 
             return byteArray;

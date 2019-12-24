@@ -22,6 +22,8 @@ namespace ErcXdbg
                 if (argc <= 1)
                 {
                     PrintHelp();
+                    ErcXdbg.PluginStop();
+                    ErcXdbg.PluginStart();
                     return true;
                 }
 
@@ -29,6 +31,8 @@ namespace ErcXdbg
                 if (hProcess == IntPtr.Zero)
                 {
                     PrintHelp("The debugger must be attached to a process to use ERC");
+                    ErcXdbg.PluginStop();
+                    ErcXdbg.PluginStart();
                     return true;
                 }
 
@@ -37,16 +41,15 @@ namespace ErcXdbg
 
                 ParseCommand(argv[0], core, info);
 
-                ErcXdbg.PluginStop();
-                ErcXdbg.PluginStart();
-                PLog.WriteLine("Exiting plugin");
+                
+                PLog.WriteLine("Operation Completed");
             }
             catch(Exception e)
             {
                 PrintHelp(e.Message);
                 ErcXdbg.PluginStop();
                 ErcXdbg.PluginStart();
-                PLog.WriteLine("Exiting plugin");
+                PLog.WriteLine("Operation Completed");
                 return true;
             }
             return true;
@@ -67,7 +70,7 @@ namespace ErcXdbg
             string help = "";
             help += "Usage:       \n";
             help += "   --Help        |\n";
-            help += "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg";
+            help += "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg \n";
             help += "   --Config        |\n";
             help += "       Takes any of the following arguments, Get requests take no additional parameters, Set requests take a directory\n";
             help += "       which will be set as the new value.\n";
