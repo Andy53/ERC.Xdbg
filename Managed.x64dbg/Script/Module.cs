@@ -26,8 +26,8 @@ namespace Managed.x64dbg.Script
             public string name;
         }
 
-        //private const string dll = "x64dbg.dll";   //uncomment for 64bit
-        private const string dll = "x32dbg.dll"; //uncomment for 32bit
+        private const string dll = "x64dbg.dll";   //uncomment for 64bit
+        //private const string dll = "x32dbg.dll"; //uncomment for 32bit
         private const CallingConvention cdecl = CallingConvention.Cdecl;
 
         [DllImport(dll, CallingConvention = cdecl,

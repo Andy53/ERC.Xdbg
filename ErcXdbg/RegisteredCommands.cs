@@ -31,6 +31,8 @@ namespace ErcXdbg
                     return true;
                 }
 
+                GC.Collect();
+
                 ERC.ErcCore core = new ERC.ErcCore();
                 ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
 
@@ -46,7 +48,7 @@ namespace ErcXdbg
             }
             ErcXdbg.PluginStop();
             ErcXdbg.PluginStart();
-            GC.Collect();
+            //GC.Collect();
             return true;
         }
 
@@ -602,7 +604,8 @@ namespace ErcXdbg
 
             bool validAddress = true;
             string path = "";
-            byte[] address = null;
+            IntPtr address = IntPtr.Zero;
+            double addrHolder = 0;
             string memAddress = "";
 
             if (File.Exists(parameters[0]))
@@ -625,8 +628,8 @@ namespace ErcXdbg
                         }
                         parameters[1] = memAddress + parameters[1];
                     }
-                    PLog.WriteLine("Here 1");
-                    address = StringToByteArray(parameters[1]);
+                    addrHolder = (double)Convert.ToInt64(parameters[1], 16);
+                    address = (IntPtr)addrHolder;
                 }
                 else
                 {
@@ -653,8 +656,8 @@ namespace ErcXdbg
                         }
                         parameters[0] = memAddress + parameters[0];
                     }
-                    PLog.WriteLine("Here 2");
-                    address = StringToByteArray(parameters[0]);
+                    addrHolder = (double)Convert.ToInt64(parameters[0], 16);
+                    address = (IntPtr)addrHolder;
                 }
                 else
                 {
@@ -673,14 +676,10 @@ namespace ErcXdbg
                 return;
             }
 
-            PLog.WriteLine("Here 3");
             byte[] bytes = File.ReadAllBytes(path);
-            IntPtr ptr = Marshal.AllocHGlobal(bytes.Length);
-            PLog.WriteLine("Here 4");
-            Marshal.Copy(address, 0, ptr, address.Length);
-            string[] output = ERC.DisplayOutput.CompareByteArrayToMemoryRegion(info, ptr, bytes);
+            string[] output = ERC.DisplayOutput.CompareByteArrayToMemoryRegion(info, address, bytes);
             PLog.WriteLine("Comparing memory region starting at 0x{0} to bytes in file {1}", 
-                BitConverter.ToString(address).Replace("-", ""), path);
+                address.ToString("X"), path);
             PLog.WriteLine(string.Join("\n", output));
             //return string.Join("\n", output);
             return;

@@ -447,7 +447,7 @@ namespace ERC
         /// <returns>Returns a byte array of all possible bytes.</returns>
         public static byte[] GenerateByteArray(ErcCore core, byte[] unwantedBytes = null)
         {
-            string byteFilename = GetFilePath(core.WorkingDirectory, "ByteArray_", ".dll");
+            string byteFilename = GetFilePath(core.WorkingDirectory, "ByteArray_", ".bin");
             byte[] byteArray = Payloads.ByteArrayConstructor(unwantedBytes);
             FileStream fs1 = new FileStream(byteFilename, FileMode.Create, FileAccess.Write);
             fs1.Write(byteArray, 0, byteArray.Length);
@@ -539,9 +539,9 @@ namespace ERC
             string fromRegion = "From Memory Region | "; 
             ErcCore.ReadProcessMemory(info.ProcessHandle, startAddress, memoryRegion, byteArray.Length, out bytesRead);
             int counter = 0;
-            for(int i = 0; i < byteArray.Length; i = i + 2)
+            for(int i = 0; i < byteArray.Length; i++)
             {
-                if (counter == 16)
+                if(i == byteArray.Length)
                 {
                     counter = 0;
                     fromArray += " | ";
@@ -550,18 +550,33 @@ namespace ERC
                     output.Add(fromArray);
                     output.Add(fromRegion);
                     output.Add(newLine);
-                    fromArray  = "        From Array | ";
+                    fromArray = "        From Array | ";
                     fromRegion = "From Memory Region | ";
                 }
-                byte[] thisByte = new byte[1];
-                thisByte[0] = byteArray[i];
-                fromArray += BitConverter.ToString(thisByte);
-                fromArray += " ";
+                else
+                {
+                    if (counter == 16)
+                    {
+                        counter = 0;
+                        fromArray += " | ";
+                        fromRegion += " | ";
+                        string newLine = "                   |                                                  | ";
+                        output.Add(fromArray);
+                        output.Add(fromRegion);
+                        output.Add(newLine);
+                        fromArray = "        From Array | ";
+                        fromRegion = "From Memory Region | ";
+                    }
+                    byte[] thisByte = new byte[1];
+                    thisByte[0] = byteArray[i];
+                    fromArray += BitConverter.ToString(thisByte);
+                    fromArray += " ";
 
-                thisByte[0] = memoryRegion[i];
-                fromRegion += BitConverter.ToString(thisByte);
-                fromRegion += " ";
-                counter++;
+                    thisByte[0] = memoryRegion[i];
+                    fromRegion += BitConverter.ToString(thisByte);
+                    fromRegion += " ";
+                    counter++;
+                }
             }
             output.Add("                   ----------------------------------------------------");
             return output.ToArray();
