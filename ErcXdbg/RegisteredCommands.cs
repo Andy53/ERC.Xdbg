@@ -12,7 +12,6 @@ namespace ErcXdbg
     {
         public static bool ErcCommand(int argc, string[] argv)
         {
-            GC.Collect();
             try
             {
                 //Get the handle of the attached process
@@ -21,9 +20,7 @@ namespace ErcXdbg
                 //Confirm that at least some options were passed.
                 if (argc <= 1)
                 {
-                    PrintHelp();
-                    ErcXdbg.PluginStop();
-                    ErcXdbg.PluginStart();
+                    PrintHelp("Arguments must be provided. Use --help for detailed information.");
                     return true;
                 }
 
@@ -31,8 +28,6 @@ namespace ErcXdbg
                 if (hProcess == IntPtr.Zero)
                 {
                     PrintHelp("The debugger must be attached to a process to use ERC");
-                    ErcXdbg.PluginStop();
-                    ErcXdbg.PluginStart();
                     return true;
                 }
 
@@ -40,9 +35,6 @@ namespace ErcXdbg
                 ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
 
                 ParseCommand(argv[0], core, info);
-
-                
-                PLog.WriteLine("Operation Completed");
             }
             catch(Exception e)
             {
@@ -52,6 +44,9 @@ namespace ErcXdbg
                 PLog.WriteLine("Operation Completed");
                 return true;
             }
+            ErcXdbg.PluginStop();
+            ErcXdbg.PluginStart();
+            GC.Collect();
             return true;
         }
 

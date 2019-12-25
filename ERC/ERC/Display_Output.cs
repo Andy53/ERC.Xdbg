@@ -482,7 +482,6 @@ namespace ERC
                 {
                     formattedHex += raw[i];
                 }
-
             }
 
             outputString += formattedHex;
