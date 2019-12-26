@@ -2,9 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Managed.x64dbg.SDK;
-
 
 namespace ErcXdbg
 {
@@ -48,7 +46,6 @@ namespace ErcXdbg
             }
             ErcXdbg.PluginStop();
             ErcXdbg.PluginStart();
-            //GC.Collect();
             return true;
         }
 
@@ -93,14 +90,14 @@ namespace ErcXdbg
             help += "       hex characters can be provided which will be excluded from the bytearray.";
             help += "   --Compare       |\n";
             help += "       Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory \n";
-            help += "       from which to start the search and a filepath for the binary file"; 
+            help += "       from which to start the search and a filepath for the binary file\n"; 
             help += "   --Assemble      |\n";
-            help += "       Takes a collection of assembley instructions and outputs the associated opcodes. Takes a boolean of 1 for x32 or\n";
-            help += "        2 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture \n";
+            help += "       Takes a collection of assembley instructions and outputs the associated opcodes. Takes a boolean of 0 for x32 or\n";
+            help += "        1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture \n";
             help += "       of the process will be used.\n";
             help += "   --Disassemble   |\n";
-            help += "       Takes a collection of opcodes and outputs the associated assembley instructions. Takes a boolean of 1 for x32 or\n";
-            help += "        2 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture \n";
+            help += "       Takes a collection of opcodes and outputs the associated assembley instructions. Takes a boolean of 0 for x32 or\n";
+            help += "        1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture \n";
             help += "       of the process will be used.\n";
             help += "   --ListProcesses |\n";
             help += "       Displays a list of processes running on the local machine.\n";
@@ -731,6 +728,12 @@ namespace ErcXdbg
                 }
             }
 
+            /*
+            string[] mnemonics = string.Join(" ", parameters.ToArray()).Split(',');
+            for(int i = 0; i < mnemonics.Length; i++)
+            {
+                mnemonics[i] = mnemonics[i].Trim();
+            }
             string[] assembled = null;
             try
             {
@@ -746,6 +749,23 @@ namespace ErcXdbg
                 PLog.WriteLine("Assembly completed at {0} by {1}", DateTime.Now, info.Author);
             }
             catch(Exception e)
+            {
+                PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1|0] <mnemonics>.", e.Message);
+            }
+            */
+            try
+            {
+                List<string> instructions = string.Join(" ", parameters).Split(',').ToList();
+                foreach (string s in instructions)
+                {
+                    List<string> instruction = new List<string>();
+                    instruction.Add(s.Trim());
+                    var asmResult = ERC.Utilities.OpcodeAssembler.AssembleOpcodes(instruction, info.ProcessMachineType);
+                    PLog.WriteLine(instruction[0] + " = " + BitConverter.ToString(asmResult.ReturnValue).Replace("-", " "));
+                }
+                PLog.WriteLine("Assembly completed at {0} by {1}", DateTime.Now, info.Author);
+            }
+            catch (Exception e)
             {
                 PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1|0] <mnemonics>.", e.Message);
             }
