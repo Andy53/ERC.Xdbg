@@ -1009,7 +1009,7 @@ namespace ERC
         }
         #endregion
 
-        #region Search_Memory
+        #region SearchMemory
         /// <summary>
         /// Searches all memory (the process and associated DLLs) for a specific string or byte array. Strings can be passed as ASCII, Unicode, UTF7 or UTF8.
         /// Specific modules can be exclude through passing a Listof strings containing module names or paths.
@@ -1758,6 +1758,46 @@ namespace ERC
             }
             offsets.ReturnValue = registers;
             return offsets;
+        }
+        #endregion
+
+        #region CreateExcludesList
+        /// <summary>
+        /// Creates a list of modules to exclude from a search of memory.
+        /// </summary>
+        /// <returns>Returns an ErcResult containing a list of stringss</returns>
+        public List<string> CreateExcludesList(bool aslr = false, bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false)
+        {
+            List<string> excludedModules = new List<string>();
+            for (int i = 0; i < ModulesInfo.Count; i++)
+            {
+                bool add = false;
+                if (aslr == true && ModulesInfo[i].ModuleASLR == true)
+                {
+                    add = true;
+                }
+                if (safeseh == true && ModulesInfo[i].ModuleSafeSEH == true)
+                {
+                    add = true;
+                }
+                if (rebase == true && ModulesInfo[i].ModuleRebase == true)
+                {
+                    add = true;
+                }
+                if (nxcompat == true && ModulesInfo[i].ModuleNXCompat == true)
+                {
+                    add = true;
+                }
+                if (osdll == true && ModulesInfo[i].ModuleOsDll == true)
+                {
+                    add = true;
+                }
+                if (add == true)
+                {
+                    excludedModules.Add(ModulesInfo[i].ModulePath);
+                }
+            }
+            return excludedModules;
         }
         #endregion
 

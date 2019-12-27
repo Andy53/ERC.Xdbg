@@ -28,7 +28,7 @@ namespace ErcXdbg
                     PrintHelp("The debugger must be attached to a process to use ERC");
                     return true;
                 }
-
+                PLog.WriteLine("");
                 GC.Collect();
 
                 ERC.ErcCore core = new ERC.ErcCore();
@@ -63,7 +63,7 @@ namespace ErcXdbg
             }
             string help = "";
             help += "Usage:       \n";
-            help += "   --Help        |\n";
+            help += "   --Help          |\n";
             help += "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg \n";
             help += "   --Config        |\n";
             help += "       Takes any of the following arguments, Get requests take no additional parameters, Set requests take a directory\n";
@@ -99,6 +99,13 @@ namespace ErcXdbg
             help += "       Takes a collection of opcodes and outputs the associated assembley instructions. Takes a boolean of 0 for x32 or\n";
             help += "        1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture \n";
             help += "       of the process will be used.\n";
+            help += "   --SearchMemory   |\n";
+            help += "       Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search \n";
+            help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8. Additionally boolean values of true or false can \n";
+            help += "       be used to exclude modules from the search with certain characteristics. The values are optional however if \n";
+            help += "       you wish to exclude a later value all previous ones must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, \n";
+            help += "       OSDLL.\n";       
+            help += "       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dlls\n";
             help += "   --ListProcesses |\n";
             help += "       Displays a list of processes running on the local machine.\n";
             help += "   --ProcessInfo   |\n";
@@ -175,6 +182,9 @@ namespace ErcXdbg
                         return;
                     case "--disassemble":
                         Disassemble(info, parameters);
+                        return;
+                    case "--searchmemory":
+                        SearchMemory(info, parameters);
                         return;
                     case "--listprocesses":
                         PLog.WriteLine(ERC.DisplayOutput.ListLocalProcesses());
@@ -728,31 +738,6 @@ namespace ErcXdbg
                 }
             }
 
-            /*
-            string[] mnemonics = string.Join(" ", parameters.ToArray()).Split(',');
-            for(int i = 0; i < mnemonics.Length; i++)
-            {
-                mnemonics[i] = mnemonics[i].Trim();
-            }
-            string[] assembled = null;
-            try
-            {
-                assembled = ERC.DisplayOutput.AssembleOpcodes(parameters.ToArray(), (uint)n);
-                PLog.WriteLine("assmbled type = {0}", assembled.GetType());
-                string combindedString = string.Join(" ", parameters.ToArray());
-
-                PLog.WriteLine("ERC assembled opcodes = {0}:", combindedString);
-                for (int i = 0; i < assembled.Length; i++)
-                {
-                    PLog.WriteLine("Instruction {0} = {1}", i, assembled[i]);
-                }
-                PLog.WriteLine("Assembly completed at {0} by {1}", DateTime.Now, info.Author);
-            }
-            catch(Exception e)
-            {
-                PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1|0] <mnemonics>.", e.Message);
-            }
-            */
             try
             {
                 List<string> instructions = string.Join(" ", parameters).Split(',').ToList();
@@ -853,6 +838,119 @@ namespace ErcXdbg
             return;
         }
 
+        private static void SearchMemory(ERC.ProcessInfo info, List<string> parameters)
+        {
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            bool aslr = false, safeseh = false, rebase = false, nxcompat = false, osdll = false;
+            int searchType = 0;
+            string searchString = "";
+            int counter = 0;
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].ToLower().Contains("true") || parameters[i].ToLower().Contains("false"))
+                {
+                    bool modifier = false;
+                    if (parameters[i].ToLower().Contains("true"))
+                    {
+                        modifier = true;
+                    }
+                    switch (counter)
+                    {
+                        case 0:
+                            aslr = modifier;
+                            break;
+                        case 1:
+                            safeseh = modifier;
+                            break;
+                        case 2:
+                            rebase = modifier;
+                            break;
+                        case 3:
+                            nxcompat = modifier;
+                            break;
+                        case 4:
+                            osdll = modifier;
+                            break;
+                        default:
+                            break;
+                    }
+                    counter++;
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+                else if (parameters[i] == "0" || parameters[i] == "1" || parameters[i] == "2" ||
+                    parameters[i] == "3" || parameters[i] == "4" || parameters[i] == "5")
+                {
+                    searchType = Int32.Parse(parameters[i]);
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+            }
+            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            Dictionary<IntPtr, string> results = new Dictionary<IntPtr, string>();
+            if(searchType == 0)
+            {
+                searchString = string.Join("", parameters);
+                byte[] searchBytes = StringToByteArray(searchString);
+                results = info.SearchMemory(searchType, searchBytes, null, excludedModules).ReturnValue;
+            }
+            else
+            {
+                searchString = string.Join("", parameters);
+                results = info.SearchMemory(searchType, null, searchString, excludedModules).ReturnValue;
+            }
+
+            List<string> output = new List<string>();
+            output.Add(String.Format("List created on {0} by {1}. Search string: {2}", DateTime.Now, info.Author, searchString));
+            output.Add("----------------------------------------------------------------------");
+            if(info.ProcessMachineType == ERC.MachineType.I386)
+            {
+                output.Add("  Address  | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
+            }
+            else
+            {
+                output.Add("      Address     | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
+            }
+
+            foreach(KeyValuePair<IntPtr, string> v in results)
+            {
+                for(int i = 0; i < info.ModulesInfo.Count; i++)
+                {
+                    if(info.ProcessMachineType == ERC.MachineType.I386)
+                    {
+                        if (info.ModulesInfo[i].ModulePath == v.Value)
+                        {
+                            output.Add(String.Format("0x{0} | {1} |  {2}   |  {3}  |   {4}   |  {5} | {6}",
+                                v.Key.ToString("X8"), info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath));
+                        }
+                    }
+                    else
+                    {
+                        if (info.ModulesInfo[i].ModulePath == v.Value)
+                        {
+                            output.Add(String.Format("0x{0} | {1} |  {2}   |  {3}  |   {4}   |  {5} | {6}",
+                                v.Key.ToString("X16"), info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath));
+                        }
+                    }
+                }
+            }
+            foreach(string s in output)
+            {
+                PLog.WriteLine(s);
+            }
+            ERC.DisplayOutput.WriteToFile(info.WorkingDirectory, "MemorySearch", ".txt", output);
+        }
         private static void SEH(List<string> parameters, ERC.ProcessInfo info) 
         {
             for (int i = 0; i < parameters.Count; i++)

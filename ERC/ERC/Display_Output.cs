@@ -46,6 +46,27 @@ namespace ERC
         }
         #endregion
 
+        #region WriteToFile
+        /// <summary>
+        /// Writes a list of strings to a file. Takes a directory, filename and prefix along with a List of strings.
+        /// </summary>
+        /// <param name="directory">The directory to be used</param>
+        /// <param name="prefix">A prefix for the file name e.g. "modules_" or "Pattern_" etc</param>
+        /// <param name="extension">The file extension to be used e.g. ".txt" </param>
+        /// <param name="content">A list of strings to be written to disk </param>
+
+        public static void WriteToFile(string directory, string prefix, string extension, List<string> content)
+        {
+            string path = GetFilePath(directory, prefix, extension);
+            TextWriter tw = new StreamWriter(path);
+
+            foreach (String s in content)
+                tw.WriteLine(s);
+
+            tw.Close();
+        }
+        #endregion
+
         #region Generate Pattern
         /// <summary>
         /// Creates a file in the ErcCore working directory containing a string of non repeating characters. 
