@@ -105,7 +105,10 @@ namespace ErcXdbg
             help += "       be used to exclude modules from the search with certain characteristics. The values are optional however if \n";
             help += "       you wish to exclude a later value all previous ones must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, \n";
             help += "       OSDLL.\n";       
-            help += "       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dlls\n";
+            help += "       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dll's\n";
+            help += "       Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's \n";
+            help += "       Example: ERC --SearchMemory FF E4 true true. Search for bytes FF E4 excluding only dll's with ASLR and SafeSEH\n"; 
+            help += "       enabled\n";
             help += "   --ListProcesses |\n";
             help += "       Displays a list of processes running on the local machine.\n";
             help += "   --ProcessInfo   |\n";
@@ -837,7 +840,7 @@ namespace ErcXdbg
             //return new List<string>(disassembled);
             return;
         }
-
+        
         private static void SearchMemory(ERC.ProcessInfo info, List<string> parameters)
         {
             for (int i = 0; i < parameters.Count; i++)
@@ -893,64 +896,16 @@ namespace ErcXdbg
                     i--;
                 }
             }
-            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
-            Dictionary<IntPtr, string> results = new Dictionary<IntPtr, string>();
-            if(searchType == 0)
-            {
-                searchString = string.Join("", parameters);
-                byte[] searchBytes = StringToByteArray(searchString);
-                results = info.SearchMemory(searchType, searchBytes, null, excludedModules).ReturnValue;
-            }
-            else
-            {
-                searchString = string.Join("", parameters);
-                results = info.SearchMemory(searchType, null, searchString, excludedModules).ReturnValue;
-            }
 
-            List<string> output = new List<string>();
-            output.Add(String.Format("List created on {0} by {1}. Search string: {2}", DateTime.Now, info.Author, searchString));
-            output.Add("----------------------------------------------------------------------");
-            if(info.ProcessMachineType == ERC.MachineType.I386)
-            {
-                output.Add("  Address  | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
-            }
-            else
-            {
-                output.Add("      Address     | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
-            }
-
-            foreach(KeyValuePair<IntPtr, string> v in results)
-            {
-                for(int i = 0; i < info.ModulesInfo.Count; i++)
-                {
-                    if(info.ProcessMachineType == ERC.MachineType.I386)
-                    {
-                        if (info.ModulesInfo[i].ModulePath == v.Value)
-                        {
-                            output.Add(String.Format("0x{0} | {1} |  {2}   |  {3}  |   {4}   |  {5} | {6}",
-                                v.Key.ToString("X8"), info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
-                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
-                                info.ModulesInfo[i].ModulePath));
-                        }
-                    }
-                    else
-                    {
-                        if (info.ModulesInfo[i].ModulePath == v.Value)
-                        {
-                            output.Add(String.Format("0x{0} | {1} |  {2}   |  {3}  |   {4}   |  {5} | {6}",
-                                v.Key.ToString("X16"), info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
-                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
-                                info.ModulesInfo[i].ModulePath));
-                        }
-                    }
-                }
-            }
+            searchString = string.Join("", parameters);
+            var output = ERC.DisplayOutput.SearchMemory(info, searchType, searchString, aslr, safeseh, rebase, nxcompat,
+                osdll);
             foreach(string s in output)
             {
                 PLog.WriteLine(s);
             }
-            ERC.DisplayOutput.WriteToFile(info.WorkingDirectory, "MemorySearch", ".txt", output);
         }
+        
         private static void SEH(List<string> parameters, ERC.ProcessInfo info) 
         {
             for (int i = 0; i < parameters.Count; i++)
