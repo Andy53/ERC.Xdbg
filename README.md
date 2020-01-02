@@ -6,6 +6,7 @@ Installing the plugin is reasonably straight forward. Simply download the approp
 
 # Usage
 Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. More detailed usage information for each option can be found below (to be completed)
+
     __________   ______  
    / ____ / __\ / ____/ 
   / __ / / /_/ / /       
