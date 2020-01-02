@@ -7,7 +7,7 @@ Installing the plugin is reasonably straight forward. Simply download the approp
 # Usage
 Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. More detailed usage information for each option can be found below (to be completed)
 
-`    __________   ______  
+```    __________   ______  
    / ____ / __\ / ____/ 
   / __ / / /_/ / /       
  / /___ / _, _/ /___     
@@ -79,4 +79,4 @@ Usage:
        3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII). Additionally if the value "True" is provided the extended 
        pattern will be used which includes special characters.
    --Rop           |
-       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...`
+       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...```
