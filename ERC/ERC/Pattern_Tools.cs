@@ -124,8 +124,14 @@ namespace ERC.Utilities
         /// <param name="core">An ErcCore object</param>
         /// <param name="extended">(Optional) bool specifying whether the extended character set should be used</param>
         /// <returns>Returns an ErcResult int containing the offset of the supplied pattern within the generated pattern</returns>
-        public static ErcResult<int> PatternOffset(string pattern, ErcCore core, bool extended = false)
+        public static ErcResult<string> PatternOffset(string pattern, ErcCore core, bool extended = false)
         {
+            //create string with reversed version of pattern to be searched for.
+            char[] reversedChars = pattern.ToCharArray();
+            Array.Reverse(reversedChars);
+            string reversed = new string(reversedChars);
+
+            //Create pattern to search within. Either extended or normal.
             string digits = "0123456789";
             string patternFull;
             if (extended == true)
@@ -137,7 +143,7 @@ namespace ERC.Utilities
             {
                 patternFull = File.ReadAllText(core.PatternStandardPath);
             }
-            ErcResult<int> result = new ErcResult<int>(core);
+            ErcResult<string> result = new ErcResult<string>(core);
 
             if (pattern.Length < 3)
             {
@@ -148,12 +154,17 @@ namespace ERC.Utilities
 
             if (patternFull.Contains(pattern))
             {
-                result.ReturnValue = patternFull.IndexOf(pattern);
+                result.ReturnValue = "Value found at postiont " + patternFull.IndexOf(pattern).ToString() + " in pattern.";
                 return result;
             }
-                
-            result.Error = new ERCException("Error: Pattern not found.");
-            result.ReturnValue = -1;
+            else if (patternFull.Contains(reversed))
+            {
+                result.ReturnValue = "Value found reversed at postiont " + patternFull.IndexOf(reversed).ToString() + " in pattern.";
+                return result;
+            }
+
+            result.Error = new ERCException("Error: Value not found.");
+            result.ReturnValue = "Value not found in pattern.";
             return result;
         }
         #endregion

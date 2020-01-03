@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Managed.x64dbg.SDK;
 
 namespace ErcXdbg
@@ -498,7 +499,7 @@ namespace ErcXdbg
                     }
                 }
                 var result = ERC.Utilities.PatternTools.PatternOffset(search, core, extended);
-                PLog.WriteLine("Pattern found at offset {0}", result.ReturnValue);
+                PLog.WriteLine(result.ReturnValue);
             }
             return;
         }
@@ -950,12 +951,15 @@ namespace ErcXdbg
                 new[] { Environment.NewLine },
                 StringSplitOptions.None
             );
-            foreach(string s in lines)
+            foreach (string s in lines)
             {
                 if (!s.Contains("{") && !s.Contains("}"))
                 {
-                    PLog.WriteLine("{");
                     PLog.WriteLine(s);
+                }
+                else
+                {
+                    PLog.WriteLine("");
                 }
             }
         }
