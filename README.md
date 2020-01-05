@@ -13,12 +13,12 @@ Details on each command can be seen below. Commands are not case sensitive.
 
 `--Help`       
 Displays the help message below.    
-    Example: `ERC --help`
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help`
 
 `--config`    
 Can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file. These options are predominatly used when writing the output of operations to file.    
-    Example 1: `ERC --config SetWorkingDirectory C:\Users\You\Desktop`   
-    Example 2: `ERC --config GetErrorFilePath`
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --config SetWorkingDirectory C:\Users\You\Desktop`   
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --config GetErrorFilePath`
 
 `--Pattern`   
 The pattern option can be used to either create a pattern or to identify the location of a string within a pattern.
