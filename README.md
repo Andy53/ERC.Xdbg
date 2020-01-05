@@ -59,12 +59,12 @@ Displays information about the attached process, loaded modules and threads. Can
 `--ModuleInfo`    
 Displays info about the modules loaded by the attached process. Can be passed a boolean to indicate if the output should be written to disk.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --moduleInfo`     
-&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --moduleinfo false` Does not write processinfo output to disk.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --moduleinfo false` Does not write moduleinfo output to disk.   
 
 `--ThreadInfo`    
 Displays info about threads associated with the attached process. Can be passed a boolean to indicate if the output should be written to disk.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --threadInfo`    
-&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write processinfo output to disk.      
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write threadinfo output to disk.      
 
 `--SEH`
 Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored in the search.    
