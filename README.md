@@ -77,7 +77,8 @@ Prints a list of egghunters which can be used for various machine types. Can be 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --egghunters ABCD` Egghunters will be generated with the tag "ABCD"    
 
 
-```    __________   ______  
+```
+    __________   ______  
    / ____ / __\ / ____/ 
   / __ / / /_/ / /       
  / /___ / _, _/ /___     
