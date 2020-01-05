@@ -90,7 +90,11 @@ namespace ErcXdbg
             help += "       of hex characters can be provided which will be excluded from the bytearray.\n";
             help += "   --Compare       |\n";
             help += "       Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory \n";
-            help += "       from which to start the search and a filepath for the binary file\n"; 
+            help += "       from which to start the search and a filepath for the binary file\n";
+            help += "   --Convert       |\n";
+            help += "       Converts input from one form to another such as ASCII to hex, Unicode to hex, ASCII to bytes. \n";
+            help += "       Valid conversion types:\n           Ascii to Hex = AtoH\n           Unicdoe to Hex = UtoH\n           UTF-7 to Hex = 7toH\n";
+            help += "           UTF-8 to Hex = 8toH\n           UTF-32 to Hex = 32toH\n";
             help += "   --Assemble      |\n";
             help += "       Takes a collection of assembley instructions and outputs the associated opcodes. Takes a boolean of 0 for x32 or\n";
             help += "        1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture \n";
@@ -179,6 +183,9 @@ namespace ErcXdbg
                         return;
                     case "--compare":
                         Compare(info, parameters);
+                        return;
+                    case "--convert":
+                        Convert(info, parameters);
                         return;
                     case "--assemble":
                         Assemble(info, parameters);
@@ -648,7 +655,7 @@ namespace ErcXdbg
                         }
                         parameters[1] = memAddress + parameters[1];
                     }
-                    addrHolder = (double)Convert.ToInt64(parameters[1], 16);
+                    addrHolder = (double)System.Convert.ToInt64(parameters[1], 16);
                     address = (IntPtr)addrHolder;
                 }
                 else
@@ -676,7 +683,7 @@ namespace ErcXdbg
                         }
                         parameters[0] = memAddress + parameters[0];
                     }
-                    addrHolder = (double)Convert.ToInt64(parameters[0], 16);
+                    addrHolder = (double)System.Convert.ToInt64(parameters[0], 16);
                     address = (IntPtr)addrHolder;
                 }
                 else
@@ -703,6 +710,58 @@ namespace ErcXdbg
             PLog.WriteLine(string.Join("\n", output));
             //return string.Join("\n", output);
             return;
+        }
+
+        private static void Convert(ERC.ProcessInfo info, List<string> parameters)
+        {
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            string output = "";
+
+            switch (parameters[0].ToLower())
+            {
+                case "atoh":
+                    parameters.Remove(parameters[0]);
+                    output = "The string " + String.Join(" ", parameters) + " encoded as ASCII has the following byte sequence:\n";
+                    output += "0x" + ERC.Utilities.Convert.AsciiToHex(String.Join(" ", parameters)).Replace(" ", " 0x");
+                    PLog.WriteLine(output);
+                    break;
+                case "utoh":
+                    parameters.Remove(parameters[0]);
+                    output = "The string " + String.Join(" ", parameters) + " encoded as Unicode has the following byte sequence:\n";
+                    output += "0x" + ERC.Utilities.Convert.UnicodeToHex(String.Join(" ", parameters)).Replace(" ", " 0x");
+                    PLog.WriteLine(output);
+                    break;
+                case "7toh":
+                    parameters.Remove(parameters[0]);
+                    output = "The string " + String.Join(" ", parameters) + " encoded as UTF-7 has the following byte sequence:\n";
+                    output += "0x" + ERC.Utilities.Convert.UTF7ToHex(String.Join(" ", parameters)).Replace(" ", " 0x");
+                    PLog.WriteLine(output);
+                    break;
+                case "8toh":
+                    parameters.Remove(parameters[0]);
+                    output = "The string " + String.Join(" ", parameters) + " encoded as UTF-8 has the following byte sequence:\n";
+                    output += "0x" + ERC.Utilities.Convert.UTF8ToHex(String.Join(" ", parameters)).Replace(" ", " 0x");
+                    PLog.WriteLine(output);
+                    break;
+                case "32toh":
+                    parameters.Remove(parameters[0]);
+                    output = "The string " + String.Join(" ", parameters) + " encoded as UTF-32 has the following byte sequence:\n";
+                    output += "0x" + ERC.Utilities.Convert.UTF32ToHex(String.Join(" ", parameters)).Replace(" ", " 0x");
+                    PLog.WriteLine(output);
+                    break;
+                default:
+                    PLog.WriteLine("Incorrect parameters provided. Convert must be run as \"ERC --convert <conversion type> <input>");
+                    PLog.WriteLine("Valid conversion types:\n    Ascii to Hex = AtoH\n    Unicdoe to Hex = UtoH\n    UTF-7 to Hex = 7toH\n" +
+                        "    UTF-8 to Hex = 8toH\n    UTF-32 to Hex = 32toH\n");
+                    return;
+            }
         }
 
         private static void Assemble(ERC.ProcessInfo info, List<string> parameters)
@@ -1083,7 +1142,7 @@ namespace ErcXdbg
         {
             return Enumerable.Range(0, hex.Length)
                              .Where(x => x % 2 == 0)
-                             .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+                             .Select(x => System.Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
         }
     }
