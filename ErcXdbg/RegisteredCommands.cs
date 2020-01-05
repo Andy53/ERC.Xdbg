@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Managed.x64dbg.SDK;
 
 namespace ErcXdbg
@@ -87,8 +88,8 @@ namespace ErcXdbg
             help += "           Pattern create: ERC --pattern <create | c> <length>\n";
             help += "           Pattern offset: ERC --pattern <offset | o> <search string>\n";
             help += "   --Bytearray     |\n";
-            help += "       Generates a bytearray which is saved to the working directory and displayed in the application log tab. An set \n";
-            help += "       hex characters can be provided which will be excluded from the bytearray.";
+            help += "       Generates a bytearray which is saved to the working directory and displayed in the application log tab. A set \n";
+            help += "       of hex characters can be provided which will be excluded from the bytearray.\n";
             help += "   --Compare       |\n";
             help += "       Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory \n";
             help += "       from which to start the search and a filepath for the binary file\n"; 
@@ -102,7 +103,7 @@ namespace ErcXdbg
             help += "       of the process will be used.\n";
             help += "   --SearchMemory   |\n";
             help += "       Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search \n";
-            help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8. Additionally boolean values of true or false can \n";
+            help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8). Additionally boolean values of true or false can \n";
             help += "       be used to exclude modules from the search with certain characteristics. The values are optional however if \n";
             help += "       you wish to exclude a later value all previous ones must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, \n";
             help += "       OSDLL.\n";       
@@ -196,7 +197,7 @@ namespace ErcXdbg
                     case "--processinfo":
                         if(parameters.Count == 2)
                         {
-                            if(parameters[1].ToLower() == "false")
+                            if(parameters[1].ToLower() == "false" || parameters[1].ToLower() == "0")
                             {
                                 writeToFile = false;
                             }
@@ -206,7 +207,7 @@ namespace ErcXdbg
                     case "--moduleinfo":
                         if (parameters.Count == 2)
                         {
-                            if (parameters[1].ToLower() == "false")
+                            if (parameters[1].ToLower() == "false" || parameters[1].ToLower() == "0")
                             {
                                 writeToFile = false;
                             }
@@ -216,7 +217,7 @@ namespace ErcXdbg
                     case "--threadinfo":
                         if (parameters.Count == 2)
                         {
-                            if (parameters[1].ToLower() == "false")
+                            if (parameters[1].ToLower() == "false" || parameters[1].ToLower() == "0")
                             {
                                 writeToFile = false;
                             }
@@ -395,6 +396,16 @@ namespace ErcXdbg
             bool extended = false;
             bool offset = false;
             bool create = false;
+
+            //force extended character set by adding "extended" to command.
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("extended"))
+                {
+                    parameters.Remove(parameters[i]);
+                    extended = true;
+                }
+            }
 
             for (int i = 0; i < parameters.Count; i++)
             {
@@ -714,20 +725,30 @@ namespace ErcXdbg
             }
 
             int n = -1;
+            List<int> elementsToRemove = new List<int>();
             for (int i = 0; i < parameters.Count; i++)
             {
-                if(i >= parameters.Count)
+                if (i <= parameters.Count)
                 {
-                    int.TryParse(parameters[1], out n);
-                    if (n == 0 || n == 1)
+                    if (Regex.IsMatch(parameters[i], @"^\d+$"))
                     {
-                        parameters.Remove(parameters[i]);
-                    }
-                    else
-                    {
-                        n = -1;
+                        if(parameters[i] == "0")
+                        {
+                            elementsToRemove.Add(i);
+                            n = 0;
+                        }
+                        else if(parameters[i] == "1")
+                        {
+                            elementsToRemove.Add(i);
+                            n = 1;
+                        }
                     }
                 }               
+            }
+
+            foreach(int i in elementsToRemove)
+            {
+                parameters.Remove(parameters[i]);
             }
 
             if(n == -1)
@@ -780,16 +801,30 @@ namespace ErcXdbg
             }
 
             int n = -1;
+            List<int> elementsToRemove = new List<int>();
             for (int i = 0; i < parameters.Count; i++)
             {
-                if(i >= parameters.Count)
+                if (i <= parameters.Count)
                 {
-                    int.TryParse(parameters[1], out n);
-                    if (n == 0 || n == 1)
+                    if (Regex.IsMatch(parameters[i], @"^\d+$"))
                     {
-                        parameters.Remove(parameters[i]);
+                        if (parameters[i] == "0")
+                        {
+                            elementsToRemove.Add(i);
+                            n = 0;
+                        }
+                        else if (parameters[i] == "1")
+                        {
+                            elementsToRemove.Add(i);
+                            n = 1;
+                        }
                     }
                 }
+            }
+
+            foreach (int i in elementsToRemove)
+            {
+                parameters.Remove(parameters[i]);
             }
 
             if (n == -1)
