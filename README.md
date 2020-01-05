@@ -7,7 +7,7 @@ Installing the plugin is reasonably straight forward. Simply download the approp
 If you wish to build the plugin from source simply clone the Git repository, open the solution in Visual Studio and build the project targeted for your architecture of choice. Then copy the binaries into the plugins directory of your X64dbg installation.
 
 # Usage
-Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. More detailed usage information for each option can be found below (to be completed)
+Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. 
 
 Details on each command can be seen below. Commands are not case sensitive.
 
