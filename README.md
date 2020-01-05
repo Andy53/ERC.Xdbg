@@ -9,15 +9,19 @@ If you wish to build the plugin from source simply clone the Git repository, ope
 # Usage
 Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. More detailed usage information for each option can be found below (to be completed)
 
-Commands are not case sensitive.
+Details on each command can be seen below. Commands are not case sensitive.
 
 `--Help`       
-Displays the help message below.
+Displays the help message below.    
+    Example: `ERC --help`
 
 `--config`    
-Can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file.
+Can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file. These options are predominatly used when writing the output of operations to file.    
+    Example 1: `ERC --config SetWorkingDirectory C:\Users\You\Desktop`   
+    Example 2: `ERC --config GetErrorFilePath`
 
-
+`--Pattern`   
+The pattern option can be used to either create a pattern or to identify the location of a string within a pattern.
 
 ```    __________   ______  
    / ____ / __\ / ____/ 
