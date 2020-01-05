@@ -9,6 +9,16 @@ If you wish to build the plugin from source simply clone the Git repository, ope
 # Usage
 Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. More detailed usage information for each option can be found below (to be completed)
 
+Commands are not case sensitive.
+
+`--Help`
+Displays the help message below.
+
+`--config`
+Can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file.
+
+
+
 ```    __________   ______  
    / ____ / __\ / ____/ 
   / __ / / /_/ / /       
