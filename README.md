@@ -67,7 +67,7 @@ Displays info about threads associated with the attached process. Can be passed 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write processinfo output to disk.      
 
 `--SEH`
-Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored in the search.
+Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored in the search.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --seh`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SEH C:\Path\To\Module\To\Exclude C:\Path\To\Other\Module\To\Exclude`
 
