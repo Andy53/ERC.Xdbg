@@ -22,6 +22,7 @@ namespace ErcXdbg
 
         public static bool PluginStart()
         {
+            Plugins._plugin_unregistercommand(Plugins.pluginHandle, "ERC");
             Plugins._plugin_registercommand(Plugins.pluginHandle, "ERC", RegisteredCommands.ErcCommand, false);        
             return true;
         }

@@ -33,20 +33,18 @@ namespace ErcXdbg
                 PLog.WriteLine("");
                 GC.Collect();
 
+                
                 ERC.ErcCore core = new ERC.ErcCore();
                 ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
-
+                
                 ParseCommand(argv[0], core, info);
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 PrintHelp(e.Message);
-                ErcXdbg.PluginStop();
                 ErcXdbg.PluginStart();
-                PLog.WriteLine("Operation Completed");
                 return true;
             }
-            ErcXdbg.PluginStop();
             ErcXdbg.PluginStart();
             return true;
         }
