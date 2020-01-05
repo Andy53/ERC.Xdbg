@@ -12,10 +12,10 @@ Instructions on usage of the plugin can be seen below. This can also be accessed
 Commands are not case sensitive.
 
 `--Help`
-Displays the help message below.
+\nDisplays the help message below.
 
 `--config`
-Can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file.
+\nCan be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file.
 
 
 
