@@ -29,7 +29,22 @@ The pattern option can be used to either create a pattern or to identify the loc
 `--ByteArray`    
 The ByteArray option allows the generation of a byte array which is displayed in the log and written to the working directory as both a text file and a binary file containing only the binary values the user wants. By defailt the array will contain all values from 0x00 to 0xFF and values can be omitted by appending them to the command.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --bytearray`     
-&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --bytearray 0xFF0x0A \x0b 0C`    
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --bytearray 0xFF0x0A \x0b 0C`   
+
+`--Compare`
+Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory address from which to start the search and a filepath for the binary file.
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Compare 0x12345678 C:\Users\You\Desktop\YourBinaryFile.bin`  
+
+`--Convert`
+Takes a string and converts it to a hex representation. The string can be converted as if it was ASCII, Unicode, UTF-7, UTF-8 or UTF-32. 
+&nbsp;&nbsp;&nbsp;&nbsp;Valid conversion types:     
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ascii to Hex = AtoH    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Unicdoe to Hex = UtoH    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UTF-7 to Hex = 7toH    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UTF-8 to Hex = 8toH    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UTF-32 to Hex = 32toH    
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Convert AtoH HelloWorld` returns the ASCII bytes for HelloWorld.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --convert UtoH HelloWorld` returns the Unicode bytes for HelloWorld.
 
 `--Assemble`    
 The assemble option can be used to convert assembly instructions into the associated opcodes. The plugin will attempt to identify the architecture required based on the attached process however a 0 can be passed to force 32 bit and a 1 can be passed to force 64 bit. Instructions must be seperated with a comma (,).   
@@ -44,7 +59,7 @@ The disassemble option can be used to convert opcodes into assembly instructions
 `--SearchMemory`    
 Search memory can take a string or set of bytes to search for within the attached process memory and loaded modules. Optionally an integer can be passed to specify the search type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8). Modules can be excluded based on certain characteristics (Is ASLR/SafeSEH/Is the binary rebasable/NXCompat(DEP)/Is the binary an OS dll) The values are optional however if you wish to exclude a later value all previous ones must be included.
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --SearchMemory FF E4` Search for bytes FF E4 include all dlls.  
-&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SearchMemory FF E4 false false false false true.` Search for bytes FF E4 excluding only OS dlls.         
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SearchMemory FF E4 false false false false true` Search for bytes FF E4 excluding only OS dlls.         
 &nbsp;&nbsp;&nbsp;&nbsp;Example 3: `ERC --SearchMemory 1 HelloWorld` Search for the ASCII string HelloWorld.
 
 `--ListProcesses`    
@@ -84,6 +99,7 @@ Prints a list of egghunters which can be used for various machine types. Can be 
  / /___ / _, _/ /___     
 /_____ /_/ |_|\____/    
 -------------------------
+Error: Arguments must be provided. Use --help for detailed information.
 Usage:       
    --Help          |
        Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg 
@@ -109,10 +125,18 @@ Usage:
            Pattern offset: ERC --pattern <offset | o> <search string>
    --Bytearray     |
        Generates a bytearray which is saved to the working directory and displayed in the application log tab. A set 
-       of hex characters can be provided which will be excluded from the bytearray.   
+       of hex characters can be provided which will be excluded from the bytearray.
    --Compare       |
        Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory 
        from which to start the search and a filepath for the binary file
+   --Convert       |
+       Converts input from one form to another such as ASCII to hex, Unicode to hex, ASCII to bytes. 
+       Valid conversion types:
+           Ascii to Hex = AtoH
+           Unicdoe to Hex = UtoH
+           UTF-7 to Hex = 7toH
+           UTF-8 to Hex = 8toH
+           UTF-32 to Hex = 32toH
    --Assemble      |
        Takes a collection of assembley instructions and outputs the associated opcodes. Takes a boolean of 0 for x32 or
         1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture 
@@ -123,11 +147,14 @@ Usage:
        of the process will be used.
    --SearchMemory   |
        Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search 
-       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8. Additionally boolean values of true or false can 
+       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8). Additionally boolean values of true or false can 
        be used to exclude modules from the search with certain characteristics. The values are optional however if 
        you wish to exclude a later value all previous ones must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, 
        OSDLL.
-       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dlls
+       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dll's
+       Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's 
+       Example: ERC --SearchMemory FF E4 true true. Search for bytes FF E4 excluding only dll's with ASLR and SafeSEH
+       enabled
    --ListProcesses |
        Displays a list of processes running on the local machine.
    --ProcessInfo   |
