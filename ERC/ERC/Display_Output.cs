@@ -478,13 +478,112 @@ namespace ERC
         /// Passing a list of module paths or names will exclude those modules from the search. 
         /// Similar to Search_All_Memory_PPR however provides output in an easily readable format.
         /// </summary>
-        /// <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions,</param>
+        /// <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions.</param>
         /// <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
         /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         public static List<string> GetSEHJumps(ProcessInfo info, List<string> excludes = null)
         {
             List<string> ret = new List<string>();
+            //ret = new List<string>();
             ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes);
+
+            string sehFilename = GetFilePath(info.WorkingDirectory, "SEH_jumps_", ".txt");
+            ret.Add("---------------------------------------------------------------------------------------");
+            if (info.Author != "No_Author_Set")
+            {
+                ret.Add("Process Name: " + info.ProcessName + " Created by: " + info.Author + " " +
+                "Total Results: " + ptrs.ReturnValue.Count);
+            }
+            else
+            {
+                ret.Add("Process Name: " + info.ProcessName + " Total Results: " + ptrs.ReturnValue.Count);
+            }
+            ret.Add("---------------------------------------------------------------------------------------");
+
+            if (ptrs.Error != null)
+            {
+                throw new Exception("Error passed from Search_All_Memory_PPR: " + ptrs.Error.ToString());
+            }
+            if (info.ProcessMachineType == ERC.MachineType.I386)
+            {
+                ret.Add("  Address  |      Instructions     | ASLR | SafeSEH  | Rebase  | NXCompat |  OsDLL | Module Path");
+            }
+            else
+            {
+                ret.Add("      Address      |      Instructions     | ASLR | SafeSEH  | Rebase  | NXCompat |  OsDLL | Module Path");
+            }
+            byte[] ppr = new byte[5];
+            int bytesread = 0;
+            foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
+            {
+                string holder = "";
+                List<byte> opcodes = new List<byte>();
+                try
+                {
+                    ErcCore.ReadProcessMemory(info.ProcessHandle, s.Key, ppr, ppr.Length, out bytesread);
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (ppr[i].Equals(0xC3))
+                        {
+                            for (int j = 0; j <= i; j++)
+                            {
+                                opcodes.Add(ppr[j]);
+                            }
+                            ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
+                            var result = disas.Disassemble(opcodes.ToArray());
+                            if (info.ProcessMachineType == ERC.MachineType.I386)
+                            {
+                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                int index = holder.IndexOf("ret");
+                                holder = holder.Substring(0, index + 3);
+                                holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
+
+                            }
+                            else
+                            {
+                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                int index = holder.IndexOf("ret");
+                                holder = holder.Substring(0, index + 3);
+                                holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
+                            }
+                            opcodes.Clear();
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
+                for (int i = 0; i < info.ModulesInfo.Count; i++)
+                {
+                    if (info.ModulesInfo[i].ModulePath == s.Value)
+                    {
+                        holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
+                            info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                            info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                            info.ModulesInfo[i].ModulePath);
+                    }
+                }
+                ret.Add(holder);
+            }
+
+            File.WriteAllLines(sehFilename, ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
+        /// Passing a list of module paths or names will exclude those modules from the search. 
+        /// Similar to Search_All_Memory_PPR however provides output in an easily readable format.
+        /// </summary>
+        /// <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions</param>
+        /// <param name="ptrsToExclude">Ptrs containing these byte values will be discarded.</param>
+        /// <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
+        /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+        public static List<string> GetSEHJumps(ProcessInfo info, byte[] ptrsToExclude, List<string> excludes = null)
+        {
+            List<string> ret = new List<string>();
+            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(ptrsToExclude, excludes);
 
             string sehFilename = GetFilePath(info.WorkingDirectory, "SEH_jumps_", ".txt");
             ret.Add("---------------------------------------------------------------------------------------");
@@ -503,11 +602,19 @@ namespace ERC
             {
                 throw new Exception("Error passed from Search_All_Memory_PPR: " + ptrs.Error.ToString());
             }
-
+            if (info.ProcessMachineType == ERC.MachineType.I386)
+            {
+                ret.Add("  Address  |      Instructions     | ASLR | SafeSEH  | Rebase  | NXCompat |  OsDLL | Module Path");
+            }
+            else
+            {
+                ret.Add("      Address      |      Instructions     | ASLR | SafeSEH  | Rebase  | NXCompat |  OsDLL | Module Path");
+            }
             byte[] ppr = new byte[5];
             int bytesread = 0;
             foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
             {
+                string holder = "";
                 List<byte> opcodes = new List<byte>();
                 try
                 {
@@ -522,8 +629,21 @@ namespace ERC
                             }
                             ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
                             var result = disas.Disassemble(opcodes.ToArray());
-                            ret.Add("0x" + s.Key.ToString("x") + " " +
-                                result.ReturnValue.Replace(Environment.NewLine, ", ") + " Source file: " + s.Value);
+                            if (info.ProcessMachineType == ERC.MachineType.I386)
+                            {
+                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                int index = holder.IndexOf("ret");
+                                holder = holder.Substring(0, index + 3);
+                                holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
+
+                            }
+                            else
+                            {
+                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                int index = holder.IndexOf("ret");
+                                holder = holder.Substring(0, index + 3);
+                                holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
+                            }
                             opcodes.Clear();
                         }
                     }
@@ -532,6 +652,17 @@ namespace ERC
                 {
                     throw e;
                 }
+                for (int i = 0; i < info.ModulesInfo.Count; i++)
+                {
+                    if (info.ModulesInfo[i].ModulePath == s.Value)
+                    {
+                        holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
+                            info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                            info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                            info.ModulesInfo[i].ModulePath);
+                    }
+                }
+                ret.Add(holder);
             }
             File.WriteAllLines(sehFilename, ret);
             return ret;
