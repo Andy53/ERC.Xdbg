@@ -272,6 +272,8 @@ namespace ErcXdbg
 
         private static void Update(List<string> parameters)
         {
+            PLog.WriteLine("ERC --Update");
+            PLog.WriteLine("----------------------------------------------------------------------");
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -387,6 +389,7 @@ namespace ErcXdbg
 
                 PLog.WriteLine("Update was downloaded successfully: {0}", fileurl);
                 PLog.WriteLine("In order to use the updated binary you will need to restart X64dbg.");
+                PLog.WriteLine("----------------------------------------------------------------------");
             }
             catch (Exception e)
             {
@@ -397,7 +400,9 @@ namespace ErcXdbg
 
         private static void Config(List<string> parameters, ERC.ErcCore core)
         {
-            for(int i = 0; i < parameters.Count; i++)
+            PLog.WriteLine("ERC --Config");
+            PLog.WriteLine("----------------------------------------------------------------------");
+            for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
                 {
@@ -410,26 +415,32 @@ namespace ErcXdbg
                 case "getworkingdirectory":
                     PLog.WriteLine("Working Directory = {0}", core.WorkingDirectory);
                     //return core.WorkingDirectory;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "getversion":
                     PLog.WriteLine("ERC Version = {0}", core.ErcVersion);
                     //return core.ErcVersion;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "getauthor":
                     PLog.WriteLine("Author = {0}", core.Author);
                     //return core.Author;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "geterrorlogpath":
                     PLog.WriteLine("Error Log File = {0}", core.SystemErrorLogPath);
                     //return core.SystemErrorLogPath;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "getstandardpattern":
                     PLog.WriteLine("Standard Pattern Location = {0}", core.PatternStandardPath);
                     //return core.PatternStandardPath;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "getextendedpattern":
                     PLog.WriteLine("Standard Pattern Location = {0}", core.PatternExtendedPath);
                     //return core.PatternExtendedPath;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "setworkingdirectory":
                     if(parameters.Count == 2)
@@ -438,24 +449,33 @@ namespace ErcXdbg
                         {
                             core.SetWorkingDirectory(parameters[1]);
                             PLog.WriteLine("New Working Directory = {0}", core.WorkingDirectory);
-                            
+                            PLog.WriteLine("----------------------------------------------------------------------");
                             return;
                         }
                         else
                         {
                             PrintHelp("Please provide a valid directory.");
+                            PLog.WriteLine("----------------------------------------------------------------------");
                         }
                     }
                     else
                     {
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetWorkingDirectory <PATH>");
+                        PLog.WriteLine("----------------------------------------------------------------------");
                     }
                     //return core.WorkingDirectory;
                     return;
                 case "setauthor":
-                    if (parameters.Count == 2)
+                    for (int i = 0; i < parameters.Count; i++)
                     {
-                        core.SetAuthor(parameters[1]);
+                        if (parameters[i].ToLower().Contains("setauthor"))
+                        {
+                            parameters.Remove(parameters[i]);
+                        }
+                    }
+                    if (parameters.Count >= 1)
+                    {
+                        core.SetAuthor(String.Join(" ", parameters.ToArray()));
                         PLog.WriteLine("New Author = {0}", core.Author);
                     }
                     else
@@ -463,6 +483,7 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetAuthor <Author>");
                     }
                     //return core.Author;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "seterrorlogpath":
                     if (parameters.Count == 2)
@@ -480,6 +501,7 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetErrorLogPath <PATH>");
                     }
                     //return core.SystemErrorLogPath;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "setstandardpattern":
                     if (parameters.Count == 2)
@@ -497,6 +519,7 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetStandardPattern <PATH>");
                     }
                     //return core.PatternStandardPath;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 case "setextendedpattern":
                     if (parameters.Count == 2)
@@ -514,16 +537,20 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetExtendedPattern <PATH>");
                     }
                     //return core.PatternExtendedPath;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
                 default:
                     PrintHelp("A syntax error was encountered when parsing the config command. Please review the documentation");
                     //return null;
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
             }
         }
 
         private static void Pattern(ERC.ErcCore core, List<string> parameters)
         {
+            PLog.WriteLine("ERC --Pattern");
+            PLog.WriteLine("----------------------------------------------------------------------");
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -653,6 +680,7 @@ namespace ErcXdbg
                 var result = ERC.Utilities.PatternTools.PatternOffset(search, core, extended);
                 PLog.WriteLine(result.ReturnValue);
             }
+            PLog.WriteLine("----------------------------------------------------------------------");
             return;
         }
 
@@ -850,6 +878,8 @@ namespace ErcXdbg
 
         private static void Convert(ERC.ProcessInfo info, List<string> parameters)
         {
+            PLog.WriteLine("ERC --Convert");
+            PLog.WriteLine("----------------------------------------------------------------------");
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -896,12 +926,16 @@ namespace ErcXdbg
                     PLog.WriteLine("Incorrect parameters provided. Convert must be run as \"ERC --convert <conversion type> <input>");
                     PLog.WriteLine("Valid conversion types:\n    Ascii to Hex = AtoH\n    Unicdoe to Hex = UtoH\n    UTF-7 to Hex = 7toH\n" +
                         "    UTF-8 to Hex = 8toH\n    UTF-32 to Hex = 32toH\n");
+                    PLog.WriteLine("----------------------------------------------------------------------");
                     return;
             }
+            PLog.WriteLine("----------------------------------------------------------------------");
         }
 
         private static void Assemble(ERC.ProcessInfo info, List<string> parameters)
         {
+            PLog.WriteLine("ERC --Assemble");
+            PLog.WriteLine("----------------------------------------------------------------------");
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -973,11 +1007,14 @@ namespace ErcXdbg
                 PLog.WriteLine("An error occured calling the assemble method. Error: {0}\nThe command should be structured ERC --assemble [1|0] <mnemonics>.", e.Message);
             }
             //return new List<string>(assembled);
+            PLog.WriteLine("----------------------------------------------------------------------");
             return;
         }
 
         private static void Disassemble(ERC.ProcessInfo info, List<string> parameters)
         {
+            PLog.WriteLine("ERC --Disassemble");
+            PLog.WriteLine("----------------------------------------------------------------------");
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -1067,6 +1104,7 @@ namespace ErcXdbg
             }
             PLog.WriteLine("Disassembly completed at {0} by {1}", DateTime.Now, info.Author);
             //return new List<string>(disassembled);
+            PLog.WriteLine("----------------------------------------------------------------------");
             return;
         }
         
