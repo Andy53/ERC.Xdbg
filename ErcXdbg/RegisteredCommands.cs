@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using Managed.x64dbg.SDK;
@@ -14,6 +17,8 @@ namespace ErcXdbg
         {
             try
             {
+                DeleteOldPlugins();
+
                 //Get the handle of the attached process
                 var hProcess = Bridge.DbgValFromString("$hProcess");
 
@@ -65,6 +70,9 @@ namespace ErcXdbg
             help += "Usage:       \n";
             help += "   --Help          |\n";
             help += "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg \n";
+            help += "   --Update        |\n";
+            help += "       Can be used to update the plugin to the latest version. Can be passed a ip:port combination to specify the\n";
+            help += "       proxy server to use.\n";
             help += "   --Config        |\n";
             help += "       Takes any of the following arguments, Get requests take no additional parameters, Set requests take a directory\n";
             help += "       which will be set as the new value.\n";
@@ -172,6 +180,9 @@ namespace ErcXdbg
                     case "--help":
                         PrintHelp();
                         return;
+                    case "--update":
+                        Update(parameters);
+                        return;
                     case "--config":
                         Config(parameters, core);
                         return;
@@ -257,6 +268,131 @@ namespace ErcXdbg
                 }
             }
             return;
+        }
+
+        private static void Update(List<string> parameters)
+        {
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            bool proxy = false;
+            string proxyIpAddress = "";
+            string proxyPort = "";
+            IPAddress address = null;
+
+            if(parameters.Count > 1)
+            {
+                PrintHelp("Too many parameters provided. Update must be called as \"ERC --update <proxyIP:port>\"");
+            }
+            else if(parameters.Count == 1)
+            {
+                if (parameters[0].Split('.').Length == 4)
+                {
+                    if (parameters[0].Contains(":") == true && parameters[0].Split(':').Length == 2 
+                        && IPAddress.TryParse(parameters[0], out address) == true)
+                    {
+                        proxyIpAddress = parameters[0].Split(':')[0];
+                        proxyPort = parameters[0].Split(':')[1];
+                        proxy = true;
+                    }
+                }
+                else
+                {
+                    PrintHelp("Proxy IP address:Port not formatted correctly. Update must be called as \"ERC --update <proxyIP:port>\"");
+                }
+            }
+
+            try
+            {
+                //Get plugins directory for X64dbg.
+                string updatePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+                var wClient = new WebClient();
+                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
+                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+                
+                wClient.Headers.Add("Accept", "text/html, application/xhtml+xml,application/xml;q=0.9,image/ webp,*/*;q=0.8");
+                wClient.Headers.Add("User-Agent", "ERC-Plugin");
+
+                //Set proxy if specified.
+                if(proxy == true)
+                {
+                    WebProxy wProxy = new WebProxy(proxyIpAddress + ":" + proxyPort);
+                    wClient.Proxy = wProxy;
+                }
+
+                //string releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/32"); //Uncomment if 32 bit.
+                string releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/64"); //Uncomment if 64 bit.
+            
+                string[] releasesArray = releases.Split(',');
+                string fileurl = "";
+                foreach (string s in releasesArray)
+                {
+                    if (s.Contains("browser_download_url"))
+                    {
+                        fileurl = s.Split('\"')[3];
+                    }
+                }
+
+                string[] urlSegments = fileurl.Split('/');
+                string filename = urlSegments[urlSegments.Length - 1];
+                string zipPath = updatePath + "\\" + filename;
+                wClient.DownloadFile(fileurl, zipPath);
+
+                // Ensures that the last character on the extraction path
+                // is the directory separator char. 
+                // Without this, a malicious zip file could try to traverse outside of the expected
+                // extraction path.
+                if (!updatePath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                {
+                    updatePath += Path.DirectorySeparatorChar;
+                }
+
+                string[] files = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+                bool oldPluginRenamed = false;
+                foreach (string s in files)
+                {
+                    if (s.Contains("Erc.Xdbg.dp64-OLD") && oldPluginRenamed == false)
+                    {
+                        int i = 0;
+                        var holder = s.Split('_')[1];
+                        int.TryParse(holder[0].ToString(), out i);
+                        System.IO.File.Move(updatePath + "Erc.Xdbg.dp64", updatePath + "Erc.Xdbg.dp64-OLD_" + i.ToString() + ".txt");
+                        oldPluginRenamed = true;
+                    }
+                }
+
+                if(oldPluginRenamed == false)
+                {
+                    System.IO.File.Move(updatePath + "Erc.Xdbg.dp64", updatePath + "Erc.Xdbg.dp64-OLD_0.txt");
+                }
+
+                //unzip update package 
+                using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+                {
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        string destinationPath = Path.GetFullPath(Path.Combine(updatePath, entry.FullName));
+                        entry.ExtractToFile(destinationPath, true);
+                    }
+                }
+
+                //Delete the zip archive.
+                File.Delete(zipPath);
+
+                PLog.WriteLine("Update was downloaded successfully: {0}", fileurl);
+                PLog.WriteLine("In order to use the updated binary you will need to restart X64dbg.");
+            }
+            catch (Exception e)
+            {
+                PrintHelp(e.Message + "\n" + e.InnerException);
+            }
+            
         }
 
         private static void Config(List<string> parameters, ERC.ErcCore core)
@@ -1039,21 +1175,7 @@ namespace ErcXdbg
         private static void EggHunters(ERC.ErcCore core = null, string tag = null)
         {
             string holder = ERC.DisplayOutput.GenerateEggHunters(core, tag);
-            string[] lines = holder.Split(
-                new[] { Environment.NewLine },
-                StringSplitOptions.None
-            );
-            foreach (string s in lines)
-            {
-                if (!s.Contains("{") && !s.Contains("}"))
-                {
-                    PLog.WriteLine(s);
-                }
-                else
-                {
-                    PLog.WriteLine("");
-                }
-            }
+            Plugins._plugin_logputs(holder);
         }
 
         private static void FindNRP(ERC.ProcessInfo info, List<string> parameters)
@@ -1144,6 +1266,26 @@ namespace ErcXdbg
                              .Where(x => x % 2 == 0)
                              .Select(x => System.Convert.ToByte(hex.Substring(x, 2), 16))
                              .ToArray();
+        }
+
+        private static void DeleteOldPlugins()
+        {
+            //Get list of files in the plugins directory. Delete old versions of the plugin.
+            try
+            {
+                string[] files = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+                foreach (string s in files)
+                {
+                    if (s.Contains("Erc.Xdbg.dp64-OLD"))
+                    {
+                        File.Delete(s);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                //Do Nothing
+            }
         }
     }
 }

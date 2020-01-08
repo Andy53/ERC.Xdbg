@@ -13,7 +13,11 @@ Details on each command can be seen below. Commands are not case sensitive.
 
 `--Help`       
 Displays the help message below.    
-&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help`
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help`    
+
+`--Update`
+Downloads the latest release of the plugin from Github and extracts it into the X64Dbg plugin directory for the architecture currently in use. Can be passed a ip:port pair in order to specify a proxy.
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update 127.0.0.1:8080`
 
 `--config`    
 The config option can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file. These options are predominatly used when writing the output of operations to file.    
