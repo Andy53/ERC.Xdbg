@@ -1,6 +1,7 @@
 ﻿using ERC.Structures;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -1761,46 +1762,6 @@ namespace ERC
         }
         #endregion
 
-        #region CreateExcludesList
-        /// <summary>
-        /// Creates a list of modules to exclude from a search of memory.
-        /// </summary>
-        /// <returns>Returns an ErcResult containing a list of stringss</returns>
-        public List<string> CreateExcludesList(bool aslr = false, bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false)
-        {
-            List<string> excludedModules = new List<string>();
-            for (int i = 0; i < ModulesInfo.Count; i++)
-            {
-                bool add = false;
-                if (aslr == true && ModulesInfo[i].ModuleASLR == true)
-                {
-                    add = true;
-                }
-                if (safeseh == true && ModulesInfo[i].ModuleSafeSEH == true)
-                {
-                    add = true;
-                }
-                if (rebase == true && ModulesInfo[i].ModuleRebase == true)
-                {
-                    add = true;
-                }
-                if (nxcompat == true && ModulesInfo[i].ModuleNXCompat == true)
-                {
-                    add = true;
-                }
-                if (osdll == true && ModulesInfo[i].ModuleOsDll == true)
-                {
-                    add = true;
-                }
-                if (add == true)
-                {
-                    excludedModules.Add(ModulesInfo[i].ModulePath);
-                }
-            }
-            return excludedModules;
-        }
-        #endregion
-
         #endregion
 
         #region BoyerMoore Search ByteArrays
@@ -1899,6 +1860,46 @@ namespace ERC
 
         #endregion
 
+        #region CreateExcludesList
+        /// <summary>
+        /// Creates a list of modules to exclude from a search of memory.
+        /// </summary>
+        /// <returns>Returns an ErcResult containing a list of stringss</returns>
+        public List<string> CreateExcludesList(bool aslr = false, bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false)
+        {
+            List<string> excludedModules = new List<string>();
+            for(int i = 0; i < ModulesInfo.Count; i++)
+            {
+                bool add = false;
+                if(aslr == true && ModulesInfo[i].ModuleASLR == true)
+                {
+                    add = true;
+                }
+                if (safeseh == true && ModulesInfo[i].ModuleSafeSEH == true)
+                {
+                    add = true;
+                }
+                if (rebase == true && ModulesInfo[i].ModuleRebase == true)
+                {
+                    add = true;
+                }
+                if (nxcompat == true && ModulesInfo[i].ModuleNXCompat == true)
+                {
+                    add = true;
+                }
+                if (osdll == true && ModulesInfo[i].ModuleOsDll == true)
+                {
+                    add = true;
+                }
+                if(add == true)
+                {
+                    excludedModules.Add(ModulesInfo[i].ModulePath);
+                }
+            }
+            return excludedModules;
+        }
+        #endregion
+
         #region Accessors
 
         #region ToString
@@ -1990,6 +1991,39 @@ namespace ERC
         }
         #endregion
 
+        #region Dump Memory Region
+        /// <summary>
+        /// Reads process memory from a specific address for a set number of bytes. 
+        /// </summary>
+        /// <param name="startAddress">The address to start reading from.</param>
+        /// <param name="length">Number of bytes to read.</param>
+        /// <returns>Returns a bytes array containing the specified contents of process memory.</returns>
+        public ErcResult<byte[]> DumpMemoryRegion(IntPtr startAddress, int length)
+        {
+            ErcResult<byte[]> result = new ErcResult<byte[]>(ProcessCore);
+            byte[] bytes = new byte[length];
+            try
+            {
+                int retValue = ErcCore.ReadProcessMemory(ProcessHandle, startAddress, bytes, length, out int bytesRead);
+                if (retValue == 0)
+                {
+                    ERCException ex = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
+                    result.ReturnValue = bytes;
+                    throw ex;
+                }
+                else
+                {
+                    result.ReturnValue = bytes;
+                }
+            }
+            catch(Exception e)
+            {
+                result.Error = e;
+            }
+            
+            return result;
+        }
+        #endregion
         #endregion
     }
 }

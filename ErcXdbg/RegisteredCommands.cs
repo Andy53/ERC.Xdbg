@@ -121,6 +121,8 @@ namespace ErcXdbg
             help += "       Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's \n";
             help += "       Example: ERC --SearchMemory FF E4 true true. Search for bytes FF E4 excluding only dll's with ASLR and SafeSEH\n"; 
             help += "       enabled\n";
+            help += "   --Dump |\n";
+            help += "       Dump contents of memory to a file. Takes an address to start at and a hex number of bytes to be read.\n"; 
             help += "   --ListProcesses |\n";
             help += "       Displays a list of processes running on the local machine.\n";
             help += "   --ProcessInfo   |\n";
@@ -206,6 +208,9 @@ namespace ErcXdbg
                         return;
                     case "--searchmemory":
                         SearchMemory(info, parameters);
+                        return;
+                    case "--dump":
+                        DumpMemory(info, parameters);
                         return;
                     case "--listprocesses":
                         PLog.WriteLine(ERC.DisplayOutput.ListLocalProcesses());
@@ -1173,6 +1178,47 @@ namespace ErcXdbg
             }
         }
         
+        private static void DumpMemory(ERC.ProcessInfo info, List<string> parameters)
+        {
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            if(parameters.Count != 2)
+            {
+                PrintHelp("Incorrect parameters passed to DumpMemory. 2 values must be passed, first being start address, second being length.");
+            }
+
+            long[] values = new long[2];
+
+            for(int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].StartsWith("0x") || parameters[i].StartsWith("x")
+                || parameters[i].StartsWith("\\x") || parameters[i].StartsWith("X"))
+                {
+                    parameters[i] = parameters[i].Replace("0x", "");
+                    parameters[i] = parameters[i].Replace("\\x", "");
+                    parameters[i] = parameters[i].Replace("X", "");
+                    parameters[i] = parameters[i].Replace("x", "");
+                }
+                values[i] = System.Convert.ToInt64(parameters[i], 16);
+            }
+
+            ERC.ErcResult<string> result = ERC.DisplayOutput.DumpMemory(info, (IntPtr)values[0], (int)values[1]);
+            if(result.Error == null)
+            {
+                PLog.WriteLine(result.ReturnValue);
+            }
+            else
+            {
+                PrintHelp(result.Error.Message);
+            }
+        }
+
         private static void SEH(List<string> parameters, ERC.ProcessInfo info) 
         {
             for (int i = 0; i < parameters.Count; i++)

@@ -13,11 +13,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
-    <Optimize>true</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Reloaded.Assembler" Version="1.0.7" />
+    <PackageReference Include="Reloaded.Assembler" Version="1.0.5" />
     <PackageReference Include="SharpDisasm" Version="1.1.11" />
   </ItemGroup>
 

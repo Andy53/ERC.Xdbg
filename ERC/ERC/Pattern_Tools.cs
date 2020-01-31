@@ -162,7 +162,7 @@ namespace ERC.Utilities
                 result.ReturnValue = "Value found reversed at postiont " + patternFull.IndexOf(reversed).ToString() + " in pattern.";
                 return result;
             }
-
+                
             result.Error = new ERCException("Error: Value not found.");
             result.ReturnValue = "Value not found in pattern.";
             return result;

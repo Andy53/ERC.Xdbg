@@ -58,5 +58,12 @@ namespace ERC.Utilities
             }
             return srcList;
         }
+
+        /*
+        public static Dictionary<IntPtr, string> RemovePointersProtection(Dictionary<IntPtr, string> srcList, int protectionLevel)
+        {
+
+        }
+        */
     }
 }
