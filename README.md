@@ -35,11 +35,11 @@ The ByteArray option allows the generation of a byte array which is displayed in
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --bytearray`     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --bytearray 0xFF0x0A \x0b 0C`   
 
-`--Compare`
+`--Compare`    
 Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory address from which to start the search and a filepath for the binary file.
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Compare 0x12345678 C:\Users\You\Desktop\YourBinaryFile.bin`  
 
-`--Convert`
+`--Convert`    
 Takes a string and converts it to a hex representation. The string can be converted as if it was ASCII, Unicode, UTF-7, UTF-8 or UTF-32. 
 &nbsp;&nbsp;&nbsp;&nbsp;Valid conversion types:     
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ascii to Hex = AtoH    
@@ -66,7 +66,7 @@ Search memory can take a string or set of bytes to search for within the attache
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SearchMemory FF E4 false false false false true` Search for bytes FF E4 excluding only OS dlls.         
 &nbsp;&nbsp;&nbsp;&nbsp;Example 3: `ERC --SearchMemory 1 HelloWorld` Search for the ASCII string HelloWorld.
 
-`--Dump`
+`--Dump`    
 Dumps the contents of process memory to the log and a file in the working directory. Takes a hex start address and a hex number for number of bytes to be read.      
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Dump 0x63428401 0x30`
 
@@ -89,17 +89,17 @@ Displays info about threads associated with the attached process. Can be passed 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --threadInfo`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write threadinfo output to disk.      
 
-`--SEH`
+`--SEH`   
 Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored in the search.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --seh`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SEH C:\Path\To\Module\To\Exclude C:\Path\To\Other\Module\To\Exclude`
 
-`--EggHunters`
+`--EggHunters`    
 Prints a list of egghunters which can be used for various machine types. Can be passed 4 character string to be used as the egghunter search tag. Default tag is ERCD.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --egghunters`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --egghunters ABCD` Egghunters will be generated with the tag "ABCD"    
 
-`--FindNRP`
+`--FindNRP`    
 Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` FindNRP table will be generated after searching for the extended NRP in Unicode format. 
