@@ -102,7 +102,7 @@ Prints a list of egghunters which can be used for various machine types. Can be 
 `--FindNRP`    
 Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
-&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` FindNRP table will be generated after searching for the extended NRP in Unicode format. 
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format. 
 ```
     __________   ______  
    / ____ / __\ / ____/ 
