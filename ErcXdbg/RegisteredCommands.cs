@@ -136,7 +136,17 @@ namespace ErcXdbg
             help += "       output should be written to disk.\n";
             help += "   --SEH           |\n";
             help += "       Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored\n"; 
-            help += "       in the search.\n";
+            help += "       in the search.Additionally boolean values of true or false can be used to exclude modules from the search with\n";
+            help += "       certain characteristics. The values are optional however if you wish to exclude a later value all previous ones\n";
+            help += "       must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, OSDLL. Additionally bytes which are to be excluded\n";
+            help += "       from pointers can be added.\n";
+            help += "       Example: ERC --SEH false false false false true. Search for POP, POP, RET instructions excluding only OS dll's\n";
+            help += "       Example: ERC --SEH 0x00 0x0A Search for POP, POP, RET instructions in memory including all dll's excluding \n";
+            help += "       pointers that contain 0x00 or 0x0A\n";  
+            help += "       Example: ERC --SEH \\x00 true true. Search for POP, POP, RET instructions excluding only dll's with ASLR and \n";
+            help += "       SafeSEH and pointers continain 0x00\n";
+            help += "       Example: ERC --SEH 000A0D Search for POP, POP, RET instructions in memory including all dll's excluding pointers\n";
+            help += "       containing 0x00, 0x0A and 0x0D\n";
             help += "   --EggHunters    |\n";
             help += "       Prints a list of egghunters which can be used for various machine types. Can be passed 4 character string to be\n"; 
             help += "       used as the egghunter search tag. Default tag is ERCD.\n";
@@ -1236,22 +1246,82 @@ namespace ErcXdbg
 
             List<string> sehJumpAddresses = new List<string>();
 
-            if(parameters.Count >= 1)
+            bool aslr = false, safeseh = true, rebase = false, nxcompat = false, osdll = false;
+            int counter = 0;
+
+            for (int i = 0; i < parameters.Count; i++)
             {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, parameters);
-                foreach(string s in sehJumpAddresses)
+                if (parameters[i].ToLower().Contains("true") || parameters[i].ToLower().Contains("false"))
                 {
-                    PLog.WriteLine(s);
+                    bool modifier = false;
+                    if (parameters[i].ToLower().Contains("true"))
+                    {
+                        modifier = true;
+                    }
+                    switch (counter)
+                    {
+                        case 0:
+                            aslr = modifier;
+                            break;
+                        case 1:
+                            safeseh = modifier;
+                            break;
+                        case 2:
+                            rebase = modifier;
+                            break;
+                        case 3:
+                            nxcompat = modifier;
+                            break;
+                        case 4:
+                            osdll = modifier;
+                            break;
+                        default:
+                            break;
+                    }
+                    counter++;
+                    parameters.Remove(parameters[i]);
+                    i--;
                 }
+            }
+
+            string opcodeChars = string.Join("", parameters.ToArray());
+            string allowedChars = "abcdefABCDEF1234567890";
+            opcodeChars = opcodeChars.Replace("\\x", "");
+            opcodeChars = opcodeChars.Replace("0x", "");
+            opcodeChars = opcodeChars.Replace(" ", "");
+            string hexChars = "";
+            for (int i = 0; i < opcodeChars.Length; i++)
+            {
+                if (allowedChars.Contains(opcodeChars[i].ToString()))
+                {
+                    hexChars = hexChars + opcodeChars[i];
+                }
+            }
+            if (hexChars.Length % 2 != 0)
+            {
+                hexChars += "0";
+            }
+
+            byte[] bytes = StringToByteArray(hexChars);
+
+            if(bytes.Length > 0)
+            {
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, bytes);
+            }
+            else if(parameters.Count == 0 && bytes.Length <= 0)
+            {
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, bytes);
             }
             else
             {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info);
-                foreach (string s in sehJumpAddresses)
-                {
-                    PLog.WriteLine(s);
-                }
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll);
             }
+
+            foreach(string s in sehJumpAddresses)
+            {
+                PLog.WriteLine(s);
+            }
+            
             //return sehJumpAddresses;
             return;
         }

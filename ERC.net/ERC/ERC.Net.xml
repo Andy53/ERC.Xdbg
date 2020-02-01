@@ -1196,14 +1196,19 @@
             <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
             <returns></returns>
         </member>
-        <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Collections.Generic.List{System.String})">
+        <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[])">
             <summary>
             Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
             Passing a list of module paths or names will exclude those modules from the search. 
             Similar to Search_All_Memory_PPR however provides output in an easily readable format.
             </summary>
             <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions.</param>
-            <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
+            <param name="aslr">Remove ASLR libraries.</param>
+            <param name="safeseh">Remove SafeSEH libraries.</param>
+            <param name="rebase">Remove rebasable libraries.</param>
+            <param name="nxcompat">Remove NXCompat libraries.</param>
+            <param name="osdll">Remove OS Dlls.</param>
+            <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
             <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         </member>
         <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Byte[],System.Collections.Generic.List{System.String})">
