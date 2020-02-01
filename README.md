@@ -67,7 +67,7 @@ Search memory can take a string or set of bytes to search for within the attache
 &nbsp;&nbsp;&nbsp;&nbsp;Example 3: `ERC --SearchMemory 1 HelloWorld` Search for the ASCII string HelloWorld.
 
 `--Dump`
-Dumps the contents of process memory to the log and a file in the working directory. Takes a hex start address and a hex number for number of bytes to be read.
+Dumps the contents of process memory to the log and a file in the working directory. Takes a hex start address and a hex number for number of bytes to be read.      
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Dump 0x63428401 0x30`
 
 `--ListProcesses`    
@@ -100,8 +100,8 @@ Prints a list of egghunters which can be used for various machine types. Can be 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --egghunters ABCD` Egghunters will be generated with the tag "ABCD"    
 
 `--FindNRP`
-Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.
-&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`    
+Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` FindNRP table will be generated after searching for the extended NRP in Unicode format. 
 ```
     __________   ______  
