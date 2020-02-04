@@ -1954,7 +1954,7 @@ namespace ERC
             /// <summary>
             /// AllocationProtect
             /// </summary>
-            public int AllocationProtect;
+            public uint AllocationProtect;
             /// <summary>
             /// __alignment1
             /// </summary>

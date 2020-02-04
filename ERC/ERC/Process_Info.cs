@@ -37,8 +37,8 @@ namespace ERC
         public List<ThreadInfo> ThreadsInfo = new List<ThreadInfo>();
 
         internal ErcCore ProcessCore;
-        private List<MEMORY_BASIC_INFORMATION32> ProcessMemoryBasicInfo32;
-        private List<MEMORY_BASIC_INFORMATION64> ProcessMemoryBasicInfo64;
+        public List<MEMORY_BASIC_INFORMATION32> ProcessMemoryBasicInfo32;
+        public List<MEMORY_BASIC_INFORMATION64> ProcessMemoryBasicInfo64;
 
         private const uint LIST_MODULES_ALL = 0x03;
         #endregion
@@ -339,6 +339,11 @@ namespace ERC
         public static bool Is64Bit(Process process)
         {
             bool isWow64;
+
+            if(process == null)
+            {
+                throw new ERCException("No process attached.");
+            }
 
             if (!Environment.Is64BitOperatingSystem)
             {
@@ -2024,6 +2029,7 @@ namespace ERC
             return result;
         }
         #endregion
+
         #endregion
     }
 }

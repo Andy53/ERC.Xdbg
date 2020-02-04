@@ -406,10 +406,11 @@ namespace ERC
         /// <param name="nxcompat">Remove NXCompat libraries.</param>
         /// <param name="osdll">Remove OS Dlls.</param>
         /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+        /// <param name="protection">String containing protection level returned pointers will.</param>
         /// <returns></returns>
         public static List<string> SearchMemory(ProcessInfo info, int searchType, string searchString, bool aslr = false, 
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false, 
-            byte[] unwantedBytes = null)
+            byte[] unwantedBytes = null, string protection = "exec")
         {
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
             Dictionary<IntPtr, string> results = new Dictionary<IntPtr, string>();
@@ -424,9 +425,40 @@ namespace ERC
                 results = info.SearchMemory(searchType, null, searchString, excludedModules).ReturnValue;
             }
 
-            if(unwantedBytes != null)
+            if (unwantedBytes != null)
             {
-                results = ERC.Utilities.PtrRemover.RemovePointers(results, unwantedBytes);
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in results)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointers(p, unwantedBytes);
+                pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in results.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        results.Remove(k.Key);
+                    }
+                }
+            }
+            else
+            {
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in results)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, p, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in results.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        results.Remove(k.Key);
+                    }
+                }
             }
 
             List<string> output = new List<string>();
@@ -485,10 +517,11 @@ namespace ERC
         /// <param name="nxcompat">Remove NXCompat libraries.</param>
         /// <param name="osdll">Remove OS Dlls.</param>
         /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+        /// <param name="protection">String containing protection level returned pointers will.</param>
         /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         public static List<string> GetSEHJumps(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[] unwantedBytes = null)
+            byte[] unwantedBytes = null, string protection = "exec")
         {
             List<string> ret = new List<string>();
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
@@ -497,11 +530,29 @@ namespace ERC
             if (unwantedBytes != null)
             {
                 List<IntPtr> p = new List<IntPtr>();
-                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue)
+                foreach(KeyValuePair<IntPtr, string> k in ptrs.ReturnValue)
                 {
                     p.Add(k.Key);
                 }
                 var pt = ERC.Utilities.PtrRemover.RemovePointers(p, unwantedBytes);
+                pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        ptrs.ReturnValue.Remove(k.Key);
+                    }
+                }
+            }
+            else
+            {
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, p, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue.ToList())
                 {
@@ -539,6 +590,7 @@ namespace ERC
             }
             byte[] ppr = new byte[5];
             int bytesread = 0;
+
             foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
             {
                 string holder = "";
@@ -556,19 +608,19 @@ namespace ERC
                             }
                             ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
                             var result = disas.Disassemble(opcodes.ToArray());
-                            if (info.ProcessMachineType == ERC.MachineType.I386)
+                            if(info.ProcessMachineType == ERC.MachineType.I386)
                             {
                                 holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
                                 int index = holder.IndexOf("ret");
-                                holder = holder.Substring(0, index + 3);
+                                holder = holder.Substring(0, index+3);
                                 holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
-
+                                
                             }
                             else
                             {
                                 holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
                                 int index = holder.IndexOf("ret");
-                                holder = holder.Substring(0, index + 3);
+                                holder = holder.Substring(0, index+3);
                                 holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
                             }
                             opcodes.Clear();
@@ -579,6 +631,7 @@ namespace ERC
                 {
                     throw e;
                 }
+
                 for (int i = 0; i < info.ModulesInfo.Count; i++)
                 {
                     if (info.ModulesInfo[i].ModulePath == s.Value)
@@ -591,7 +644,6 @@ namespace ERC
                 }
                 ret.Add(holder);
             }
-
             File.WriteAllLines(sehFilename, ret);
             return ret;
         }
@@ -2363,17 +2415,17 @@ namespace ERC
             }
 
             output.ReturnValue += "----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
-            output.ReturnValue += "Contents of memory region 0x" + startAddress.ToString("X" + bytesPerLine) + " - 0x" + (startAddress + length).ToString("X" + bytesPerLine)
+            output.ReturnValue += "Contents of memory region 0x" + startAddress.ToString("X" + bytesPerLine) + " - 0x" + (startAddress + length).ToString("X" + bytesPerLine) 
                 + " Created at: " + DateTime.Now + ". Created by: " + info.Author + Environment.NewLine;
             output.ReturnValue += "----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
 
-            for (int i = 0; i < result.ReturnValue.Length; i++)
+            for(int i = 0; i < result.ReturnValue.Length; i++)
             {
-                if (i == 0)
+                if(i == 0)
                 {
                     output.ReturnValue += startAddress.ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ";
                 }
-                else if (i % bytesPerLine == 0)
+                else if(i % bytesPerLine == 0)
                 {
                     output.ReturnValue += Environment.NewLine;
                     output.ReturnValue += (startAddress + ((i / bytesPerLine) * bytesPerLine)).ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ";

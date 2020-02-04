@@ -7,6 +7,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Xml;
 using Managed.x64dbg.SDK;
 
 namespace ErcXdbg
@@ -15,9 +16,42 @@ namespace ErcXdbg
     {
         public static bool ErcCommand(int argc, string[] argv)
         {
+
+            string sessionFile = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml";
+            sessionFile = sessionFile.Replace("file:\\", "");
+
             try
             {
                 DeleteOldPlugins();
+
+                if (!File.Exists(sessionFile))
+                {
+                    WriteSessionFile(sessionFile);
+                }
+                else
+                {
+                    try
+                    {
+                        XmlDocument sessConfig = new XmlDocument();
+                        sessConfig.Load(sessionFile);
+                        var singleNode = sessConfig.DocumentElement.SelectNodes("//aslr");
+                        Globals.aslr = (singleNode[0].InnerText.ToLower() == "true") ? true : false;
+                        singleNode = sessConfig.DocumentElement.SelectNodes("//safeseh");
+                        Globals.safeseh = (singleNode[0].InnerText.ToLower() == "true") ? true : false;
+                        singleNode = sessConfig.DocumentElement.SelectNodes("//rebase");
+                        Globals.rebase = (singleNode[0].InnerText.ToLower() == "true") ? true : false;
+                        singleNode = sessConfig.DocumentElement.SelectNodes("//nxcompat");
+                        Globals.nxcompat = (singleNode[0].InnerText.ToLower() == "true") ? true : false;
+                        singleNode = sessConfig.DocumentElement.SelectNodes("//osdll");
+                        Globals.osdll = (singleNode[0].InnerText.ToLower() == "true") ? true : false;
+                        sessConfig = null;
+                        GC.Collect();
+                    }
+                    catch (Exception e)
+                    {
+                        PLog.WriteLine("ERROR when attempting to read existing session file: " + e.Message);
+                    }
+                }
 
                 //Get the handle of the attached process
                 var hProcess = Bridge.DbgValFromString("$hProcess");
@@ -41,15 +75,19 @@ namespace ErcXdbg
                 
                 ERC.ErcCore core = new ERC.ErcCore();
                 ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
-                
+
                 ParseCommand(argv[0], core, info);
             }
             catch (Exception e)
             {
                 PrintHelp(e.Message);
+                WriteSessionFile(sessionFile, Globals.aslr.ToString(), Globals.safeseh.ToString(), Globals.rebase.ToString(), Globals.nxcompat.ToString(), Globals.osdll.ToString(),
+                    ByteArrayToString(Globals.bytes), Globals.protection);
                 ErcXdbg.PluginStart();
                 return true;
             }
+            WriteSessionFile(sessionFile, Globals.aslr.ToString(), Globals.safeseh.ToString(), Globals.rebase.ToString(), Globals.nxcompat.ToString(), Globals.osdll.ToString(),
+                    ByteArrayToString(Globals.bytes), Globals.protection.ToString());
             ErcXdbg.PluginStart();
             return true;
         }
@@ -67,6 +105,25 @@ namespace ErcXdbg
                 PLog.WriteLine("Error: {0}", errorMessage);
             }
             string help = "";
+            help += "Globals:\n";
+            help += "   Global arguments can be appended to any command and will persist for the length of the session until X64dbg is next\n";
+            help += "   restarted.\n";
+            help += "   -Aslr           |\n";
+            help += "       Excludes ASLR enabled modules from all searches. Can be disabled by passing \"false\". -Aslr false\n";
+            help += "   -SafeSEH        |\n";
+            help += "       Excludes SafeSEH enabled modules from all searches. Can be disabled by passing \"false\". -SafeSEH false\n";
+            help += "   -Rebase         |\n";
+            help += "       Excludes Rebase enabled modules from all searches. Can be disabled by passing \"false\". -Rebase false\n";
+            help += "   -NXCompat       |\n";
+            help += "       Excludes NXCompat enabled modules from all searches. Can be disabled by passing \"false\". -NXCompat false\n";
+            help += "   -OSDLL          |\n";
+            help += "       Excludes OSDLL enabled modules from all searches. Can be disabled by passing \"false\". -OSDLL false\n";
+            help += "   -Bytes          |\n";
+            help += "       Excludes bytes from pointers returned in searches. Disabled by passing without any bytes.\n";
+            help += "   -Protection     |\n";
+            help += "       Defines the protection level of pointers to be included search results. Default is exec. this\n";
+            help += "       allows only executable pointers to be returned in search results. A value must be provided with this switch,\n";
+            help += "       options are read,write,exec. Options must be comma seperated without spaces.\n";
             help += "Usage:       \n";
             help += "   --Help          |\n";
             help += "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg \n";
@@ -113,14 +170,9 @@ namespace ErcXdbg
             help += "       of the process will be used.\n";
             help += "   --SearchMemory   |\n";
             help += "       Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search \n";
-            help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8). Additionally boolean values of true or false can \n";
-            help += "       be used to exclude modules from the search with certain characteristics. The values are optional however if \n";
-            help += "       you wish to exclude a later value all previous ones must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, \n";
-            help += "       OSDLL.\n";       
-            help += "       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dll's\n";
+            help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8).\n";        
             help += "       Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's \n";
-            help += "       Example: ERC --SearchMemory FF E4 true true. Search for bytes FF E4 excluding only dll's with ASLR and SafeSEH\n"; 
-            help += "       enabled\n";
+            help += "       Example: ERC --SearchMemory HelloWorld 1. Search for the string \"HelloWorld in Unicode\"\n"; 
             help += "   --Dump |\n";
             help += "       Dump contents of memory to a file. Takes an address to start at and a hex number of bytes to be read.\n"; 
             help += "   --ListProcesses |\n";
@@ -135,18 +187,9 @@ namespace ErcXdbg
             help += "       Displays info about threads associated with the attached process. Can be passed a boolen to indicate if the\n"; 
             help += "       output should be written to disk.\n";
             help += "   --SEH           |\n";
-            help += "       Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored\n"; 
-            help += "       in the search.Additionally boolean values of true or false can be used to exclude modules from the search with\n";
-            help += "       certain characteristics. The values are optional however if you wish to exclude a later value all previous ones\n";
-            help += "       must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, OSDLL. Additionally bytes which are to be excluded\n";
-            help += "       from pointers can be added.\n";
-            help += "       Example: ERC --SEH false false false false true. Search for POP, POP, RET instructions excluding only OS dll's\n";
-            help += "       Example: ERC --SEH 0x00 0x0A Search for POP, POP, RET instructions in memory including all dll's excluding \n";
-            help += "       pointers that contain 0x00 or 0x0A\n";  
-            help += "       Example: ERC --SEH \\x00 true true. Search for POP, POP, RET instructions excluding only dll's with ASLR and \n";
-            help += "       SafeSEH and pointers continain 0x00\n";
-            help += "       Example: ERC --SEH 000A0D Search for POP, POP, RET instructions in memory including all dll's excluding pointers\n";
-            help += "       containing 0x00, 0x0A and 0x0D\n";
+            help += "       Displays a list of addresses for pop pop ret instructions.\n"; 
+            help += "       in the search.\n";
+            help += "       Example: ERC --SEH Search for POP, POP, RET instructions in memory. \n";
             help += "   --EggHunters    |\n";
             help += "       Prints a list of egghunters which can be used for various machine types. Can be passed 4 character string to be\n"; 
             help += "       used as the egghunter search tag. Default tag is ERCD.\n";
@@ -160,6 +203,65 @@ namespace ErcXdbg
             PLog.WriteLine(help);
         }
 
+        private static void WriteSessionFile(string sessPath, string ASLR = "false", string SAFESEH = "false", string REBASE = "false", string NXCOMPAT = "false", string OSDLL = "false", 
+            string BYTES = "", string PROTECTION = "exec")
+        {
+            XmlDocument defaultConfig = new XmlDocument();
+            XmlDeclaration xmlDeclaration = defaultConfig.CreateXmlDeclaration("1.0", "UTF-8", null);
+            XmlElement root = defaultConfig.DocumentElement;
+            defaultConfig.InsertBefore(xmlDeclaration, root);
+
+            XmlElement erc_xml = defaultConfig.CreateElement(string.Empty, "ERC.Xdbg", Assembly.GetExecutingAssembly().GetName().Version.ToString());
+            defaultConfig.AppendChild(erc_xml);
+
+            XmlElement parameters = defaultConfig.CreateElement(string.Empty, "Parameters", string.Empty);
+            erc_xml.AppendChild(parameters);
+
+            XmlElement aslr = defaultConfig.CreateElement(string.Empty, "aslr", string.Empty);
+            XmlText text1 = (ASLR == "False") ? defaultConfig.CreateTextNode("False") : defaultConfig.CreateTextNode("True");
+            aslr.AppendChild(text1);
+            parameters.AppendChild(aslr);
+
+            XmlElement safeseh = defaultConfig.CreateElement(string.Empty, "safeseh", string.Empty);
+            text1 = (SAFESEH == "False") ? defaultConfig.CreateTextNode("False") : defaultConfig.CreateTextNode("True");
+            safeseh.AppendChild(text1);
+            parameters.AppendChild(safeseh);
+
+            XmlElement rebase = defaultConfig.CreateElement(string.Empty, "rebase", string.Empty);
+            text1 = (REBASE == "False") ? defaultConfig.CreateTextNode("False") : defaultConfig.CreateTextNode("True");
+            rebase.AppendChild(text1);
+            parameters.AppendChild(rebase);
+
+            XmlElement nxcompat = defaultConfig.CreateElement(string.Empty, "nxcompat", string.Empty);
+            text1 = (NXCOMPAT == "False") ? defaultConfig.CreateTextNode("False") : defaultConfig.CreateTextNode("True");
+            nxcompat.AppendChild(text1);
+            parameters.AppendChild(nxcompat);
+
+            XmlElement osdll = defaultConfig.CreateElement(string.Empty, "osdll", string.Empty);
+            text1 = (OSDLL == "False") ? defaultConfig.CreateTextNode("False") : defaultConfig.CreateTextNode("True");
+            osdll.AppendChild(text1);
+            parameters.AppendChild(osdll);
+
+            XmlElement bytes = defaultConfig.CreateElement(string.Empty, "Bytes", string.Empty);
+            text1 = defaultConfig.CreateTextNode(BYTES);
+            bytes.AppendChild(text1);
+            parameters.AppendChild(bytes);
+
+            XmlElement protection = defaultConfig.CreateElement(string.Empty, "Protection", string.Empty);
+            text1 = defaultConfig.CreateTextNode(PROTECTION);
+            protection.AppendChild(text1);
+            parameters.AppendChild(protection);
+
+            try
+            {
+                defaultConfig.Save(sessPath);
+            }
+            catch (Exception e)
+            {
+                PLog.WriteLine("ERROR when attempting to save new session file: " + e.Message);
+            }
+        }
+
         private static void ParseCommand(string command, ERC.ErcCore core, ERC.ProcessInfo info)
         {
             List<string> parameters = new List<string>(command.Split(' '));
@@ -167,7 +269,9 @@ namespace ErcXdbg
 
             int commands = 0;
             string option = "";
-            
+
+            parameters = ParseGlobals(parameters);
+
             //check how many options were passed to ERC
             foreach(string s in parameters)
             {
@@ -277,12 +381,255 @@ namespace ErcXdbg
                     case "--rop":
                         rop(info);
                         return;
+                    case "--debug":
+                        Debug(info, parameters);
+                        return;
                     default:
                         PrintHelp("The command was not structured correctly: Option is not supported. ERC <option> <parameters>");
                         return;
                 }
             }
             return;
+        }
+
+        private static List<string> ParseGlobals(List<string> parameters)
+        {
+            try
+            {
+                for (int i = 0; i < parameters.Count; i++)
+                {
+                    if (parameters.Count > i + 1)
+                    {
+                        if (parameters[i].ToLower() == "-aslr" && (parameters[i + 1].ToLower() == "true" || parameters[i + 1].ToLower() == "false"))
+                        {
+                            if (parameters[i + 1].ToLower() == "true")
+                            {
+                                Globals.aslr = true;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                Globals.aslr = false;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                        else if (parameters[i].ToLower() == "-aslr")
+                        {
+                            Globals.aslr = true;
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-aslr")
+                    {
+                        Globals.aslr = true;
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+
+                    if (parameters.Count > i + 1)
+                    {
+                        if (parameters[i].ToLower() == "-safeseh" && (parameters[i + 1].ToLower() == "true" || parameters[i + 1].ToLower() == "false"))
+                        {
+                            if (parameters[i + 1].ToLower() == "true")
+                            {
+                                Globals.safeseh = true;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                Globals.safeseh = false;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                        else if (parameters[i].ToLower() == "-safeseh")
+                        {
+                            Globals.safeseh = true;
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-safeseh")
+                    {
+                        Globals.safeseh = true;
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+
+                    if (parameters.Count > i + 1)
+                    {
+                        if (parameters[i].ToLower() == "-rebase" && (parameters[i + 1].ToLower() == "true" || parameters[i + 1].ToLower() == "false"))
+                        {
+                            if (parameters[i + 1].ToLower() == "true")
+                            {
+                                Globals.rebase = true;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                Globals.rebase = false;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                        else if (parameters[i].ToLower() == "-rebase")
+                        {
+                            Globals.rebase = true;
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-rebase")
+                    {
+                        Globals.rebase = true;
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+
+                    if (parameters.Count > i + 1)
+                    {
+                        if (parameters[i].ToLower() == "-nxcompat" && (parameters[i + 1].ToLower() == "true" || parameters[i + 1].ToLower() == "false"))
+                        {
+                            if (parameters[i + 1].ToLower() == "true")
+                            {
+                                Globals.nxcompat = true;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                Globals.nxcompat = false;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                        else if (parameters[i].ToLower() == "-nxcompat")
+                        {
+                            Globals.nxcompat = true;
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-nxcompat")
+                    {
+                        Globals.nxcompat = true;
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+
+                    if (parameters.Count > i + 1)
+                    {
+                        if (parameters[i].ToLower() == "-osdll" && (parameters[i + 1].ToLower() == "true" || parameters[i + 1].ToLower() == "false"))
+                        {
+                            if (parameters[i + 1].ToLower() == "true")
+                            {
+                                Globals.osdll = true;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                            else
+                            {
+                                Globals.osdll = false;
+                                parameters.RemoveAt(i + 1);
+                                parameters.RemoveAt(i);
+                                i--;
+                            }
+                        }
+                        else if (parameters[i].ToLower() == "-osdll")
+                        {
+                            Globals.osdll = true;
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-osdll")
+                    {
+                        Globals.osdll = true;
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+
+                    if (parameters.Count > i + 1)
+                    {
+                        
+                        if (parameters[i].ToLower() == "-bytes" && !parameters[i + 1].ToLower().Contains("-"))
+                        {
+                            string allowedChars = "abcdefABCDEF1234567890";
+                            parameters[i + 1] = parameters[i + 1].Replace("\\x", "");
+                            parameters[i + 1] = parameters[i + 1].Replace("0x", "");
+                            string hexChars = "";
+
+                            for (int j = 0; j < parameters[i + 1].Length; j++)
+                            {
+                                if (allowedChars.Contains(parameters[i + 1][j].ToString()))
+                                {
+                                    hexChars = hexChars + parameters[i + 1][j];
+                                }
+                            }
+
+                            if (hexChars.Length % 2 != 0)
+                            {
+                                hexChars += "0";
+                            }
+
+                            byte[] bytes = StringToByteArray(hexChars);
+                            Globals.bytes = bytes;
+                            parameters.RemoveAt(i + 1);
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                        else if (parameters[i].ToLower() == "-bytes")
+                        {
+                            
+                            Globals.bytes = new byte[0];
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-bytes")
+                    {
+                        Globals.bytes = new byte[0];
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+
+                    if (parameters.Count > i + 1)
+                    {
+                        if (parameters[i].ToLower() == "-protection")
+                        {
+                            Globals.protection = parameters[i + 1].ToLower();
+                            parameters.RemoveAt(i + 1);
+                            parameters.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (parameters[i].ToLower() == "-protection")
+                    {
+                        parameters.RemoveAt(i);
+                        i--;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                PLog.WriteLine("ERROR: " + e.Message + "\n");
+            }
+            
+            return parameters;
         }
 
         private static void Update(List<string> parameters)
@@ -709,30 +1056,11 @@ namespace ErcXdbg
                 }
             }
 
-            string opcodeChars = string.Join("", parameters.ToArray());
-            string allowedChars = "abcdefABCDEF1234567890";
-            opcodeChars = opcodeChars.Replace("\\x", "");
-            opcodeChars = opcodeChars.Replace("0x", "");
-            opcodeChars = opcodeChars.Replace(" ", "");
-            string hexChars = "";
-            for (int i = 0; i < opcodeChars.Length; i++)
-            {
-                if (allowedChars.Contains(opcodeChars[i].ToString()))
-                {
-                    hexChars = hexChars + opcodeChars[i];
-                }
-            }
-            if (hexChars.Length % 2 != 0)
-            {
-                hexChars += "0";
-            }
+            byte[] byteArray = ERC.DisplayOutput.GenerateByteArray(core, Globals.bytes);
 
-            byte[] bytes = StringToByteArray(hexChars);
-            byte[] byteArray = ERC.DisplayOutput.GenerateByteArray(core, bytes);
-
-            if(bytes.Length > 0)
+            if(Globals.bytes.Length > 0)
             {
-                PLog.WriteLine("Byte Array excluding: " + BitConverter.ToString(bytes).Replace('-', ' '));
+                PLog.WriteLine("Byte Array excluding: " + BitConverter.ToString(Globals.bytes).Replace('-', ' '));
             }
             else
             {
@@ -1133,44 +1461,12 @@ namespace ErcXdbg
                 }
             }
 
-            bool aslr = false, safeseh = false, rebase = false, nxcompat = false, osdll = false;
             int searchType = 0;
             string searchString = "";
-            int counter = 0;
+
             for (int i = 0; i < parameters.Count; i++)
             {
-                if (parameters[i].ToLower().Contains("true") || parameters[i].ToLower().Contains("false"))
-                {
-                    bool modifier = false;
-                    if (parameters[i].ToLower().Contains("true"))
-                    {
-                        modifier = true;
-                    }
-                    switch (counter)
-                    {
-                        case 0:
-                            aslr = modifier;
-                            break;
-                        case 1:
-                            safeseh = modifier;
-                            break;
-                        case 2:
-                            rebase = modifier;
-                            break;
-                        case 3:
-                            nxcompat = modifier;
-                            break;
-                        case 4:
-                            osdll = modifier;
-                            break;
-                        default:
-                            break;
-                    }
-                    counter++;
-                    parameters.Remove(parameters[i]);
-                    i--;
-                }
-                else if (parameters[i] == "0" || parameters[i] == "1" || parameters[i] == "2" ||
+                if (parameters[i] == "0" || parameters[i] == "1" || parameters[i] == "2" ||
                     parameters[i] == "3" || parameters[i] == "4" || parameters[i] == "5")
                 {
                     searchType = Int32.Parse(parameters[i]);
@@ -1180,8 +1476,8 @@ namespace ErcXdbg
             }
 
             searchString = string.Join("", parameters);
-            var output = ERC.DisplayOutput.SearchMemory(info, searchType, searchString, aslr, safeseh, rebase, nxcompat,
-                osdll);
+            var output = ERC.DisplayOutput.SearchMemory(info, searchType, searchString, Globals.aslr, Globals.safeseh, Globals.rebase, Globals.nxcompat,
+                Globals.osdll, Globals.bytes, Globals.protection) ;
             foreach(string s in output)
             {
                 PLog.WriteLine(s);
@@ -1246,75 +1542,15 @@ namespace ErcXdbg
 
             List<string> sehJumpAddresses = new List<string>();
 
-            bool aslr = false, safeseh = true, rebase = false, nxcompat = false, osdll = false;
-            int counter = 0;
+            bool aslr = Globals.aslr, safeseh = Globals.safeseh, rebase = Globals.rebase, nxcompat = Globals.nxcompat, osdll = Globals.osdll;
 
-            for (int i = 0; i < parameters.Count; i++)
+            if(Globals.bytes.Length > 0)
             {
-                if (parameters[i].ToLower().Contains("true") || parameters[i].ToLower().Contains("false"))
-                {
-                    bool modifier = false;
-                    if (parameters[i].ToLower().Contains("true"))
-                    {
-                        modifier = true;
-                    }
-                    switch (counter)
-                    {
-                        case 0:
-                            aslr = modifier;
-                            break;
-                        case 1:
-                            safeseh = modifier;
-                            break;
-                        case 2:
-                            rebase = modifier;
-                            break;
-                        case 3:
-                            nxcompat = modifier;
-                            break;
-                        case 4:
-                            osdll = modifier;
-                            break;
-                        default:
-                            break;
-                    }
-                    counter++;
-                    parameters.Remove(parameters[i]);
-                    i--;
-                }
-            }
-
-            string opcodeChars = string.Join("", parameters.ToArray());
-            string allowedChars = "abcdefABCDEF1234567890";
-            opcodeChars = opcodeChars.Replace("\\x", "");
-            opcodeChars = opcodeChars.Replace("0x", "");
-            opcodeChars = opcodeChars.Replace(" ", "");
-            string hexChars = "";
-            for (int i = 0; i < opcodeChars.Length; i++)
-            {
-                if (allowedChars.Contains(opcodeChars[i].ToString()))
-                {
-                    hexChars = hexChars + opcodeChars[i];
-                }
-            }
-            if (hexChars.Length % 2 != 0)
-            {
-                hexChars += "0";
-            }
-
-            byte[] bytes = StringToByteArray(hexChars);
-
-            if(bytes.Length > 0)
-            {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, bytes);
-            }
-            else if(parameters.Count == 0 && bytes.Length <= 0)
-            {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, bytes);
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection);
             }
             else
             {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll);
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection);
             }
 
             foreach(string s in sehJumpAddresses)
@@ -1422,6 +1658,11 @@ namespace ErcXdbg
                              .ToArray();
         }
 
+        private static string ByteArrayToString(byte[] ba)
+        {
+            return BitConverter.ToString(ba).Replace("-", "");
+        }
+
         private static void DeleteOldPlugins()
         {
             //Get list of files in the plugins directory. Delete old versions of the plugin.
@@ -1439,6 +1680,63 @@ namespace ErcXdbg
             catch (Exception e)
             {
                 //Do Nothing
+            }
+        }
+
+        private static void Debug(ERC.ProcessInfo info, List<string> parameters)
+        {
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            for(int i = 0; i < parameters.Count && i >= 0; i++)
+            {
+                if(parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showsession")
+                    {
+                        PLog.WriteLine("DEBUG: Session ");
+                        PLog.WriteLine("--------------------------------------------");
+                        string sessionText = File.ReadAllText((Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml").Replace("file:\\", ""));
+                        PLog.WriteLine(sessionText + "\n");
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
+
+                if(parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showglobals")
+                    {
+                        PLog.WriteLine("DEBUG: Globals ");
+                        PLog.WriteLine("--------------------------------------------");
+                        PLog.WriteLine("ASLR = {0}", Globals.aslr.ToString());
+                        PLog.WriteLine("SafeSEH = {0}", Globals.safeseh.ToString());
+                        PLog.WriteLine("Rebase = {0}", Globals.rebase.ToString());
+                        PLog.WriteLine("NXCompat = {0}", Globals.nxcompat.ToString());
+                        PLog.WriteLine("OSDll = {0}", Globals.osdll.ToString());
+                        PLog.WriteLine("Bytes = {0}", ByteArrayToString(Globals.bytes));
+                        PLog.WriteLine("Protection = {0}\n", Globals.protection);
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
+                
+                if(parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showargs")
+                    {
+                        PLog.WriteLine("DEBUG: Args ");
+                        PLog.WriteLine("--------------------------------------------");
+                        PLog.WriteLine("Args = {0}\n", string.Join(" ", parameters.ToArray()));
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
             }
         }
     }

@@ -90,9 +90,11 @@
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ErcXdbg.cs" />
+    <Compile Include="Globals.cs" />
     <Compile Include="RegisteredCommands.cs" />
     <Compile Include="ErcMain.cs" />
     <Compile Include="AssemblyInfo.cs" />

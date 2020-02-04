@@ -266,6 +266,24 @@
             <param name="bytes">If a pointer contains any of these bytes it will be discarded</param>
             <returns>Returns a ErcResult of Dictionary IntPtr, String</returns>
         </member>
+        <member name="M:ERC.Utilities.PtrRemover.RemovePointersProtection(ERC.ProcessInfo,System.Collections.Generic.List{System.IntPtr},System.String)">
+            <summary>
+            Removes pointers from a dictionary when pointers do not have the protection level specified.
+            </summary>
+            <param name="info">ProcessInfo object of the associated process.</param>
+            <param name="srcList">List of pointers.</param>
+            <param name="protection">Specified protection level of pointers.</param>
+            <returns>Returns a Dictionary of Intptr, string</returns>
+        </member>
+        <member name="M:ERC.Utilities.PtrRemover.RemovePointersProtection(ERC.ProcessInfo,System.Collections.Generic.List{System.IntPtr},System.UInt32)">
+            <summary>
+            Removes pointers from a dictionary when pointers do not have the protection level specified.
+            </summary>
+            <param name="info">ProcessInfo object of the associated process.</param>
+            <param name="srcList">List of pointers.</param>
+            <param name="protection">Specified protection level of pointers.</param>
+            <returns>Returns a Dictionary of Intptr, string</returns>
+        </member>
         <member name="T:ERC.Utilities.RopChainGenerator32">
             <summary> Attempts to create Rop chains from 64 bit processes. </summary>
         </member>
@@ -1181,7 +1199,7 @@
             <param name="outputToFile">Set to false to surpress file output.</param>
             <returns>Returns a formatted string of all results</returns>
         </member>
-        <member name="M:ERC.DisplayOutput.SearchMemory(ERC.ProcessInfo,System.Int32,System.String,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[])">
+        <member name="M:ERC.DisplayOutput.SearchMemory(ERC.ProcessInfo,System.Int32,System.String,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.String)">
             <summary>
             Searches the memory of a process and it's loaded modules for a string or byte combination.
             </summary>
@@ -1194,16 +1212,23 @@
             <param name="nxcompat">Remove NXCompat libraries.</param>
             <param name="osdll">Remove OS Dlls.</param>
             <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+            <param name="protection">String containing protection level returned pointers will.</param>
             <returns></returns>
         </member>
-        <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Collections.Generic.List{System.String})">
+        <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.String)">
             <summary>
             Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
             Passing a list of module paths or names will exclude those modules from the search. 
             Similar to Search_All_Memory_PPR however provides output in an easily readable format.
             </summary>
             <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions.</param>
-            <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
+            <param name="aslr">Remove ASLR libraries.</param>
+            <param name="safeseh">Remove SafeSEH libraries.</param>
+            <param name="rebase">Remove rebasable libraries.</param>
+            <param name="nxcompat">Remove NXCompat libraries.</param>
+            <param name="osdll">Remove OS Dlls.</param>
+            <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+            <param name="protection">String containing protection level returned pointers will.</param>
             <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         </member>
         <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Byte[],System.Collections.Generic.List{System.String})">
@@ -1303,6 +1328,15 @@
             </summary>
             <param name="hex">A string containing hex characters.</param>
             <returns>Returns a byte array.</returns>
+        </member>
+        <member name="M:ERC.DisplayOutput.DumpMemory(ERC.ProcessInfo,System.IntPtr,System.Int32)">
+            <summary>
+            Reads a set of bytes from process memory and provides a string contianing the results.
+            </summary>
+            <param name="info">ProcessInfo object</param>
+            <param name="startAddress">The address to start reading from.</param>
+            <param name="length">The number of bytes to read.</param>
+            <returns>A string containing the bytes read from memroy</returns>
         </member>
         <member name="T:ERC.ERCException">
             <summary>
@@ -4218,6 +4252,11 @@
             Module product.
             </summary>
         </member>
+        <member name="P:ERC.ModuleInfo.ModuleProtection">
+            <summary>
+            Memory protection of this module.
+            </summary>
+        </member>
         <member name="P:ERC.ModuleInfo.ModuleBase">
             <summary>
             Module base pointer.
@@ -4489,9 +4528,11 @@
         </member>
         <member name="M:ERC.ProcessInfo.DumpMemoryRegion(System.IntPtr,System.Int32)">
             <summary>
-            
+            Reads process memory from a specific address for a set number of bytes. 
             </summary>
-            <returns></returns>
+            <param name="startAddress">The address to start reading from.</param>
+            <param name="length">Number of bytes to read.</param>
+            <returns>Returns a bytes array containing the specified contents of process memory.</returns>
         </member>
         <member name="T:ERC.ThreadInfo">
             <summary>

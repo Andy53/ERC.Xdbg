@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace ERC
 {
@@ -30,6 +31,11 @@ namespace ERC
         /// Module product.
         /// </summary>
         public string ModuleProduct { get; private set; }
+
+        /// <summary>
+        /// Memory protection of this module.
+        /// </summary>
+        public uint ModuleProtection { get; private set; }
 
         /// <summary>
         /// Module base pointer.
@@ -239,6 +245,36 @@ namespace ERC
                 else
                 {
                     ModuleRebase = false;
+                }
+
+                long MaxAddress = 0x7fffffff;
+                long address = (long)ModuleBase;
+
+                if(!ProcessInfo.Is64Bit(process))
+                {
+                    List<ERC.Structures.MEMORY_BASIC_INFORMATION32> ProcessMemoryBasicInfo32 = new List<ERC.Structures.MEMORY_BASIC_INFORMATION32>();
+                    do
+                    {
+                        ERC.Structures.MEMORY_BASIC_INFORMATION32 m;
+                        int result = ErcCore.VirtualQueryEx32(ModuleProcess.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION32)));
+                        if (address == (long)m.BaseAddress + (long)m.RegionSize)
+                            break;
+                        address = (long)m.BaseAddress + (long)m.RegionSize;
+                        ModuleProtection = m.AllocationProtect;
+                    } while (address <= MaxAddress);
+                }
+                else
+                {
+                    List<ERC.Structures.MEMORY_BASIC_INFORMATION64> ProcessMemoryBasicInfo64 = new List<ERC.Structures.MEMORY_BASIC_INFORMATION64>();
+                    do
+                    {
+                        ERC.Structures.MEMORY_BASIC_INFORMATION64 m;
+                        int result = ErcCore.VirtualQueryEx64(ModuleProcess.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64)));
+                        if (address == (long)m.BaseAddress + (long)m.RegionSize)
+                            break;
+                        address = (long)m.BaseAddress + (long)m.RegionSize;
+                        ModuleProtection = m.AllocationProtect;
+                    } while (address <= MaxAddress);
                 }
             }
             catch (Exception e)

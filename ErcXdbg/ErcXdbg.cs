@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.IO;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Managed.x64dbg.SDK;
 using Microsoft.VisualBasic;
 using RGiesecke.DllExport;
@@ -37,6 +39,12 @@ namespace ErcXdbg
         {
             Plugins._plugin_menuaddentry(setupStruct.hMenu, 0, "&About...");
             Plugins._plugin_menuaddentry(setupStruct.hMenu, 1, "&Help");
+            string sessionFile = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml";
+            sessionFile = sessionFile.Replace("file:\\", "");
+            if (File.Exists(sessionFile))
+            {
+                File.Delete(sessionFile);
+            }
         }
 
         [DllExport("CBMENUENTRY", CallingConvention.Cdecl)]
