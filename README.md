@@ -6,7 +6,47 @@ Installing the plugin is reasonably straight forward. Simply download the approp
 
 If you wish to build the plugin from source simply clone the Git repository, open the solution in Visual Studio and build the project targeted for your architecture of choice. Then copy the binaries into the plugins directory of your X64dbg installation.
 
-# Usage
+## Globals
+Global variables are variables which are set and stored for one session. They are reset to the defaults each time X64dbg is restarted.     
+
+`-ASLR`   
+Used to exclude pointers from modules implementing ASLR in search output. Can be reset by supplying `false` as a parameter.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -ASLR` Remove pointers from ASLR enabled modules from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -ASLR false` Include pointers from ASLR enabled modules in all search results.    
+
+`-SafeSEH`   
+Used to exclude pointers from modules implementing SafeSEH in search output. Can be reset by supplying `false` as a parameter.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -SafeSEH` Remove pointers from SafeSEH enabled modules from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -SafeSEH false` Include pointers from SafeSEH enabled modules in all search results.    
+
+`-Rebase`    
+Used to exclude pointers from modules implementing Rebase in search output. Can be reset by supplying `false` as a parameter.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Rebase` Remove pointers from Rebase enabled modules from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Rebase false` Include pointers from Rebase enabled modules in all search results.    
+
+`-NXCompat`    
+Used to exclude pointers from modules implementing NXCompat in search output. Can be reset by supplying `false` as a parameter.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -NXCompat` Remove pointers from NXCompat enabled modules from all search results.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -NXCompat false` Include pointers from NXCompat enabled modules in all search results.    
+
+`-OSdll`    
+Used to exclude pointers from modules that are OSdll's in search output. Can be reset by supplying `false` as a parameter.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -OSdll` Remove pointers from OSdll's from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -OSdll false` Include pointers from OSdll's in all search results.    
+
+`-Bytes`    
+Used to exploit pointers containing specific bytes from all search results. Can be disabled by passing switch with no arguments. Bytes must be passed without spaces.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Bytes 0x0A0x0D` Remove pointers containing bytes 0A or 0D from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Bytes 740D` Remove pointers containing bytes 74 or 0D from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Bytes` Remove any previous byte restrictions from all further search results.    
+
+`-Protection`
+Used to specify the protection value of all pointers returned in search results. Generic values of `read`, `write` and `exec` are used to specify which the returned pointers should have and can be used in combination. Options must be sperated with commas and no spaces.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection exec` Remove pointers that do not have exec permission from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection read,exec` Remove pointers that do not have read and exec permission from all search results.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection all` Remove any previous protection restrictions from all further search results.
+
+## Usage
 Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. 
 
 Details on each command can be seen below. Commands are not case sensitive.
@@ -111,6 +151,25 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
 /_____ /_/ |_|\____/    
 -------------------------
 Error: Arguments must be provided. Use --help for detailed information.
+Globals:
+   Global arguments can be appended to any command and will persist for the length of the session until X64dbg is next
+   restarted.
+   -Aslr           |
+       Excludes ASLR enabled modules from all searches. Can be disabled by passing "false". -Aslr false
+   -SafeSEH        |
+       Excludes SafeSEH enabled modules from all searches. Can be disabled by passing "false". -SafeSEH false
+   -Rebase         |
+       Excludes Rebase enabled modules from all searches. Can be disabled by passing "false". -Rebase false
+   -NXCompat       |
+       Excludes NXCompat enabled modules from all searches. Can be disabled by passing "false". -NXCompat false
+   -OSDLL          |
+       Excludes OSDLL enabled modules from all searches. Can be disabled by passing "false". -OSDLL false
+   -Bytes          |
+       Excludes bytes from pointers returned in searches. Disabled by passing without any bytes.
+   -Protection     |
+       Defines the protection level of pointers to be included search results. Default is exec. This
+       allows only executable pointers to be returned in search results. A value must be provided with this switch,
+       options are read,write,exec. Options must be comma seperated without spaces.
 Usage:       
    --Help          |
        Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg 
@@ -161,14 +220,9 @@ Usage:
        of the process will be used.
    --SearchMemory   |
        Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search 
-       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8). Additionally boolean values of true or false can 
-       be used to exclude modules from the search with certain characteristics. The values are optional however if 
-       you wish to exclude a later value all previous ones must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, 
-       OSDLL.
-       Example: ERC --SearchMemory FF E4 false false false false true. Search for bytes FF E4 excluding only OS dll's
+       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8).
        Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's 
-       Example: ERC --SearchMemory FF E4 true true. Search for bytes FF E4 excluding only dll's with ASLR and SafeSEH
-       enabled
+       Example: ERC --SearchMemory HelloWorld 1. Search for the string "HelloWorld in Unicode"
    --Dump |
        Dump contents of memory to a file. Takes an address to start at and a hex number of bytes to be read.
    --ListProcesses |
@@ -183,18 +237,9 @@ Usage:
        Displays info about threads associated with the attached process. Can be passed a boolen to indicate if the
        output should be written to disk.
    --SEH           |
-       Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored
-       in the search.Additionally boolean values of true or false can be used to exclude modules from the search with
-       certain characteristics. The values are optional however if you wish to exclude a later value all previous ones
-       must be included. Order is ASLR, SAFESEH, REBASE, NXCOMPAT, OSDLL. Additionally bytes which are to be excluded
-       from pointers can be added.
-       Example: ERC --SEH false false false false true. Search for POP, POP, RET instructions excluding only OS dll's
-       Example: ERC --SEH 0x00 0x0A Search for POP, POP, RET instructions in memory including all dll's excluding 
-       pointers that contain 0x00 or 0x0A
-       Example: ERC --SEH \x00 true true. Search for POP, POP, RET instructions excluding only dll's with ASLR and 
-       SafeSEH and pointers continain 0x00
-       Example: ERC --SEH 000A0D Search for POP, POP, RET instructions in memory including all dll's excluding pointers
-       containing 0x00, 0x0A and 0x0D
+       Displays a list of addresses for pop pop ret instructions.
+       in the search.
+       Example: ERC --SEH Search for POP, POP, RET instructions in memory. 
    --EggHunters    |
        Prints a list of egghunters which can be used for various machine types. Can be passed 4 character string to be
        used as the egghunter search tag. Default tag is ERCD.

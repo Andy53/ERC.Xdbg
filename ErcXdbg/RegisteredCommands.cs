@@ -121,7 +121,7 @@ namespace ErcXdbg
             help += "   -Bytes          |\n";
             help += "       Excludes bytes from pointers returned in searches. Disabled by passing without any bytes.\n";
             help += "   -Protection     |\n";
-            help += "       Defines the protection level of pointers to be included search results. Default is exec. this\n";
+            help += "       Defines the protection level of pointers to be included search results. Default is exec. This\n";
             help += "       allows only executable pointers to be returned in search results. A value must be provided with this switch,\n";
             help += "       options are read,write,exec. Options must be comma seperated without spaces.\n";
             help += "Usage:       \n";
