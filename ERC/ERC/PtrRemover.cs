@@ -12,21 +12,52 @@ namespace ERC.Utilities
         /// <summary>
         /// Removes pointers which contain unwanted bytes. 
         /// </summary>
+        /// <param name="mt">MachineType architecture of the associated process.</param>
         /// <param name="srcList">The list from which to remove the pointers</param>
         /// <param name="bytes">If a pointer contains any of these bytes it will be discarded</param>
         /// <returns>Returns a ErcResult of List IntPtr</returns>
-        public static List<IntPtr> RemovePointers(List<IntPtr> srcList, byte[] bytes)
+        public static List<IntPtr> RemovePointers(MachineType mt, List<IntPtr> srcList, byte[] bytes)
         {
-            for(int i = 0; i < srcList.Count; i++)
+            bool nullByte = false;
+            foreach (byte b in bytes)
             {
+                if (b == 0x00)
+                {
+                    nullByte = true;
+                }
+            }
+
+            for (int i = 0; i < srcList.Count; i++)
+            {
+                bool removed = false;
                 var ptr = BitConverter.GetBytes((long)srcList[i]);
                 for(int j = 0; j < ptr.Length; j++)
                 {
                     for(int k = 0; k < bytes.Length; k++)
                     {
-                        if(bytes[k] == ptr[j])
+                        if (bytes[k] == ptr[j] && removed == false)
                         {
                             srcList.RemoveAt(i);
+                            removed = true;
+                            i--;
+                        }
+                        if(mt == MachineType.I386 && removed == false && nullByte == true)
+                        {
+                            if(srcList[i].ToString("X8").Length < 7)
+                            {
+                                srcList.RemoveAt(i);
+                                removed = true;
+                                i--;
+                            }
+                        }
+                        else if(mt == MachineType.x64 && removed == false && nullByte == true)
+                        {
+                            if (srcList[i].ToString("X").Length < 15)
+                            {
+                                srcList.RemoveAt(i);
+                                removed = true;
+                                i--;
+                            }
                         }
                     }
                 }
@@ -37,21 +68,52 @@ namespace ERC.Utilities
         /// <summary>
         /// Removes pointers which contain unwanted bytes. 
         /// </summary>
+        /// <param name="mt">MachineType architecture of the associated process.</param>
         /// <param name="srcList">The list from which to remove the pointers</param>
         /// <param name="bytes">If a pointer contains any of these bytes it will be discarded</param>
         /// <returns>Returns a ErcResult of Dictionary IntPtr, String</returns>
-        public static Dictionary<IntPtr, string> RemovePointers(Dictionary<IntPtr, string> srcList, byte[] bytes)
+        public static Dictionary<IntPtr, string> RemovePointers(MachineType mt, Dictionary<IntPtr, string> srcList, byte[] bytes)
         {
+            bool nullByte = false;
+            foreach(byte b in bytes)
+            {
+                if(b == 0x00)
+                {
+                    nullByte = true;
+                }
+            }
+
             for (int i = 0; i < srcList.Count; i++)
             {
+                bool removed = false;
                 var ptr = BitConverter.GetBytes((long)srcList.ElementAt(i).Key);
                 for (int j = 0; j < ptr.Length; j++)
                 {
                     for (int k = 0; k < bytes.Length; k++)
                     {
-                        if (bytes[k] == ptr[j])
+                        if (bytes[k] == ptr[j] && removed == false)
                         {
                             srcList.Remove(srcList.ElementAt(i).Key);
+                            removed = true;
+                            i--;
+                        }
+                        if (mt == MachineType.I386 && removed == false && nullByte == true)
+                        {
+                            if (srcList.ElementAt(i).Key.ToString("X").Length < 7)
+                            {
+                                srcList.Remove(srcList.ElementAt(i).Key);
+                                removed = true;
+                                i--;
+                            }
+                        }
+                        else if (mt == MachineType.x64 && removed == false && nullByte == true)
+                        {
+                            if (srcList.ElementAt(i).Key.ToString("X").Length < 15)
+                            {
+                                srcList.Remove(srcList.ElementAt(i).Key);
+                                removed = true;
+                                i--;
+                            }
                         }
                     }
                 }

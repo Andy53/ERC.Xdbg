@@ -432,7 +432,7 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
-                var pt = ERC.Utilities.PtrRemover.RemovePointers(p, unwantedBytes);
+                var pt = ERC.Utilities.PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
                 pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in results.ToList())
@@ -534,7 +534,7 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
-                var pt = ERC.Utilities.PtrRemover.RemovePointers(p, unwantedBytes);
+                var pt = ERC.Utilities.PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
                 pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue.ToList())
@@ -986,14 +986,24 @@ namespace ERC
                 File.WriteAllLines(fnrpFilename, output);
                 return output;
             }
+
             for (int i = 0; i < fnrp.ReturnValue.Count; i++)
             {
                 string registerInfoText = "";
-                if (fnrp.ReturnValue[i].StringOffset > 0 && !fnrp.ReturnValue[i].Register.Contains("IP") && !fnrp.ReturnValue[i].Register.Contains("SP")
+                if (fnrp.ReturnValue[i].StringOffset >= 0 && !fnrp.ReturnValue[i].Register.Contains("IP") && !fnrp.ReturnValue[i].Register.Contains("SP")
                     && !fnrp.ReturnValue[i].Register.Contains("SEH"))
                 {
-                    registerInfoText += "Register " + fnrp.ReturnValue[i].Register + " points into pattern at position " + fnrp.ReturnValue[i].StringOffset;
-                    output.Add(registerInfoText);
+                    if(fnrp.ReturnValue[i].overwritten == false)
+                    {
+                        registerInfoText += "Register " + fnrp.ReturnValue[i].Register + " points into pattern at position " + fnrp.ReturnValue[i].StringOffset 
+                            + " for " + fnrp.ReturnValue[i].BufferSize + " bytes." + " in thread " + fnrp.ReturnValue[i].ThreadID;
+                        output.Add(registerInfoText);
+                    }
+                    else
+                    {
+                        registerInfoText += "Register " + fnrp.ReturnValue[i].Register + " is overwritten with pattern at position " + fnrp.ReturnValue[i].StringOffset + " in thread " + fnrp.ReturnValue[i].ThreadID;
+                        output.Add(registerInfoText);
+                    }
                 }
                 else if (fnrp.ReturnValue[i].StringOffset > 0 && fnrp.ReturnValue[i].Register.Contains("SP"))
                 {
@@ -1001,30 +1011,27 @@ namespace ERC
                     if (fnrp.ReturnValue[i].RegisterOffset > 0)
                     {
                         registerInfoText += " at " + fnrp.ReturnValue[i].Register + " +" + fnrp.ReturnValue[i].RegisterOffset + " length of pattern found is " +
-                            fnrp.ReturnValue[i].BufferSize + " characters";
+                            fnrp.ReturnValue[i].BufferSize + " characters" + " in thread " + fnrp.ReturnValue[i].ThreadID;
                         output.Add(registerInfoText);
                     }
                     else
                     {
-                        registerInfoText += " length of pattern found is " + fnrp.ReturnValue[i].BufferSize + " characters";
+                        registerInfoText += " length of pattern found is " + fnrp.ReturnValue[i].BufferSize + " characters" + " in thread " + fnrp.ReturnValue[i].ThreadID;
                         output.Add(registerInfoText);
                     }
                 }
                 else if (fnrp.ReturnValue[i].StringOffset > 0 && fnrp.ReturnValue[i].Register.Contains("IP"))
                 {
-                    registerInfoText += "Register " + fnrp.ReturnValue[i].Register + " is overwritten with pattern at position " + fnrp.ReturnValue[i].StringOffset;
+                    registerInfoText += "Register " + fnrp.ReturnValue[i].Register + " is overwritten with pattern at position " + fnrp.ReturnValue[i].StringOffset + " in thread " + fnrp.ReturnValue[i].ThreadID;
                     output.Add(registerInfoText);
                 }
                 else if (fnrp.ReturnValue[i].StringOffset > 0 && fnrp.ReturnValue[i].Register.Contains("SEH"))
                 {
-                    registerInfoText += "SEH register overwritten at pattern position " + fnrp.ReturnValue[i].StringOffset;
+                    registerInfoText += "SEH register is overwritten with pattern at position " + fnrp.ReturnValue[i].StringOffset + " in thread " + fnrp.ReturnValue[i].ThreadID;
                     output.Add(registerInfoText);
                 }
-                if (fnrp.ReturnValue[i].Register.Contains("SEH"))
-                {
-                    Console.WriteLine("In seh if");
-                }
             }
+            output = output.Distinct().ToList();
             File.WriteAllLines(fnrpFilename, output);
             return output;
         }

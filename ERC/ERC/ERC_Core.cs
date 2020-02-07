@@ -2745,6 +2745,10 @@ namespace ERC
             /// Thread ID.
             /// </summary>
             public int ThreadID { get; set; }
+            /// <summary>
+            /// Overwritten.
+            /// </summary>
+            public bool overwritten { get; set; }
         }
         #endregion
 
