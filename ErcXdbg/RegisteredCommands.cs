@@ -16,7 +16,6 @@ namespace ErcXdbg
     {
         public static bool ErcCommand(int argc, string[] argv)
         {
-
             string sessionFile = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml";
             sessionFile = sessionFile.Replace("file:\\", "");
 
@@ -636,6 +635,8 @@ namespace ErcXdbg
         {
             PLog.WriteLine("ERC --Update");
             PLog.WriteLine("----------------------------------------------------------------------");
+
+            
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -649,16 +650,16 @@ namespace ErcXdbg
             string proxyPort = "";
             IPAddress address = null;
 
-            if(parameters.Count > 1)
+            if (parameters.Count > 1)
             {
                 PrintHelp("Too many parameters provided. Update must be called as \"ERC --update <proxyIP:port>\"");
             }
-            else if(parameters.Count == 1)
+            else if (parameters.Count == 1)
             {
                 if (parameters[0].Split('.').Length == 4)
                 {
-                    if (parameters[0].Contains(":") == true && parameters[0].Split(':').Length == 2 
-                        && IPAddress.TryParse(parameters[0], out address) == true)
+                    if (parameters[0].Contains(":") == true && parameters[0].Split(':').Length == 2
+                        && IPAddress.TryParse(parameters[0].Split(':')[0], out address) == true)
                     {
                         proxyIpAddress = parameters[0].Split(':')[0];
                         proxyPort = parameters[0].Split(':')[1];
@@ -679,20 +680,24 @@ namespace ErcXdbg
                 var wClient = new WebClient();
                 ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
                 System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
-                
+
                 wClient.Headers.Add("Accept", "text/html, application/xhtml+xml,application/xml;q=0.9,image/ webp,*/*;q=0.8");
                 wClient.Headers.Add("User-Agent", "ERC-Plugin");
 
                 //Set proxy if specified.
-                if(proxy == true)
+                if (proxy == true)
                 {
                     WebProxy wProxy = new WebProxy(proxyIpAddress + ":" + proxyPort);
                     wClient.Proxy = wProxy;
                 }
+                
+                if (!updatePath.Contains("\\x64\\"))
+                {
+                    updatePath = updatePath.Replace("\\x32\\", "\\x64\\");
+                }
 
-                //string releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/32"); //Uncomment if 32 bit.
                 string releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/64"); //Uncomment if 64 bit.
-            
+
                 string[] releasesArray = releases.Split(',');
                 string fileurl = "";
                 foreach (string s in releasesArray)
@@ -717,8 +722,9 @@ namespace ErcXdbg
                     updatePath += Path.DirectorySeparatorChar;
                 }
 
-                string[] files = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+                string[] files = Directory.GetFiles(updatePath);
                 bool oldPluginRenamed = false;
+
                 foreach (string s in files)
                 {
                     if (s.Contains("Erc.Xdbg.dp64-OLD") && oldPluginRenamed == false)
@@ -731,9 +737,12 @@ namespace ErcXdbg
                     }
                 }
 
-                if(oldPluginRenamed == false)
+                if (oldPluginRenamed == false)
                 {
-                    System.IO.File.Move(updatePath + "Erc.Xdbg.dp64", updatePath + "Erc.Xdbg.dp64-OLD_0.txt");
+                    if(File.Exists(updatePath + "Erc.Xdbg.dp64"))
+                    {
+                        System.IO.File.Move(updatePath + "Erc.Xdbg.dp64", updatePath + "Erc.Xdbg.dp64-OLD_0.txt");
+                    }
                 }
 
                 //unzip update package 
@@ -749,7 +758,73 @@ namespace ErcXdbg
                 //Delete the zip archive.
                 File.Delete(zipPath);
 
-                PLog.WriteLine("Update was downloaded successfully: {0}", fileurl);
+                wClient.Headers.Add("Accept", "text/html, application/xhtml+xml,application/xml;q=0.9,image/ webp,*/*;q=0.8");
+                wClient.Headers.Add("User-Agent", "ERC-Plugin");
+
+                updatePath = updatePath.Replace("\\x64\\", "\\x32\\");
+                releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/32");
+
+                releasesArray = releases.Split(',');
+                fileurl = "";
+                foreach (string s in releasesArray)
+                {
+                    if (s.Contains("browser_download_url"))
+                    {
+                        fileurl = s.Split('\"')[3];
+                    }
+                }
+
+                urlSegments = fileurl.Split('/');
+                filename = urlSegments[urlSegments.Length - 1];
+                zipPath = updatePath + "\\" + filename;
+                wClient.DownloadFile(fileurl, zipPath);
+
+                // Ensures that the last character on the extraction path
+                // is the directory separator char. 
+                // Without this, a malicious zip file could try to traverse outside of the expected
+                // extraction path.
+                if (!updatePath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+                {
+                    updatePath += Path.DirectorySeparatorChar;
+                }
+
+                files = Directory.GetFiles(updatePath);
+                oldPluginRenamed = false;
+
+                foreach (string s in files)
+                {
+                    if (s.Contains("Erc.Xdbg.dp32-OLD") && oldPluginRenamed == false)
+                    {
+                        int i = 0;
+                        var holder = s.Split('_')[1];
+                        int.TryParse(holder[0].ToString(), out i);
+                        System.IO.File.Move(updatePath + "Erc.Xdbg.dp32", updatePath + "Erc.Xdbg.dp32-OLD_" + i.ToString() + ".txt");
+                        oldPluginRenamed = true;
+                    }
+                }
+
+                if (oldPluginRenamed == false)
+                {
+                    if (File.Exists(updatePath + "Erc.Xdbg.dp32"))
+                    {
+                        System.IO.File.Move(updatePath + "Erc.Xdbg.dp32", updatePath + "Erc.Xdbg.dp32-OLD_0.txt");
+                    }
+                }
+
+                //unzip update package 
+                using (ZipArchive archive = ZipFile.OpenRead(zipPath))
+                {
+                    foreach (ZipArchiveEntry entry in archive.Entries)
+                    {
+                        string destinationPath = Path.GetFullPath(Path.Combine(updatePath, entry.FullName));
+                        entry.ExtractToFile(destinationPath, true);
+                    }
+                }
+
+                //Delete the zip archive.
+                File.Delete(zipPath);
+
+                PLog.WriteLine("\nUpdate was downloaded successfully.");
                 PLog.WriteLine("In order to use the updated binary you will need to restart X64dbg.");
                 PLog.WriteLine("----------------------------------------------------------------------");
             }
@@ -757,7 +832,6 @@ namespace ErcXdbg
             {
                 PrintHelp(e.Message + "\n" + e.InnerException);
             }
-            
         }
 
         private static void Config(List<string> parameters, ERC.ErcCore core)
@@ -1671,7 +1745,7 @@ namespace ErcXdbg
                 string[] files = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
                 foreach (string s in files)
                 {
-                    if (s.Contains("Erc.Xdbg.dp64-OLD"))
+                    if (s.Contains("Erc.Xdbg.dp64-OLD") || s.Contains("Erc.Xdbg.dp32-OLD"))
                     {
                         File.Delete(s);
                     }
@@ -1679,7 +1753,7 @@ namespace ErcXdbg
             }
             catch (Exception e)
             {
-                //Do Nothing
+                PLog.WriteLine("ERROR: " + e.Message);
             }
         }
 
