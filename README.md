@@ -2,13 +2,9 @@
 [![License](https://img.shields.io/github/license/Andy53/ERC.Xdbg)](license.txt)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/tags)
 [![GitHub issues](https://img.shields.io/github/issues-raw/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/issues)
-[![Last Commit](https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"alt="GitHub last commit")(https://github.com/Andy53/ERC.Xdbg/commits/master)  
-
-<p align="center">
-    <a href="https://github.com/Andy53/ERC.Xdbg/commits/master">
+<a href="https://github.com/Andy53/ERC.Xdbg/commits/master">
     <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"
          alt="GitHub last commit">
-</p>
 
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
 
