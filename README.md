@@ -7,6 +7,11 @@ Installing the plugin is reasonably straight forward. Simply download the approp
 
 If you wish to build the plugin from source simply clone the Git repository, open the solution in Visual Studio and build the project targeted for your architecture of choice. Then copy the binaries into the plugins directory of your X64dbg installation.
 
+## Documentation
+This library contains the fundamental specifications, documentation, and architecture that underpin ERC.Xdbg. If you're looking to understand the system better, or want to know how to integrate the various components, there is a lot of valuable information contained [here](https://github.com/Andy53/ERC.net).    
+
+[📄 Documentation and Specifications](https://andy53.github.io/ERC.net/)    
+
 ## Globals
 Global variables are variables which are set and stored for one session. They are reset to the defaults each time X64dbg is restarted.     
 
