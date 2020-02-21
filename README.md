@@ -1,5 +1,6 @@
 # ERC.Xdbg
-[![license](https://github.com/Andy53/ERC.Xdbg/blob/master/LICENSE)](License)    
+[![Downloads](http://pepy.tech/badge/stronghold)](http://pepy.tech/count/stronghold) [![license](https://github.com/Andy53/ERC.Xdbg/blob/master/LICENSE)](License)    
+
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
 
 ## Installation
