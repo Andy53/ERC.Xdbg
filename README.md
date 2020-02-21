@@ -20,6 +20,9 @@ This library contains the fundamental specifications, documentation, and archite
 
 [📄 Documentation and Specifications](https://andy53.github.io/ERC.net/)    
 
+## Articles
+[📄 The Basics of Exploit Development 1: Win32 Buffer Overflows](https://www.coalfire.com/The-Coalfire-Blog/January-2020/The-Basics-of-Exploit-Development-1) 
+
 ## Globals
 Global variables are variables which are set and stored for one session. They are reset to the defaults each time X64dbg is restarted.     
 
