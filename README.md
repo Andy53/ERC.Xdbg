@@ -1,5 +1,5 @@
 # ERC.Xdbg
-[![license](https://img.shields.io/github/license/microsoft/electionguard)](License)    
+[![license](https://github.com/Andy53/ERC.Xdbg/blob/master/LICENSE)](License)    
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
 
 ## Installation
