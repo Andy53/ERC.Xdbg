@@ -1,4 +1,4 @@
-<img src="Icon.png" align="right" />
+<img src="Icon.png" align="right" alt="Image" height="42" width="42"/>
 
 # ERC.Xdbg    
 [![License](https://img.shields.io/github/license/Andy53/ERC.Xdbg)](license.txt)
