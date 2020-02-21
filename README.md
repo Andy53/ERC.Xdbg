@@ -1,3 +1,5 @@
+<img src="icon.png" align="right" />
+
 # ERC.Xdbg    
 [![License](https://img.shields.io/github/license/Andy53/ERC.Xdbg)](license.txt)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/tags)
