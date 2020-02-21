@@ -21,7 +21,8 @@ This library contains the fundamental specifications, documentation, and archite
 [📄 Documentation and Specifications](https://andy53.github.io/ERC.net/)    
 
 ## Articles    
-A list of articles covering common usage scenarios using ERC.Xdbg.    
+A list of articles covering common usage scenarios using ERC.Xdbg.
+    
 [📄 The Basics of Exploit Development 1: Win32 Buffer Overflows](https://www.coalfire.com/The-Coalfire-Blog/January-2020/The-Basics-of-Exploit-Development-1) 
 
 ## Globals
