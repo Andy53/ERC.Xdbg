@@ -79,7 +79,7 @@ Downloads the latest release of the plugin from Github and extracts it into the 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update 127.0.0.1:8080`
 
 `--config`    
-The config option can be used to set values in the config.xml file. Can be used to set things such as the project author, current working directory and error log file. These options are predominatly used when writing the output of operations to file.    
+The config option can be used to set values in the config.xml file. These options persist between sessions. Can be used to set things such as the project author, current working directory and error log file. These options are predominatly used when writing the output of operations to file.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --config SetWorkingDirectory C:\Users\You\Desktop`   
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --config GetErrorFilePath`
 
