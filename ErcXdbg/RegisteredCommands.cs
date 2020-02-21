@@ -1742,10 +1742,24 @@ namespace ErcXdbg
             //Get list of files in the plugins directory. Delete old versions of the plugin.
             try
             {
-                string[] files = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+                string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if (path.Contains("\\x32\\"))
+                {
+                    path = path.Replace("\\x32\\", "\\x64\\");
+                }
+                string[] files = Directory.GetFiles(path);
                 foreach (string s in files)
                 {
-                    if (s.Contains("Erc.Xdbg.dp64-OLD") || s.Contains("Erc.Xdbg.dp32-OLD"))
+                    if (s.Contains("Erc.Xdbg.dp64-OLD") || s.Contains("Erc.Xdbg.dp32-OLD") || s.Contains(".zip"))
+                    {
+                        File.Delete(s);
+                    }
+                }
+                path = path.Replace("\\x64\\", "\\x32\\");
+                files = Directory.GetFiles(path);
+                foreach (string s in files)
+                {
+                    if (s.Contains("Erc.Xdbg.dp64-OLD") || s.Contains("Erc.Xdbg.dp32-OLD") || s.Contains(".zip"))
                     {
                         File.Delete(s);
                     }
