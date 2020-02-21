@@ -3,8 +3,8 @@
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/tags)
 [![GitHub issues](https://img.shields.io/github/issues-raw/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/issues)
 <a href="https://github.com/Andy53/ERC.Xdbg/commits/master">
-    <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"
-alt="GitHub last commit">
+    <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"    
+
 
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
 
