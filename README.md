@@ -4,6 +4,7 @@
 [![GitHub issues](https://img.shields.io/github/issues-raw/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/issues)
 <a href="https://github.com/Andy53/ERC.Xdbg/commits/master">
     <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"
+alt="GitHub last commit">
 
 
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
