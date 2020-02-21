@@ -1,6 +1,18 @@
 # ERC.Xdbg
 [![license](https://github.com/Andy53/ERC.Xdbg/blob/master/LICENSE)](License)    
 
+<p align="center">
+    <a href="https://github.com/Andy53/ERC.Xdbg/commits/master">
+    <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"
+         alt="GitHub last commit">
+    <a href="https://github.com/Andy53/ERC.Xdbg/issues">
+    <img src="https://img.shields.io/github/issues-raw/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"
+         alt="GitHub issues">
+    <a href="https://github.com/Andy53/ERC.Xdbg/pulls">
+    <img src="https://img.shields.io/github/issues-pr-raw/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white"
+         alt="GitHub pull requests">
+</p>
+
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
 
 ## Installation
