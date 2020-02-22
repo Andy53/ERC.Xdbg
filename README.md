@@ -165,7 +165,7 @@ Prints a list of egghunters which can be used for various machine types. Can be 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --egghunters`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --egghunters ABCD` Egghunters will be generated with the tag "ABCD"    
 
-`--FindNRP`    
+➡️ `--FindNRP`    
 Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format. 
@@ -176,7 +176,6 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
  / /___ / _, _/ /___     
 /_____ /_/ |_|\____/    
 -------------------------
-Error: Arguments must be provided. Use --help for detailed information.
 Globals:
    Global arguments can be appended to any command and will persist for the length of the session until X64dbg is next
    restarted.
