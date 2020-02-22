@@ -172,7 +172,7 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
 
 ## Author
 Andy Bowden - [![@Andy53_](http://img.shields.io/twitter/follow/Andy53_?style=social)](https://twitter.com/Andy53_)      
-[@Andy53_](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_)
+[![@Andy53_](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_)]    
 
 ## Contact 
 Andy@evilrobots.club
