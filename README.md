@@ -150,28 +150,28 @@ Displays info about the modules loaded by the attached process. Can be passed a 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --moduleInfo`     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --moduleinfo false` Does not write moduleinfo output to disk.   
 
-➡️ `--ThreadInfo`    
+`--ThreadInfo`    
 Displays info about threads associated with the attached process. Can be passed a boolean to indicate if the output should be written to disk.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --threadInfo`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write threadinfo output to disk.      
 
-➡️ `--SEH`   
+`--SEH`   
 Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored in the search.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --seh`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SEH C:\Path\To\Module\To\Exclude C:\Path\To\Other\Module\To\Exclude`
 
-➡️ `--EggHunters`    
+`--EggHunters`    
 Prints a list of egghunters which can be used for various machine types. Can be passed 4 character string to be used as the egghunter search tag. Default tag is ERCD.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --egghunters`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --egghunters ABCD` Egghunters will be generated with the tag "ABCD"    
 
-➡️ `--FindNRP`    
+`--FindNRP`    
 Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format. 
 
 ## Author
-Andy Bowden 
+Andy Bowden [!@Andy53_](http://img.shields.io/twitter/follow/Andy53_?style=social)](https://twitter.com/Andy53_)
 
 ## Contact 
 Andy@evilrobots.club
