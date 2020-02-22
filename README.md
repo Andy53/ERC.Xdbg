@@ -7,6 +7,7 @@
 <a href="https://github.com/Andy53/ERC.Xdbg/commits/master">
     <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white">
 </a>
+<img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_">
 
 An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
 
@@ -171,7 +172,7 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format. 
 
 ## Author
-Andy Bowden - <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_"> 
+Andy Bowden 
 
 ## Contact 
 Andy@evilrobots.club
