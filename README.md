@@ -171,7 +171,4 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format. 
 
 ## Author
-Andy Bowden 
-
-## Contact 
-Andy@evilrobots.club | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_">
+[Andy Bowden](mailto:andy@evilrobots.club) | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_">
