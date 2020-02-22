@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Xdbg?style=flat-square&logo=github&logoColor=white">
 </a>
 
-An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library.
+An X64dbg Plugin of the [ERC](https://github.com/Andy53/ERC.net) Library designed to assist in the exploit development process.
 
 ## Installation
 Installing the plugin is reasonably straight forward. Simply download the appropriate zip package for your architecture from the releases page of this repoistory and save then unzip it in the plugins directory of X64dbg. If X64dbg does not currently have a plugins directory then run it once to create the intial directory structure.
@@ -172,3 +172,5 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
 
 ## Author
 [Andy Bowden](mailto:andy@evilrobots.club) | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_">
+
+
