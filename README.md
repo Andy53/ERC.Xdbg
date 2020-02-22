@@ -21,7 +21,7 @@ This library contains the fundamental specifications, documentation, and archite
 [📄 Documentation and Specifications](https://andy53.github.io/ERC.net/)    
 
 ## API     
-ERC.Net is the API used to develop ERC.Xdbg, all of the functionality in this plugin stems from the API. ERC.Net is a collection of tools designed to assist in debugging Windows application crashes.
+ERC.Net is the API used to develop ERC.Xdbg, all of the functionality in this plugin stems from the API. ERC.Net is a collection of tools designed to assist in debugging Windows application crashes.      
 [📁 Source](https://github.com/Andy53/ERC.net) - https://github.com/Andy53/ERC.net     
 [📦 32 bit Package - ERC.Net-x86.SDK](https://www.nuget.org/packages/ERC.Net-x86/)    
 [📦 64 bit Package - ERC.Net-x64.SDK](https://www.nuget.org/packages/ERC.Net-x64/)   
