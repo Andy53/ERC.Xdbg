@@ -11,7 +11,7 @@
 An X64dbg plugin built around the [ERC](https://github.com/Andy53/ERC.net) library designed to assist in the exploit development process.
 
 ## Installation
-Installing the plugin is reasonably straight forward. Simply download the appropriate zip package for your architecture from the releases page of this repoistory and save then unzip it in the plugins directory of X64dbg. If X64dbg does not currently have a plugins directory then run it once to create the intial directory structure.
+Installing the plugin is reasonably straight forward. Simply download the appropriate zip package for your architecture from the releases page of this repository and save then unzip it in the plugins directory of X64dbg. If X64dbg does not currently have a plugins directory then run it once to create the initial directory structure.
 
 If you wish to build the plugin from source simply clone the Git repository, open the solution in Visual Studio and build the project targeted for your architecture of choice. Then copy the binaries into the plugins directory of your X64dbg installation.
 
@@ -31,6 +31,7 @@ ERC.Net is the API used to develop ERC.Xdbg, all of the functionality in this pl
 A list of articles covering common usage scenarios using ERC.Xdbg.
     
 [📄 The Basics of Exploit Development 1: Win32 Buffer Overflows](https://www.coalfire.com/The-Coalfire-Blog/January-2020/The-Basics-of-Exploit-Development-1) 
+[📄 The Basics of Exploit Development 2: SEH Overflows](https://www.coalfire.com/The-Coalfire-Blog/March-2020/The-Basics-of-Exploit-Development-2-SEH-Overflows)
 
 ## Globals
 Global variables are variables which are set and stored for one session. They are reset to the defaults each time X64dbg is restarted.     
@@ -67,7 +68,7 @@ Used to exploit pointers containing specific bytes from all search results. Can 
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Bytes` Remove any previous byte restrictions from all further search results.    
 
 `-Protection`
-Used to specify the protection value of all pointers returned in search results. Generic values of `read`, `write` and `exec` are used to specify which the returned pointers should have and can be used in combination. Options must be sperated with commas and no spaces.    
+Used to specify the protection value of all pointers returned in search results. Generic values of `read`, `write` and `exec` are used to specify which the returned pointers should have and can be used in combination. Options must be separated with commas and no spaces.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection exec` Remove pointers that do not have exec permission from all search results.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection read,exec` Remove pointers that do not have read and exec permission from all search results.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection all` Remove any previous protection restrictions from all further search results.
@@ -86,7 +87,7 @@ Downloads the latest release of the plugin from Github and extracts it into the 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update 127.0.0.1:8080`
 
 `--config`    
-The config option can be used to set values in the config.xml file. These options persist between sessions. Can be used to set things such as the project author, current working directory and error log file. These options are predominatly used when writing the output of operations to file.    
+The config option can be used to set values in the config.xml file. These options persist between sessions. Can be used to set things such as the project author, current working directory and error log file. These options are predominantly used when writing the output of operations to file.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --config SetWorkingDirectory C:\Users\You\Desktop`   
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --config GetErrorFilePath`
 
@@ -97,19 +98,19 @@ The pattern option can be used to either create a pattern or to identify the loc
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --pattern o Aa9 extended`   
 
 `--ByteArray`    
-The ByteArray option allows the generation of a byte array which is displayed in the log and written to the working directory as both a text file and a binary file containing only the binary values the user wants. By defailt the array will contain all values from 0x00 to 0xFF and values can be omitted by appending them to the command.    
+The ByteArray option allows the generation of a byte array which is displayed in the log and written to the working directory as both a text file and a binary file containing only the binary values the user wants. By default the array will contain all values from 0x00 to 0xFF and values can be omitted by appending them to the command.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --bytearray`     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --bytearray 0xFF0x0A \x0b 0C`   
 
 `--Compare`    
-Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory address from which to start the search and a filepath for the binary file.
+Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory address from which to start the search and a file path for the binary file.
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Compare 0x12345678 C:\Users\You\Desktop\YourBinaryFile.bin`  
 
 `--Convert`    
 Takes a string and converts it to a hex representation. The string can be converted as if it was ASCII, Unicode, UTF-7, UTF-8 or UTF-32. 
 &nbsp;&nbsp;&nbsp;&nbsp;Valid conversion types:     
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ascii to Hex = AtoH    
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Unicdoe to Hex = UtoH    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Unicode to Hex = UtoH    
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UTF-7 to Hex = 7toH    
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UTF-8 to Hex = 8toH    
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UTF-32 to Hex = 32toH    
@@ -117,7 +118,7 @@ Takes a string and converts it to a hex representation. The string can be conver
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --convert UtoH HelloWorld` returns the Unicode bytes for HelloWorld.
 
 `--Assemble`    
-The assemble option can be used to convert assembly instructions into the associated opcodes. The plugin will attempt to identify the architecture required based on the attached process however a 0 can be passed to force 32 bit and a 1 can be passed to force 64 bit. Instructions must be seperated with a comma (,).   
+The assemble option can be used to convert assembly instructions into the associated opcodes. The plugin will attempt to identify the architecture required based on the attached process however a 0 can be passed to force 32 bit and a 1 can be passed to force 64 bit. Instructions must be separated with a comma (,).   
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Assemble jmp esp`     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --assemble 1 jmp rsp, nop, nop`   
 
@@ -166,7 +167,7 @@ Prints a list of egghunters which can be used for various machine types. Can be 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --egghunters ABCD` Egghunters will be generated with the tag "ABCD"    
 
 `--FindNRP`    
-Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formating (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
+Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formatting (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format. 
 
