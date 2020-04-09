@@ -30,8 +30,8 @@ ERC.Net is the API used to develop ERC.Xdbg, all of the functionality in this pl
 ## Articles    
 A list of articles covering common usage scenarios using ERC.Xdbg.
     
-[📄 The Basics of Exploit Development 1: Win32 Buffer Overflows](https://www.coalfire.com/The-Coalfire-Blog/January-2020/The-Basics-of-Exploit-Development-1) 
-[📄 The Basics of Exploit Development 2: SEH Overflows](https://www.coalfire.com/The-Coalfire-Blog/March-2020/The-Basics-of-Exploit-Development-2-SEH-Overflows)
+[📄 The Basics of Exploit Development 1: Win32 Buffer Overflows](https://www.coalfire.com/The-Coalfire-Blog/January-2020/The-Basics-of-Exploit-Development-1)     
+[📄 The Basics of Exploit Development 2: SEH Overflows](https://www.coalfire.com/The-Coalfire-Blog/March-2020/The-Basics-of-Exploit-Development-2-SEH-Overflows)     
 
 ## Globals
 Global variables are variables which are set and stored for one session. They are reset to the defaults each time X64dbg is restarted.     
