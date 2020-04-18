@@ -18,8 +18,8 @@ namespace Managed.x64dbg.SDK
         public delegate void CBPLUGIN(CBTYPE cbType, ref IntPtr callbackInfo);
 
 
-        private const string dll = "x64dbg.dll";   //Uncomment for 64bit
-        //private const string dll = "x32dbg.dll"; //Uncomment for 32bit
+        //private const string dll = "x64dbg.dll";   //Uncomment for 64bit
+        private const string dll = "x32dbg.dll"; //Uncomment for 32bit
 
         private const CallingConvention cdecl = CallingConvention.Cdecl;
 
@@ -57,6 +57,16 @@ namespace Managed.x64dbg.SDK
             public int pluginVersion;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
             public string pluginName;
+
+            public override string ToString()
+            {
+                string ret = "";
+                ret += "pluginHandle:  " + pluginHandle.ToString("X") + Environment.NewLine;
+                ret += "sdkVersion:    " + sdkVersion + Environment.NewLine;
+                ret += "pluginVersion: " + pluginVersion + Environment.NewLine;
+                ret += "pluginName:    " + pluginName + Environment.NewLine;
+                return ret;
+            }
         }
 
         public struct PLUG_SETUPSTRUCT
@@ -66,6 +76,16 @@ namespace Managed.x64dbg.SDK
             public int hMenuDisasm;
             public int hMenuDump;
             public int hMenuStack;
+
+            public override string ToString()
+            {
+                string ret = "";
+                ret += "hwndDlg:      " + hwndDlg.ToString("X") + Environment.NewLine;
+                ret += "hMenu:        " + hMenu + Environment.NewLine;
+                ret += "hMenuDisasmn: " + hMenuDisasm + Environment.NewLine;
+                ret += "hMenuStack:   " + hMenuStack + Environment.NewLine;
+                return ret;
+            }
         }
 
         public enum CBTYPE

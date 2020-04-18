@@ -1,0 +1,776 @@
+{
+  "homepages": [],
+  "source_base_path": "C:/Users/tester/Documents/GitHub/ERC.net/docs",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.DisplayOutput.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.DisplayOutput.html",
+          "hash": "uSYzKJoVWETKQVnHYkipvA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.ERCException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.ERCException.html",
+          "hash": "N9DFx+jCIZ1kehMpnWEwfA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.ErcCore.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.ErcCore.html",
+          "hash": "9IZRrvUxvz8k3i52PlpDpg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.ErcResult-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.ErcResult-1.html",
+          "hash": "WYfQ8G5E2EhB5JyUiEsovw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.MachineType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.MachineType.html",
+          "hash": "5yfM5V9gEwgoY9gz5QPOQQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.ModuleInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.ModuleInfo.html",
+          "hash": "9C6u6oFxGZw0ci6TbvgVeQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.ProcessInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.ProcessInfo.html",
+          "hash": "sKVlzd+yWeL3BNm4lpEUrA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.AllocationProtect.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.AllocationProtect.html",
+          "hash": "cGNnldFfQKV3EK5eVwymSA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.CONTEXT32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.CONTEXT32.html",
+          "hash": "RwgCozxQlmS3GhwBd3Dw3A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.CONTEXT64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.CONTEXT64.html",
+          "hash": "2NsD4+XIMA5EUY/Jub3HOA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.CONTEXT_FLAGS.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.CONTEXT_FLAGS.html",
+          "hash": "KgT2JGr7eSSKweXru6j5wA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.ClientID.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.ClientID.html",
+          "hash": "LICOYcjp530Ezdg3hoKggg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.FLOATING_SAVE_AREA.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.FLOATING_SAVE_AREA.html",
+          "hash": "c8d30/NNm1Zc4R1V5QfceA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_DATA_DIRECTORY.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_DATA_DIRECTORY.html",
+          "hash": "wjHXN/VAzWbAwXwaZPPzkg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_DOS_HEADER.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_DOS_HEADER.html",
+          "hash": "GZ3UjpuCuEu5QP0JV5r5pA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_FILE_HEADER.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_FILE_HEADER.html",
+          "hash": "Bwj5+Vi2cwjmpfezQIeWJw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_LOAD_CONFIG_CODE_INTEGRITY.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_LOAD_CONFIG_CODE_INTEGRITY.html",
+          "hash": "IZw6dOI0kjGT/rIgZyyJ+w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_LOAD_CONFIG_DIRECTORY32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_LOAD_CONFIG_DIRECTORY32.html",
+          "hash": "SRGb8SqJeShOcFFp754wHA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_LOAD_CONFIG_DIRECTORY64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_LOAD_CONFIG_DIRECTORY64.html",
+          "hash": "4HNcZ+eu0Azhr++sqzkwgg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_NT_HEADERS32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_NT_HEADERS32.html",
+          "hash": "FyBVNZyh6PWAt43ZY1BYXQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_NT_HEADERS64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_NT_HEADERS64.html",
+          "hash": "DepcbKsMIOw6CTSU8OiQfQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_OPTIONAL_HEADER32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_OPTIONAL_HEADER32.html",
+          "hash": "l2982mUrRICAzTA40DukpA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.IMAGE_OPTIONAL_HEADER64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.IMAGE_OPTIONAL_HEADER64.html",
+          "hash": "Xvq+aAwnY3GqWPeSqtpwDA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.LIST_ENTRY.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.LIST_ENTRY.html",
+          "hash": "VdcJQTRIBfiwnTnAJxVV8Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.LOADED_IMAGE.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.LOADED_IMAGE.html",
+          "hash": "pQKbsgiHvrHqc3Iq4TeFLg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.LoadLibraryFlags.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.LoadLibraryFlags.html",
+          "hash": "IohngiHhNws1gH5nfsoVWQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.M128A.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.M128A.html",
+          "hash": "R7e838YgKIj+caDDgHKubQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.MEMORY_BASIC_INFORMATION32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.MEMORY_BASIC_INFORMATION32.html",
+          "hash": "A1ojjPM1+mn/fBAMSaHiBQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.MEMORY_BASIC_INFORMATION64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.MEMORY_BASIC_INFORMATION64.html",
+          "hash": "c/+N2Dtz+aT//bhbXa18sQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.MagicType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.MagicType.html",
+          "hash": "d96xnXpM9r/hRX0WDyZgNg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.ProcessAccessFlags.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.ProcessAccessFlags.html",
+          "hash": "GA0ruj9C44NeOQvKji5Ybg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.RegisterInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.RegisterInfo.html",
+          "hash": "JJy1/LZFychjeoNs4M0mtg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.StateEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.StateEnum.html",
+          "hash": "VKUJ04gDA+xta4zFG33Ngw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.SubSystemType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.SubSystemType.html",
+          "hash": "WgwdwtSTKygAXIy18dedKg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.TEB.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.TEB.html",
+          "hash": "K7hd9RXsGYVL+lwdcahYiA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.ThreadAccess.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.ThreadAccess.html",
+          "hash": "u/xuZgP1viOxTzL9GLXXFA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.ThreadBasicInformation.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.ThreadBasicInformation.html",
+          "hash": "9uMIulB2vsVa+/eeZaG4tw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.TypeEnum.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.TypeEnum.html",
+          "hash": "4aV72qOxe2a5ZGTOO4QbvA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.XSAVE_FORMAT64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.XSAVE_FORMAT64.html",
+          "hash": "HGoepyAi3CJHnVPs+v02VQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Structures.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Structures.html",
+          "hash": "ds6+Dm2PmcnglrU7vE7xjQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.ThreadInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.ThreadInfo.html",
+          "hash": "PcgKJN9nURRIQMgQVYSOSA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.Convert.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.Convert.html",
+          "hash": "O+EEBM/ljqjnImBqbsfkbg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.OpcodeAssembler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.OpcodeAssembler.html",
+          "hash": "eFBIH+zEd50gxvAsFQ9RZQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.OpcodeDisassembler.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.OpcodeDisassembler.html",
+          "hash": "vSj1IFUSrpSh0ndWo8k03Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.PatternTools.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.PatternTools.html",
+          "hash": "YxTA14LQM1CWI+JouDRrGw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.Payloads.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.Payloads.html",
+          "hash": "phx0gCfYMmHTD0P6T9tS/Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.PtrRemover.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.PtrRemover.html",
+          "hash": "GdQqodlX3mYCNIbnWreviA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.RopChainGenerator32.X86Lists.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.RopChainGenerator32.X86Lists.html",
+          "hash": "U8cfWwlJmyWJTD2gG4Jp7A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.RopChainGenerator32.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.RopChainGenerator32.html",
+          "hash": "GCi3SaahGGNOfVZZf7zfEg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.RopChainGenerator64.X64Lists.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.RopChainGenerator64.X64Lists.html",
+          "hash": "W3s053W0r4+bcZWgRh3hZA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.RopChainGenerator64.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.RopChainGenerator64.html",
+          "hash": "Reqw0yjmak/1eo4nM+x75Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.Utilities.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.Utilities.html",
+          "hash": "l9f45qJY/Tf5QvxzOAUGsw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "api/ERC.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/ERC.html",
+          "hash": "KZSG7RbnbE5JO6i9YQhQJg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "api/index.md",
+      "output": {
+        ".html": {
+          "relative_path": "api/index.html",
+          "hash": "hPYCWqYUEXVZVL3qVrcZ+g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "HWdu7b5uaUb2KaI1afXOqQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/LICENSE.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/LICENSE.html",
+          "hash": "eCZ6/K0A4mKe6kRRZan5+A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "articles/intro.md",
+      "output": {
+        ".html": {
+          "relative_path": "articles/intro.html",
+          "hash": "VX1ZJ6Es1l7iI9bmpxoOrw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "articles/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "articles/toc.html",
+          "hash": "gB8AESyvNru97tzIZofEEg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Conceptual",
+      "source_relative_path": "index.md",
+      "output": {
+        ".html": {
+          "relative_path": "index.html",
+          "hash": "5a++662pB3tOEugXxQ/cvQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "+rHUkRZHZRi5gd1aTU6lJA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot build incrementally because last build info is missing.",
+        "incrementalPhase": "build",
+        "total_file_count": 0,
+        "skipped_file_count": 0,
+        "full_build_reason_code": "NoAvailableBuildCache"
+      },
+      "processors": {
+        "ConceptualDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build",
+          "total_file_count": 4,
+          "skipped_file_count": 0
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build",
+          "total_file_count": 53,
+          "skipped_file_count": 0
+        },
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build",
+          "total_file_count": 0,
+          "skipped_file_count": 0
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot support incremental post processing, the reason is: last post processor info is null.",
+        "incrementalPhase": "postProcessing",
+        "total_file_count": 0,
+        "skipped_file_count": 0
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

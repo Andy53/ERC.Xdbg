@@ -250,9 +250,11 @@ namespace ERC
                 long MaxAddress = 0x7fffffff;
                 long address = (long)ModuleBase;
 
-                if(!ProcessInfo.Is64Bit(process))
+                Console.WriteLine("At problem do while statment. Module Name = {0}", ModuleName);
+                if (!ProcessInfo.Is64Bit(process))
                 {
                     List<ERC.Structures.MEMORY_BASIC_INFORMATION32> ProcessMemoryBasicInfo32 = new List<ERC.Structures.MEMORY_BASIC_INFORMATION32>();
+                    long oldAddress = 0;
                     do
                     {
                         ERC.Structures.MEMORY_BASIC_INFORMATION32 m;
@@ -260,12 +262,18 @@ namespace ERC
                         if (address == (long)m.BaseAddress + (long)m.RegionSize)
                             break;
                         address = (long)m.BaseAddress + (long)m.RegionSize;
+                        if(oldAddress > address)
+                        {
+                            address = long.MaxValue;
+                        }
+                        oldAddress = address;
                         ModuleProtection = m.AllocationProtect;
                     } while (address <= MaxAddress);
                 }
                 else
                 {
                     List<ERC.Structures.MEMORY_BASIC_INFORMATION64> ProcessMemoryBasicInfo64 = new List<ERC.Structures.MEMORY_BASIC_INFORMATION64>();
+                    long oldAddress = 0;
                     do
                     {
                         ERC.Structures.MEMORY_BASIC_INFORMATION64 m;
@@ -273,6 +281,11 @@ namespace ERC
                         if (address == (long)m.BaseAddress + (long)m.RegionSize)
                             break;
                         address = (long)m.BaseAddress + (long)m.RegionSize;
+                        if (oldAddress > address)
+                        {
+                            address = long.MaxValue;
+                        }
+                        oldAddress = address;
                         ModuleProtection = m.AllocationProtect;
                     } while (address <= MaxAddress);
                 }

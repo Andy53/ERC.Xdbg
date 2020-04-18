@@ -22,7 +22,7 @@ namespace ErcXdbg
             try
             {
                 DeleteOldPlugins();
-
+                
                 if (!File.Exists(sessionFile))
                 {
                     WriteSessionFile(sessionFile);
@@ -44,29 +44,31 @@ namespace ErcXdbg
                         singleNode = sessConfig.DocumentElement.SelectNodes("//osdll");
                         Globals.osdll = (singleNode[0].InnerText.ToLower() == "true") ? true : false;
                         sessConfig = null;
-                        GC.Collect();
+                        //GC.Collect(); Try and figure out why this causes a crash after 6 runs without a process attached.
                     }
                     catch (Exception e)
                     {
                         PLog.WriteLine("ERROR when attempting to read existing session file: " + e.Message);
                     }
                 }
-
+                
                 //Get the handle of the attached process
                 var hProcess = Bridge.DbgValFromString("$hProcess");
-
+                
                 //Confirm that at least some options were passed.
                 if (argc <= 1)
                 {
                     PrintHelp("Arguments must be provided. Use --help for detailed information.");
-                    return true;
+                    ErcXdbg.PluginStart();
+                    return true; 
                 }
-
+                
                 //Check a process is attached.
                 if (hProcess == IntPtr.Zero)
                 {
                     PrintHelp("The debugger must be attached to a process to use ERC");
-                    return true;
+                    ErcXdbg.PluginStart();
+                    return true; 
                 }
                 PLog.WriteLine("");
                 GC.Collect();

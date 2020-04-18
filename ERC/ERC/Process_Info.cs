@@ -373,6 +373,7 @@ namespace ERC
                 ProcessMemoryBasicInfo32 = new List<MEMORY_BASIC_INFORMATION32>();
                 long MaxAddress = 0x7fffffff;
                 long address = 0;
+                long oldAddress = 0;
 
                 do
                 {
@@ -381,6 +382,11 @@ namespace ERC
                     if (address == (long)m.BaseAddress + (long)m.RegionSize)
                         break;
                     address = (long)m.BaseAddress + (long)m.RegionSize;
+                    if (oldAddress > address)
+                    {
+                        address = long.MaxValue;
+                    }
+                    oldAddress = address;
                     if (m.State == StateEnum.MEM_COMMIT && (m.Type == TypeEnum.MEM_MAPPED || m.Type == TypeEnum.MEM_PRIVATE))
                     {
                         ProcessMemoryBasicInfo32.Add(m);
@@ -392,6 +398,7 @@ namespace ERC
                 ProcessMemoryBasicInfo64 = new List<MEMORY_BASIC_INFORMATION64>();
                 long MaxAddress = 0x000007FFFFFEFFFF;
                 long address = 0;
+                long oldAddress = 0;
 
                 do
                 {
@@ -400,6 +407,11 @@ namespace ERC
                     if (address == (long)m.BaseAddress + (long)m.RegionSize)
                         break;
                     address = (long)m.BaseAddress + (long)m.RegionSize;
+                    if (oldAddress > address)
+                    {
+                        address = long.MaxValue;
+                    }
+                    oldAddress = address;
                     if (m.State == StateEnum.MEM_COMMIT && (m.Type == TypeEnum.MEM_MAPPED || m.Type == TypeEnum.MEM_PRIVATE))
                     {
                         ProcessMemoryBasicInfo64.Add(m);

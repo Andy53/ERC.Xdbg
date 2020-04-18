@@ -1,4 +1,9 @@
-# ERC.Net
+# ERC.Net     
+[![License](https://img.shields.io/github/license/Andy53/ERC.Net)](license.txt)
+[![GitHub issues](https://img.shields.io/github/issues-raw/Andy53/ERC.Net?style=flat)](https://github.com/Andy53/ERC.Net/issues)
+<a href="https://github.com/Andy53/ERC.Net/commits/master">
+    <img src="https://img.shields.io/github/last-commit/Andy53/ERC.Net?style=flat-square&logo=github&logoColor=white">
+</a> 
 
 ERC.Net is a collection of tools designed to assist in debugging Windows application crashes. ERC.Net supports both 64 and 32 bit applications, can parse DLL/EXE headers, identify compile time flags such as ASLR, DEP and SafeSEH, generate non repeating patterns, generate platform specific egg hunters, identify process information such as loaded modules and running threads, read the TEB of a specific thread, assist with identifying numerous types of memory vulnerabilities and has numerous other use cases. 
 
@@ -11,6 +16,11 @@ Install one of the nuget packages ([x86](https://www.nuget.org/packages/ERC.Net-
 Visual studio  
 .Net 4.7.2   
 C#   
+
+### Documentation
+This library contains the fundamental specifications, documentation, and architecture that underpin ERC.Xdbg. If you're looking to understand the system better, or want to know how to integrate the various components, there is a lot of valuable information contained here.    
+
+[📄 Documentation and Specifications](https://andy53.github.io/ERC.net/) 
 
 ### Getting Started
 
