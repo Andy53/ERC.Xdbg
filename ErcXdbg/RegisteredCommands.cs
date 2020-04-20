@@ -1775,12 +1775,27 @@ namespace ErcXdbg
 
         private static void Debug(ERC.ProcessInfo info, List<string> parameters)
         {
+            List<string> arg = new List<string>();
+            arg.Add("ERC ");
+
+            foreach(string s in parameters)
+            {
+                arg.Add(s);
+            }
+
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
                 {
                     parameters.Remove(parameters[i]);
                 }
+            }
+
+            if(parameters.Count == 0)
+            {
+                parameters.Add("showsession");
+                parameters.Add("showglobals");
+                parameters.Add("showargs");
             }
 
             for(int i = 0; i < parameters.Count && i >= 0; i++)
@@ -1822,7 +1837,7 @@ namespace ErcXdbg
                     {
                         PLog.WriteLine("DEBUG: Args ");
                         PLog.WriteLine("--------------------------------------------");
-                        PLog.WriteLine("Args = {0}\n", string.Join(" ", parameters.ToArray()));
+                        PLog.WriteLine("Args = {0}\n", string.Join(" ", arg.ToArray()));
                         parameters.Remove(parameters[i]);
                         i--;
                     }
