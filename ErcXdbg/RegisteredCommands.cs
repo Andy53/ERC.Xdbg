@@ -69,6 +69,7 @@ namespace ErcXdbg
                     bool exitWithError = true;
                     bool update = false;
                     bool config = false;
+                    bool debug = false;
                     ERC.ErcCore coreTemp = new ERC.ErcCore();
 
                     foreach (string s in argv[0].Split(' '))
@@ -97,6 +98,16 @@ namespace ErcXdbg
                                         Config(args, coreTemp);
                                     }
                                     break;
+                                case "--debug":
+                                    exitWithError = false;
+                                    if (debug == false)
+                                    {
+                                        debug = true;
+                                        List<string> args = argv[0].Split(' ').ToList<string>();
+                                        args.RemoveAt(0);
+                                        Debug(args);
+                                    }
+                                    break;
                                 default:
                                     break;
                             }
@@ -118,7 +129,6 @@ namespace ErcXdbg
                 ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
 
                 ParseCommand(argv[0], core, info);
-
             }
             catch (Exception e)
             {
@@ -1817,9 +1827,15 @@ namespace ErcXdbg
         private static void Debug(ERC.ProcessInfo info, List<string> parameters)
         {
             List<string> arg = new List<string>();
-            arg.Add("ERC ");
+            arg.Add("ERC");
+            PLog.WriteLine("\n");
 
-            foreach(string s in parameters)
+            bool showSession = false;
+            bool showGlobals = false;
+            bool showArgs = false;
+            bool showProcess = false;
+
+            foreach (string s in parameters)
             {
                 arg.Add(s);
             }
@@ -1832,57 +1848,198 @@ namespace ErcXdbg
                 }
             }
 
-            if(parameters.Count == 0)
+            if (parameters.Count == 0)
             {
-                parameters.Add("showsession");
-                parameters.Add("showglobals");
-                parameters.Add("showargs");
+                showSession = true;
+                showGlobals = true;
+                showArgs = true;
+                showProcess = true;
             }
 
-            for(int i = 0; i < parameters.Count && i >= 0; i++)
+            for (int i = 0; i < parameters.Count && i >= 0; i++)
             {
-                if(parameters.Count > i && i >= 0)
+                if (parameters.Count > i && i >= 0)
                 {
                     if (parameters[i].ToLower() == "showsession")
                     {
-                        PLog.WriteLine("DEBUG: Session ");
-                        PLog.WriteLine("--------------------------------------------");
-                        string sessionText = File.ReadAllText((Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml").Replace("file:\\", ""));
-                        PLog.WriteLine(sessionText + "\n");
+                        showSession = true;
                         parameters.Remove(parameters[i]);
                         i--;
                     }
                 }
 
-                if(parameters.Count > i && i >= 0)
+                if (parameters.Count > i && i >= 0)
                 {
                     if (parameters[i].ToLower() == "showglobals")
                     {
-                        PLog.WriteLine("DEBUG: Globals ");
-                        PLog.WriteLine("--------------------------------------------");
-                        PLog.WriteLine("ASLR = {0}", Globals.aslr.ToString());
-                        PLog.WriteLine("SafeSEH = {0}", Globals.safeseh.ToString());
-                        PLog.WriteLine("Rebase = {0}", Globals.rebase.ToString());
-                        PLog.WriteLine("NXCompat = {0}", Globals.nxcompat.ToString());
-                        PLog.WriteLine("OSDll = {0}", Globals.osdll.ToString());
-                        PLog.WriteLine("Bytes = {0}", ByteArrayToString(Globals.bytes));
-                        PLog.WriteLine("Protection = {0}\n", Globals.protection);
+                        showGlobals = true;
                         parameters.Remove(parameters[i]);
                         i--;
                     }
                 }
-                
-                if(parameters.Count > i && i >= 0)
+
+                if (parameters.Count > i && i >= 0)
                 {
                     if (parameters[i].ToLower() == "showargs")
                     {
-                        PLog.WriteLine("DEBUG: Args ");
-                        PLog.WriteLine("--------------------------------------------");
-                        PLog.WriteLine("Args = {0}\n", string.Join(" ", arg.ToArray()));
+                        showArgs = true;
                         parameters.Remove(parameters[i]);
                         i--;
                     }
                 }
+
+                if (parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showprocess")
+                    {
+                        showProcess = true;
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
+            }
+
+            if (showArgs == false && showGlobals == false && showSession == false)
+            {
+                showArgs = true;
+                PLog.WriteLine("\n");
+            }
+
+            if (showProcess == true)
+            {
+                PLog.WriteLine("DEBUG: Process ");
+                PLog.WriteLine("--------------------------------------------");
+                PLog.WriteLine("Process Name         = {0}", info.ProcessName);
+                PLog.WriteLine("Process Description  = {0}", info.ProcessDescription);
+                PLog.WriteLine("Process Path         = {0}", info.ProcessPath);
+                PLog.WriteLine("Process ID           = {0}", info.ProcessID);
+                PLog.WriteLine("Process Handle       = {0}", info.ProcessHandle.ToString("X"));
+                PLog.WriteLine("Process Architecture = {0}\n", info.ProcessMachineType.ToString());
+            }
+
+            if (showSession == true)
+            {
+                PLog.WriteLine("DEBUG: Session ");
+                PLog.WriteLine("--------------------------------------------");
+                string sessionText = File.ReadAllText((Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml").Replace("file:\\", ""));
+                PLog.WriteLine(sessionText + "\n");
+            }
+
+            if (showGlobals == true)
+            {
+                PLog.WriteLine("DEBUG: Globals ");
+                PLog.WriteLine("--------------------------------------------");
+                PLog.WriteLine("ASLR       = {0}", Globals.aslr.ToString());
+                PLog.WriteLine("SafeSEH    = {0}", Globals.safeseh.ToString());
+                PLog.WriteLine("Rebase     = {0}", Globals.rebase.ToString());
+                PLog.WriteLine("NXCompat   = {0}", Globals.nxcompat.ToString());
+                PLog.WriteLine("OSDll      = {0}", Globals.osdll.ToString());
+                PLog.WriteLine("Bytes      = {0}", ByteArrayToString(Globals.bytes));
+                PLog.WriteLine("Protection = {0}\n", Globals.protection);
+            }
+
+            if (showArgs == true)
+            {
+                PLog.WriteLine("DEBUG: Args ");
+                PLog.WriteLine("--------------------------------------------");
+                PLog.WriteLine("Args = {0}\n", string.Join(" ", arg.ToArray()));
+            }
+        }
+
+        private static void Debug(List<string> parameters)
+        {
+            List<string> arg = new List<string>();
+            arg.Add("ERC");
+            PLog.WriteLine("\n");
+
+            bool showSession = false;
+            bool showGlobals = false;
+            bool showArgs = false;
+
+            foreach (string s in parameters)
+            {
+                arg.Add(s);
+            }
+
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            if (parameters.Count == 0)
+            {
+                showSession = true;
+                showGlobals = true;
+                showArgs = true;
+            }
+
+            for (int i = 0; i < parameters.Count && i >= 0; i++)
+            {
+                if (parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showsession")
+                    {
+                        showSession = true;
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
+
+                if (parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showglobals")
+                    {
+                        showGlobals = true;
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
+
+                if (parameters.Count > i && i >= 0)
+                {
+                    if (parameters[i].ToLower() == "showargs")
+                    {
+                        showArgs = true;
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                }
+            }
+
+            if(showArgs == false && showGlobals == false && showSession == false)
+            {
+                showArgs = true;
+            }
+
+            if (showSession == true)
+            {
+                PLog.WriteLine("DEBUG: Session ");
+                PLog.WriteLine("--------------------------------------------");
+                string sessionText = File.ReadAllText((Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml").Replace("file:\\", ""));
+                PLog.WriteLine(sessionText + "\n");
+            }
+
+            if (showGlobals == true)
+            {
+                PLog.WriteLine("DEBUG: Globals ");
+                PLog.WriteLine("--------------------------------------------");
+                PLog.WriteLine("ASLR       = {0}", Globals.aslr.ToString());
+                PLog.WriteLine("SafeSEH    = {0}", Globals.safeseh.ToString());
+                PLog.WriteLine("Rebase     = {0}", Globals.rebase.ToString());
+                PLog.WriteLine("NXCompat   = {0}", Globals.nxcompat.ToString());
+                PLog.WriteLine("OSDll      = {0}", Globals.osdll.ToString());
+                PLog.WriteLine("Bytes      = {0}", ByteArrayToString(Globals.bytes));
+                PLog.WriteLine("Protection = {0}\n", Globals.protection);
+            }
+
+            if (showArgs == true)
+            {
+                PLog.WriteLine("DEBUG: Args ");
+                PLog.WriteLine("--------------------------------------------");
+                PLog.WriteLine("Args = {0}\n", string.Join(" ", arg.ToArray()));
             }
         }
     }
