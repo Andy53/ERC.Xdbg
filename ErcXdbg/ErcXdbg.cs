@@ -41,12 +41,6 @@ namespace ErcXdbg
         {
             Plugins._plugin_menuaddentry(setupStruct.hMenu, 0, "&About...");
             Plugins._plugin_menuaddentry(setupStruct.hMenu, 1, "&Help");
-            string sessionFile = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase) + "\\Session.xml";
-            sessionFile = sessionFile.Replace("file:\\", "");
-            if (File.Exists(sessionFile))
-            {
-                File.Delete(sessionFile);
-            }
         }
 
         [DllExport("CBMENUENTRY", CallingConvention.Cdecl)]
@@ -58,7 +52,7 @@ namespace ErcXdbg
                     Interaction.MsgBox("ERC Plugin For x64dbg\nCoded By Andy Bowden", MsgBoxStyle.OkOnly, "Info");
                     break;
                 case MENU_HELP:
-                    Interaction.MsgBox("https://github.com/Andy53/ERC.net", MsgBoxStyle.OkOnly, "Help");
+                    Interaction.MsgBox("https://github.com/Andy53/ERC.Xdbg", MsgBoxStyle.OkOnly, "Help");
                     break;
 
             }

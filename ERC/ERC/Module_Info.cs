@@ -250,7 +250,6 @@ namespace ERC
                 long MaxAddress = 0x7fffffff;
                 long address = (long)ModuleBase;
 
-                Console.WriteLine("At problem do while statment. Module Name = {0}", ModuleName);
                 if (!ProcessInfo.Is64Bit(process))
                 {
                     List<ERC.Structures.MEMORY_BASIC_INFORMATION32> ProcessMemoryBasicInfo32 = new List<ERC.Structures.MEMORY_BASIC_INFORMATION32>();

@@ -1031,6 +1031,7 @@ namespace ERC
                     output.Add(registerInfoText);
                 }
             }
+
             output = output.Distinct().ToList();
             File.WriteAllLines(fnrpFilename, output);
             return output;

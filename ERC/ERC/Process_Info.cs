@@ -1272,6 +1272,10 @@ namespace ERC
                 {
                     RegisterInfo regEdi = new RegisterInfo();
                     regEdi.Register = "EDI";
+                    if (ThreadsInfo[i].Context32.Edi > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Edi = ThreadsInfo[i].Context32.Edi - int.MaxValue;
+                    }
                     regEdi.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Edi;
                     regEdi.ThreadID = ThreadsInfo[i].ThreadID;
                     regEdi.StringOffset = -1;
@@ -1279,6 +1283,10 @@ namespace ERC
                     registers.Add(regEdi);
                     RegisterInfo regEsi = new RegisterInfo();
                     regEsi.Register = "ESI";
+                    if (ThreadsInfo[i].Context32.Esi > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Esi = ThreadsInfo[i].Context32.Esi - int.MaxValue;
+                    }
                     regEsi.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Esi;
                     regEsi.ThreadID = ThreadsInfo[i].ThreadID;
                     regEsi.StringOffset = -1;
@@ -1286,6 +1294,10 @@ namespace ERC
                     registers.Add(regEsi);
                     RegisterInfo regEbx = new RegisterInfo();
                     regEbx.Register = "EBX";
+                    if (ThreadsInfo[i].Context32.Ebx > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Ebx = ThreadsInfo[i].Context32.Ebx - int.MaxValue;
+                    }
                     regEbx.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Ebx;
                     regEbx.ThreadID = ThreadsInfo[i].ThreadID;
                     regEbx.StringOffset = -1;
@@ -1293,6 +1305,10 @@ namespace ERC
                     registers.Add(regEbx);
                     RegisterInfo regEdx = new RegisterInfo();
                     regEdx.Register = "EDX";
+                    if (ThreadsInfo[i].Context32.Edx > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Edx = ThreadsInfo[i].Context32.Edx - int.MaxValue;
+                    }
                     regEdx.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Edx;
                     regEdx.ThreadID = ThreadsInfo[i].ThreadID;
                     regEdx.StringOffset = -1;
@@ -1300,6 +1316,10 @@ namespace ERC
                     registers.Add(regEdx);
                     RegisterInfo regEcx = new RegisterInfo();
                     regEcx.Register = "ECX";
+                    if (ThreadsInfo[i].Context32.Ecx > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Ecx = ThreadsInfo[i].Context32.Ecx - int.MaxValue;
+                    }
                     regEcx.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Ecx;
                     regEcx.ThreadID = ThreadsInfo[i].ThreadID;
                     regEcx.StringOffset = -1;
@@ -1307,13 +1327,21 @@ namespace ERC
                     registers.Add(regEcx);
                     RegisterInfo regEax = new RegisterInfo();
                     regEax.Register = "EAX";
-                    regEax.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Eax;
+                    if(ThreadsInfo[i].Context32.Eax > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Eax = ThreadsInfo[i].Context32.Eax - int.MaxValue;
+                    }
+                    regEax.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Eax; //Arith problem here
                     regEax.ThreadID = ThreadsInfo[i].ThreadID;
                     regEax.StringOffset = -1;
                     regEax.RegisterOffset = -1;
                     registers.Add(regEax);
                     RegisterInfo regEsp = new RegisterInfo();
                     regEsp.Register = "ESP";
+                    if (ThreadsInfo[i].Context32.Esp > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Esp = ThreadsInfo[i].Context32.Esp - int.MaxValue;
+                    }
                     regEsp.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Esp;
                     regEsp.ThreadID = ThreadsInfo[i].ThreadID;
                     regEsp.StringOffset = -1;
@@ -1321,6 +1349,10 @@ namespace ERC
                     registers.Add(regEsp);
                     RegisterInfo regEbp = new RegisterInfo();
                     regEbp.Register = "EBP";
+                    if (ThreadsInfo[i].Context32.Ebp > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Ebp = ThreadsInfo[i].Context32.Ebp - int.MaxValue;
+                    }
                     regEbp.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Ebp;
                     regEbp.ThreadID = ThreadsInfo[i].ThreadID;
                     regEbp.StringOffset = -1;
@@ -1328,6 +1360,10 @@ namespace ERC
                     registers.Add(regEbp);
                     RegisterInfo regEIP = new RegisterInfo();
                     regEIP.Register = "EIP";
+                    if (ThreadsInfo[i].Context32.Eip > int.MaxValue)
+                    {
+                        ThreadsInfo[i].Context32.Eip = ThreadsInfo[i].Context32.Eip - int.MaxValue;
+                    }
                     regEIP.RegisterValue = (IntPtr)ThreadsInfo[i].Context32.Eip;
                     regEIP.ThreadID = ThreadsInfo[i].ThreadID;
                     registers.Add(regEIP);
@@ -1462,6 +1498,13 @@ namespace ERC
                                             SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j]);
                                             break;
                                         case 1:
+                                            if(sehChain.ReturnValue[j][0] == 0x00)
+                                            {
+                                                byte[] newSEH = new byte[sehChain.ReturnValue[j].Length];
+                                                Array.Copy(sehChain.ReturnValue[j], 1, newSEH, 0, sehChain.ReturnValue[j].Length - 1);
+                                                newSEH[newSEH.Length - 1] = 0x00;
+                                                sehChain.ReturnValue[j] = newSEH;
+                                            }
                                             SEHValue = Encoding.Unicode.GetString(sehChain.ReturnValue[j]);
                                             break;
                                         case 2:
@@ -1482,14 +1525,19 @@ namespace ERC
                                     }
                                     char[] sehArray = SEHValue.ToCharArray();
                                     Array.Reverse(sehArray);
-                                    SEHValue = new string(sehArray);
-                                    Array.Reverse(sehArray);
                                     string ReversedSEHValue = new string(sehArray);
                                     RegisterInfo SEH = new RegisterInfo();
-                                    if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue));
+                                    if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue))
                                     {
                                         SEH.Register = "SEH" + i.ToString();
-                                        SEH.StringOffset = pattern.IndexOf(SEHValue);
+                                        if (pattern.Contains(ReversedSEHValue))
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(ReversedSEHValue);
+                                        }
+                                        else
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(SEHValue);
+                                        }
                                         SEH.ThreadID = ThreadsInfo[i].ThreadID;
                                         SEH.RegisterValue = (IntPtr)BitConverter.ToInt32(sehChain.ReturnValue[j], 0);
                                         registers.Add(SEH);
@@ -1774,14 +1822,19 @@ namespace ERC
                                     }
                                     char[] sehArray = SEHValue.ToCharArray();
                                     Array.Reverse(sehArray);
-                                    SEHValue = new string(sehArray);
-                                    Array.Reverse(sehArray);
                                     string ReversedSEHValue = new string(sehArray);
                                     RegisterInfo SEH = new RegisterInfo();
                                     if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue)) ;
                                     {
                                         SEH.Register = "SEH" + i.ToString();
-                                        SEH.StringOffset = pattern.IndexOf(SEHValue);
+                                        if (pattern.Contains(ReversedSEHValue))
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(ReversedSEHValue);
+                                        }
+                                        else
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(SEHValue);
+                                        }
                                         SEH.ThreadID = ThreadsInfo[i].ThreadID;
                                         SEH.RegisterValue = (IntPtr)BitConverter.ToInt64(sehChain.ReturnValue[j], 0);
                                         registers.Add(SEH);
