@@ -87,7 +87,7 @@ Sets the character encoding as Unicode. All search functions will seach for text
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Unicode` Changes the default characters encoding to Unicode.     
     
 `-UTF7`
-Sets the character encoding as UTF-7. All search functions will seach for text in UTF-7.
+Sets the character encoding as UTF-7. All search functions will seach for text in UTF-7.          
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -UTF7` Changes the default characters encoding to UTF-7.          
     
 `-UTF8`
