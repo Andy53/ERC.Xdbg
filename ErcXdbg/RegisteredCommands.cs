@@ -1555,10 +1555,9 @@ namespace ErcXdbg
                 }
             }
 
-            //int searchType = 0;
+            int searchType = 0;
             string searchString = "";
 
-            /*
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i] == "0" || parameters[i] == "1" || parameters[i] == "2" ||
@@ -1569,10 +1568,9 @@ namespace ErcXdbg
                     i--;
                 }
             }
-            */
 
             searchString = string.Join("", parameters);
-            var output = ERC.DisplayOutput.SearchMemory(info, (int)Globals.encode, searchString, Globals.aslr, Globals.safeseh, Globals.rebase, Globals.nxcompat,
+            var output = ERC.DisplayOutput.SearchMemory(info, searchType, searchString, Globals.aslr, Globals.safeseh, Globals.rebase, Globals.nxcompat,
                 Globals.osdll, Globals.bytes, Globals.protection) ;
             foreach(string s in output)
             {
@@ -1642,11 +1640,25 @@ namespace ErcXdbg
 
             if(Globals.bytes.Length > 0)
             {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection);
+                if(Globals.encode == Encoding.Unicode)
+                {
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection);
+                }
+                else
+                {
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection);
+                }
             }
             else
             {
-                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection);
+                if (Globals.encode == Encoding.Unicode)
+                {
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection);
+                }
+                else
+                {
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection);
+                } 
             }
 
             foreach(string s in sehJumpAddresses)

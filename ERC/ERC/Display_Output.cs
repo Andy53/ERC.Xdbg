@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -591,59 +592,67 @@ namespace ERC
             byte[] ppr = new byte[5];
             int bytesread = 0;
 
-            foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
+            if(ptrs.ReturnValue.Count > 0)
             {
-                string holder = "";
-                List<byte> opcodes = new List<byte>();
-                try
+                foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
                 {
-                    ErcCore.ReadProcessMemory(info.ProcessHandle, s.Key, ppr, ppr.Length, out bytesread);
-                    for (int i = 0; i < 5; i++)
+                    string holder = "";
+                    List<byte> opcodes = new List<byte>();
+                    try
                     {
-                        if (ppr[i].Equals(0xC3))
+                        ErcCore.ReadProcessMemory(info.ProcessHandle, s.Key, ppr, ppr.Length, out bytesread);
+                        for (int i = 0; i < 5; i++)
                         {
-                            for (int j = 0; j <= i; j++)
+                            if (ppr[i].Equals(0xC3))
                             {
-                                opcodes.Add(ppr[j]);
+                                for (int j = 0; j <= i; j++)
+                                {
+                                    opcodes.Add(ppr[j]);
+                                }
+                                ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
+                                var result = disas.Disassemble(opcodes.ToArray());
+                                if (info.ProcessMachineType == ERC.MachineType.I386)
+                                {
+                                    holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                    int index = holder.IndexOf("ret");
+                                    holder = holder.Substring(0, index + 3);
+                                    holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
+
+                                }
+                                else
+                                {
+                                    holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                    int index = holder.IndexOf("ret");
+                                    holder = holder.Substring(0, index + 3);
+                                    holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
+                                }
+                                opcodes.Clear();
                             }
-                            ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
-                            var result = disas.Disassemble(opcodes.ToArray());
-                            if(info.ProcessMachineType == ERC.MachineType.I386)
-                            {
-                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
-                                int index = holder.IndexOf("ret");
-                                holder = holder.Substring(0, index+3);
-                                holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
-                                
-                            }
-                            else
-                            {
-                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
-                                int index = holder.IndexOf("ret");
-                                holder = holder.Substring(0, index+3);
-                                holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
-                            }
-                            opcodes.Clear();
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-
-                for (int i = 0; i < info.ModulesInfo.Count; i++)
-                {
-                    if (info.ModulesInfo[i].ModulePath == s.Value)
+                    catch (Exception e)
                     {
-                        holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
-                            info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
-                            info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
-                            info.ModulesInfo[i].ModulePath);
+                        throw e;
                     }
+
+                    for (int i = 0; i < info.ModulesInfo.Count; i++)
+                    {
+                        if (info.ModulesInfo[i].ModulePath == s.Value)
+                        {
+                            holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
+                                info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath);
+                        }
+                    }
+                    ret.Add(holder);
                 }
-                ret.Add(holder);
             }
+            else
+            {
+                ret.Add("No compliant POP POP RET instuctions were found.");
+            }
+            
             File.WriteAllLines(sehFilename, ret);
             return ret;
         }
@@ -689,58 +698,229 @@ namespace ERC
             }
             byte[] ppr = new byte[5];
             int bytesread = 0;
-            foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
-            {
-                string holder = "";
-                List<byte> opcodes = new List<byte>();
-                try
-                {
-                    ErcCore.ReadProcessMemory(info.ProcessHandle, s.Key, ppr, ppr.Length, out bytesread);
-                    for (int i = 0; i < 5; i++)
-                    {
-                        if (ppr[i].Equals(0xC3))
-                        {
-                            for (int j = 0; j <= i; j++)
-                            {
-                                opcodes.Add(ppr[j]);
-                            }
-                            ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
-                            var result = disas.Disassemble(opcodes.ToArray());
-                            if (info.ProcessMachineType == ERC.MachineType.I386)
-                            {
-                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
-                                int index = holder.IndexOf("ret");
-                                holder = holder.Substring(0, index + 3);
-                                holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
 
-                            }
-                            else
+            if(ptrs.ReturnValue.Count > 0)
+            {
+                foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
+                {
+                    string holder = "";
+                    List<byte> opcodes = new List<byte>();
+                    try
+                    {
+                        ErcCore.ReadProcessMemory(info.ProcessHandle, s.Key, ppr, ppr.Length, out bytesread);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (ppr[i].Equals(0xC3))
                             {
-                                holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
-                                int index = holder.IndexOf("ret");
-                                holder = holder.Substring(0, index + 3);
-                                holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
+                                for (int j = 0; j <= i; j++)
+                                {
+                                    opcodes.Add(ppr[j]);
+                                }
+                                ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
+                                var result = disas.Disassemble(opcodes.ToArray());
+                                if (info.ProcessMachineType == ERC.MachineType.I386)
+                                {
+                                    holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                    int index = holder.IndexOf("ret");
+                                    holder = holder.Substring(0, index + 3);
+                                    holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
+
+                                }
+                                else
+                                {
+                                    holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                    int index = holder.IndexOf("ret");
+                                    holder = holder.Substring(0, index + 3);
+                                    holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
+                                }
+                                opcodes.Clear();
                             }
-                            opcodes.Clear();
                         }
                     }
-                }
-                catch (Exception e)
-                {
-                    throw e;
-                }
-                for (int i = 0; i < info.ModulesInfo.Count; i++)
-                {
-                    if (info.ModulesInfo[i].ModulePath == s.Value)
+                    catch (Exception e)
                     {
-                        holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
-                            info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
-                            info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
-                            info.ModulesInfo[i].ModulePath);
+                        throw e;
+                    }
+                    for (int i = 0; i < info.ModulesInfo.Count; i++)
+                    {
+                        if (info.ModulesInfo[i].ModulePath == s.Value)
+                        {
+                            holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
+                                info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath);
+                        }
+                    }
+                    ret.Add(holder);
+                }
+            }
+            else
+            {
+                ret.Add("No compliant POP POP RET instuctions were found.");
+            }
+            
+            File.WriteAllLines(sehFilename, ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
+        /// Passing a list of module paths or names will exclude those modules from the search. 
+        /// Similar to Search_All_Memory_PPR however provides output in an easily readable format. This version only returns unicode compliant pointers.
+        /// </summary>
+        /// <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions.</param>
+        /// <param name="aslr">Remove ASLR libraries.</param>
+        /// <param name="safeseh">Remove SafeSEH libraries.</param>
+        /// <param name="rebase">Remove rebasable libraries.</param>
+        /// <param name="nxcompat">Remove NXCompat libraries.</param>
+        /// <param name="osdll">Remove OS Dlls.</param>
+        /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+        /// <param name="protection">String containing protection level returned pointers will.</param>
+        /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+        public static List<string> GetSEHJumpsUnicode(ProcessInfo info, bool aslr = false,
+            bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
+            byte[] unwantedBytes = null, string protection = "exec")
+        {
+            List<string> ret = new List<string>();
+            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludedModules);
+
+            if (unwantedBytes != null)
+            {
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
+                pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        ptrs.ReturnValue.Remove(k.Key);
                     }
                 }
-                ret.Add(holder);
             }
+            else
+            {
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, p, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in ptrs.ReturnValue.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        ptrs.ReturnValue.Remove(k.Key);
+                    }
+                }
+            }
+
+            byte[] managedArray = new byte[IntPtr.Size];
+            
+            foreach (KeyValuePair<IntPtr, string> entry in ptrs.ReturnValue.ToList())
+            {
+                managedArray = BitConverter.GetBytes((uint)entry.Key);
+                if (!(managedArray[0] == 0x00 && managedArray[2] == 0x00) && !(managedArray[1] == 0x00 && managedArray[3] == 0x00))
+                {
+                    ptrs.ReturnValue.Remove(entry.Key);
+                }
+            }
+
+            string sehFilename = GetFilePath(info.WorkingDirectory, "SEH_jumps_", ".txt");
+            ret.Add("---------------------------------------------------------------------------------------");
+            if (info.Author != "No_Author_Set")
+            {
+                ret.Add("Process Name: " + info.ProcessName + " Created by: " + info.Author + " " +
+                "Total Results: " + ptrs.ReturnValue.Count);
+            }
+            else
+            {
+                ret.Add("Process Name: " + info.ProcessName + " Total Results: " + ptrs.ReturnValue.Count);
+            }
+            ret.Add("---------------------------------------------------------------------------------------");
+
+            if (ptrs.Error != null)
+            {
+                throw new Exception("Error passed from Search_All_Memory_PPR: " + ptrs.Error.ToString());
+            }
+            if (info.ProcessMachineType == ERC.MachineType.I386)
+            {
+                ret.Add("  Address  |      Instructions     | ASLR | SafeSEH  | Rebase  | NXCompat |  OsDLL | Module Path");
+            }
+            else
+            {
+                ret.Add("      Address      |      Instructions     | ASLR | SafeSEH  | Rebase  | NXCompat |  OsDLL | Module Path");
+            }
+            byte[] ppr = new byte[5];
+            int bytesread = 0;
+
+            if(ptrs.ReturnValue.Count > 0)
+            {
+                foreach (KeyValuePair<IntPtr, string> s in ptrs.ReturnValue)
+                {
+                    string holder = "";
+                    List<byte> opcodes = new List<byte>();
+                    try
+                    {
+                        ErcCore.ReadProcessMemory(info.ProcessHandle, s.Key, ppr, ppr.Length, out bytesread);
+                        for (int i = 0; i < 5; i++)
+                        {
+                            if (ppr[i].Equals(0xC3))
+                            {
+                                for (int j = 0; j <= i; j++)
+                                {
+                                    opcodes.Add(ppr[j]);
+                                }
+                                ERC.Utilities.OpcodeDisassembler disas = new ERC.Utilities.OpcodeDisassembler(info);
+                                var result = disas.Disassemble(opcodes.ToArray());
+                                if (info.ProcessMachineType == ERC.MachineType.I386)
+                                {
+                                    holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                    int index = holder.IndexOf("ret");
+                                    holder = holder.Substring(0, index + 3);
+                                    holder = "0x" + s.Key.ToString("x8") + " | " + holder + " ";
+
+                                }
+                                else
+                                {
+                                    holder = result.ReturnValue.Replace(Environment.NewLine, ", ");
+                                    int index = holder.IndexOf("ret");
+                                    holder = holder.Substring(0, index + 3);
+                                    holder = "0x" + s.Key.ToString("x16") + " | " + holder + " ";
+                                }
+                                opcodes.Clear();
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        throw e;
+                    }
+
+                    for (int i = 0; i < info.ModulesInfo.Count; i++)
+                    {
+                        if (info.ModulesInfo[i].ModulePath == s.Value)
+                        {
+                            holder += String.Format("| {0} |  {1}   |  {2}   |   {3}   |  {4}  |  {5} ",
+                                info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath);
+                        }
+                    }
+                    ret.Add(holder);
+                }
+            }
+            else
+            {
+                ret.Add("No Unicode compliant POP POP RET instructions were found.");
+            }
+            
             File.WriteAllLines(sehFilename, ret);
             return ret;
         }

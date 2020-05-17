@@ -71,8 +71,33 @@ Used to exploit pointers containing specific bytes from all search results. Can 
 Used to specify the protection value of all pointers returned in search results. Generic values of `read`, `write` and `exec` are used to specify which the returned pointers should have and can be used in combination. Options must be separated with commas and no spaces.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection exec` Remove pointers that do not have exec permission from all search results.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection read,exec` Remove pointers that do not have read and exec permission from all search results.    
-&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection all` Remove any previous protection restrictions from all further search results.
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Protection all` Remove any previous protection restrictions from all further search results.       
+     
+`-Extended`     
+Used to specify that the extended character set should be used when using FindNRP and Pattern create and offset functionality. Can be reset by supplying `false` as a parameter.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Extended` Replaces the standard character set with the extended character set.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Extended false` Resets to the standard characters set.    
+    
+`-ASCII`
+Sets the character encoding as ASCII. All search functions will seach for text in ASCII.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -ASCII` Changes the default characters encoding to ASCII.     
+     
+`-Unicode`
+Sets the character encoding as Unicode. All search functions will seach for text in Unicode.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -Unicode` Changes the default characters encoding to Unicode.     
+    
+`-UTF7`
+Sets the character encoding as UTF-7. All search functions will seach for text in UTF-7.
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -UTF7` Changes the default characters encoding to UTF-7.          
+    
+`-UTF8`
+Sets the character encoding as UTF-8. All search functions will seach for text in UTF-8.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -UTF8` Changes the default characters encoding to UTF-8.     
 
+`-UTF32`
+Sets the character encoding as UTF-32. All search functions will seach for text in UTF-32.          
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help -UTF32` Changes the default characters encoding to UTF-32.     
+    
 ## Usage
 Instructions on usage of the plugin can be seen below. This can also be accessed directly through the debugger using `ERC --help`. 
 
