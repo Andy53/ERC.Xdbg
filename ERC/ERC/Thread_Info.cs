@@ -152,7 +152,7 @@ namespace ERC
                     ErcCore.GetThreadContext32(ThreadHandle, ref Context32);
                     if (new Win32Exception(Marshal.GetLastWin32Error()).Message != "The operation completed successfully")
                     {
-                        throw new ERCException("Win32 Exception encountered when attempting to get thread context" +
+                        throw new ERCException("Win32 Exception encountered when attempting to get thread context: " +
                             new Win32Exception(Marshal.GetLastWin32Error()).Message);
                     }
                 }
