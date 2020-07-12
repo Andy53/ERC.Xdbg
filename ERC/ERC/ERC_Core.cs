@@ -330,8 +330,8 @@ namespace ERC
             PatternExtendedPath = "";
             SystemErrorLogPath = Path.Combine(WorkingDirectory, "System_Error.LOG");
             
-            ErcVersion = "ERC.Xdbg_32-1.3"; //Uncomment for 32bit.
-            //ErcVersion = "ERC.Xdbg_64-1.3"; //Uncomment for 32bit.
+            //ErcVersion = "ERC.Xdbg_32-1.3"; //Uncomment for 32bit.
+            ErcVersion = "ERC.Xdbg_64-1.3"; //Uncomment for 32bit.
 
             bool configRead = false;
             while (configRead == false)
@@ -706,7 +706,7 @@ namespace ERC
         {
             using (StreamWriter sw = File.AppendText(base.SystemErrorLogPath))
             {
-                sw.WriteLine(Error);
+                sw.WriteLine(Error + " TimeStamp: " + DateTime.Now);
             }
         }
 

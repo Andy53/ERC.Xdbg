@@ -99,8 +99,8 @@ namespace ERC
                 Context64.ContextFlags = CONTEXT_FLAGS.CONTEXT_ALL;
                 try
                 {
-                    ErcCore.GetThreadContext64(ThreadHandle, ref Context64);
-                    if(new Win32Exception(Marshal.GetLastWin32Error()).Message != "The operation completed successfully")
+                    bool returnVar = ErcCore.GetThreadContext64(ThreadHandle, ref Context64);
+                    if(returnVar == false)
                     {
                         throw new ERCException("Win32 Exception encountered when attempting to get thread context" + 
                             new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -124,8 +124,8 @@ namespace ERC
                 Context32.ContextFlags = CONTEXT_FLAGS.CONTEXT_ALL;
                 try
                 {
-                    ErcCore.Wow64GetThreadContext(ThreadHandle, ref Context32);
-                    if (new Win32Exception(Marshal.GetLastWin32Error()).Message != "The operation completed successfully")
+                    bool returnVar = ErcCore.Wow64GetThreadContext(ThreadHandle, ref Context32);
+                    if (returnVar == false)
                     {
                         throw new ERCException("Win32 Exception encountered when attempting to get thread context" +
                             new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -149,8 +149,8 @@ namespace ERC
                 Context32.ContextFlags = CONTEXT_FLAGS.CONTEXT_ALL;
                 try
                 {
-                    ErcCore.GetThreadContext32(ThreadHandle, ref Context32);
-                    if (new Win32Exception(Marshal.GetLastWin32Error()).Message != "The operation completed successfully")
+                    bool returnVar = ErcCore.GetThreadContext32(ThreadHandle, ref Context32);
+                    if (returnVar == false)
                     {
                         throw new ERCException("Win32 Exception encountered when attempting to get thread context: " +
                             new Win32Exception(Marshal.GetLastWin32Error()).Message);
