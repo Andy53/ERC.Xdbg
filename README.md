@@ -34,6 +34,7 @@ A list of articles covering common usage scenarios using ERC.Xdbg.
 [📄 The Basics of Exploit Development 2: SEH Overflows](https://www.coalfire.com/The-Coalfire-Blog/March-2020/The-Basics-of-Exploit-Development-2-SEH-Overflows)     
 [📄 The Basics of Exploit Development 3: Egg Hunters](https://www.coalfire.com/The-Coalfire-Blog/May-2020/The-Basics-of-Exploit-Development-3-Egg-Hunters)   
 [📄 The Basics of Exploit Development 4: Unicode Overflows](https://www.coalfire.com/The-Coalfire-Blog/July-2020/The-Basics-of-Exploit-Development-4-Unicode-Overfl)       
+[📄 The Basics of Exploit Development 5: x86-64 Buffer Overflows](https://www.coalfire.com/the-coalfire-blog/september-2020/the-basics-of-exploit-development-5-x86-64-buffer)     
 
 ## Globals
 Global variables are variables which are set and stored for one session. They are reset to the defaults each time X64dbg is restarted.     
