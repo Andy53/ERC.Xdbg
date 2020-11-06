@@ -15,6 +15,8 @@ Installing the plugin is reasonably straight forward. Simply download the approp
 
 If you wish to build the plugin from source simply clone the Git repository, open the solution in Visual Studio and build the project targeted for your architecture of choice. Then copy the binaries into the plugins directory of your X64dbg installation.
 
+It should be noted that if you are running Windows you will need to ensure [.Net Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472) is installed on your system or X64dbg will crash immediately on startup.     
+
 ## Documentation
 This library contains the fundamental specifications, documentation, and architecture that underpin ERC.Xdbg. If you're looking to understand the system better, or want to know how to integrate the various components, there is a lot of valuable information contained here.    
 
