@@ -1706,11 +1706,13 @@ namespace ErcXdbg
 
         private static void rop(ERC.ProcessInfo info)
         {
+            PLog.WriteLine("This functionality is not yet implemented.");
+            /*
             ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
             try
             {
                 PLog.WriteLine("Generating ROP chain files, this could take some time...");
-                RCG.GenerateRopChain64();             //Uncomment if 64 bit
+                //RCG.GenerateRopChain64();             //Uncomment if 64 bit
                 //RCG.GenerateRopChain32();             //Uncomment if 32 bit
                 PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
             }
@@ -1723,6 +1725,7 @@ namespace ErcXdbg
                 RCG = null;
                 GC.Collect();
             }
+            */
             
             return;
         }
