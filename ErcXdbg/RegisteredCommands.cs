@@ -138,7 +138,8 @@ namespace ErcXdbg
             help += "   -OSDLL          |\n";
             help += "       Excludes OSDLL enabled modules from all searches. Can be disabled by passing \"false\". -OSDLL false\n";
             help += "   -Bytes          |\n";
-            help += "       Excludes bytes from pointers returned in searches. Disabled by passing without any bytes.\n";
+            help += "       Excludes bytes from pointers returned in searches and from being added to bytearrays. Disabled by passing\n"; 
+            help += "       without any bytes.\n";
             help += "   -Protection     |\n";
             help += "       Defines the protection level of pointers to be included search results. Default is exec. This\n";
             help += "       allows only executable pointers to be returned in search results. A value must be provided with this switch,\n";
@@ -163,6 +164,7 @@ namespace ErcXdbg
             help += "           SetExtendedPattern  (ERC --config SetExtendedPattern file)\n";
             help += "           SetAuthor           (ERC --config SetAuthor author)\n";
             help += "           SetErrorFilePath    (ERC --config SetErrorFilePath file)\n";
+            help += "       Passed without parameters will print all Get requests.\n";
             help += "   --Pattern       |\n";
             help += "       Generates a non repeating pattern. A pattern of pure ASCII characters can be generated up to 20277 and up to  \n";
             help += "       66923 if special characters are used. The offset of a particular string can be found inside the pattern by \n";
@@ -171,7 +173,7 @@ namespace ErcXdbg
             help += "           Pattern offset: ERC --pattern <offset | o> <search string>\n";
             help += "   --Bytearray     |\n";
             help += "       Generates a bytearray which is saved to the working directory and displayed in the application log tab. A set \n";
-            help += "       of hex characters can be provided which will be excluded from the bytearray.\n";
+            help += "       of hex characters can be provided to the -byte global which will be excluded from the bytearray.\n";
             help += "   --Compare       |\n";
             help += "       Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory \n";
             help += "       from which to start the search and a filepath for the binary file\n";
@@ -219,6 +221,8 @@ namespace ErcXdbg
             help += "       pattern will be used which includes special characters.\n";
             help += "   --Rop           |\n";
             help += "       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...\n";
+            help += "   --Reset         |\n";
+            help += "       Clears all global variables and user defined configurations.";
             PLog.WriteLine(help);
         }
 
@@ -343,6 +347,9 @@ namespace ErcXdbg
                         return;
                     case "--debug":
                         Debug(info, parameters);
+                        return;
+                    case "--reset":
+                        Reset(info, parameters);
                         return;
                     default:
                         PrintHelp("The command was not structured correctly: Option is not supported. ERC <option> <parameters>");
@@ -877,7 +884,7 @@ namespace ErcXdbg
         private static void Config(List<string> parameters, ERC.ErcCore core)
         {
             PLog.WriteLine("ERC --Config");
-            PLog.WriteLine("----------------------------------------------------------------------");
+            PLog.WriteLine("--------------------------------------------");
             for (int i = 0; i < parameters.Count; i++)
             {
                 if (parameters[i].Contains("--"))
@@ -886,37 +893,51 @@ namespace ErcXdbg
                 }
             }
 
+            if(parameters.Count == 0)
+            {
+                PLog.WriteLine("Configuration Settings:");
+                PLog.WriteLine("Working Directory = {0}", core.WorkingDirectory);
+                PLog.WriteLine("ERC Version = {0}", core.ErcVersion);
+                PLog.WriteLine("Author = {0}", core.Author);
+                PLog.WriteLine("Error Log File = {0}", core.SystemErrorLogPath);
+                PLog.WriteLine("Standard Pattern Location = {0}", core.PatternStandardPath);
+                PLog.WriteLine("Standard Pattern Location = {0}", core.PatternExtendedPath);
+                //return null;
+                PLog.WriteLine("--------------------------------------------");
+                return;
+            }
+            
             switch (parameters[0].ToLower())
             {
                 case "getworkingdirectory":
                     PLog.WriteLine("Working Directory = {0}", core.WorkingDirectory);
                     //return core.WorkingDirectory;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "getversion":
                     PLog.WriteLine("ERC Version = {0}", core.ErcVersion);
                     //return core.ErcVersion;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "getauthor":
                     PLog.WriteLine("Author = {0}", core.Author);
                     //return core.Author;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "geterrorlogpath":
                     PLog.WriteLine("Error Log File = {0}", core.SystemErrorLogPath);
                     //return core.SystemErrorLogPath;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "getstandardpattern":
                     PLog.WriteLine("Standard Pattern Location = {0}", core.PatternStandardPath);
                     //return core.PatternStandardPath;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "getextendedpattern":
                     PLog.WriteLine("Standard Pattern Location = {0}", core.PatternExtendedPath);
                     //return core.PatternExtendedPath;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "setworkingdirectory":
                     if(parameters.Count == 2)
@@ -925,19 +946,19 @@ namespace ErcXdbg
                         {
                             core.SetWorkingDirectory(parameters[1]);
                             PLog.WriteLine("New Working Directory = {0}", core.WorkingDirectory);
-                            PLog.WriteLine("----------------------------------------------------------------------");
+                            PLog.WriteLine("--------------------------------------------");
                             return;
                         }
                         else
                         {
                             PrintHelp("Please provide a valid directory.");
-                            PLog.WriteLine("----------------------------------------------------------------------");
+                            PLog.WriteLine("--------------------------------------------");
                         }
                     }
                     else
                     {
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetWorkingDirectory <PATH>");
-                        PLog.WriteLine("----------------------------------------------------------------------");
+                        PLog.WriteLine("--------------------------------------------");
                     }
                     //return core.WorkingDirectory;
                     return;
@@ -959,7 +980,7 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetAuthor <Author>");
                     }
                     //return core.Author;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "seterrorlogpath":
                     if (parameters.Count == 2)
@@ -977,7 +998,7 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetErrorLogPath <PATH>");
                     }
                     //return core.SystemErrorLogPath;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "setstandardpattern":
                     if (parameters.Count == 2)
@@ -995,7 +1016,7 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetStandardPattern <PATH>");
                     }
                     //return core.PatternStandardPath;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 case "setextendedpattern":
                     if (parameters.Count == 2)
@@ -1013,12 +1034,18 @@ namespace ErcXdbg
                         PLog.WriteLine("Error incorrect number of arguments. Use ERC --config SetExtendedPattern <PATH>");
                     }
                     //return core.PatternExtendedPath;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
                 default:
-                    PrintHelp("A syntax error was encountered when parsing the config command. Please review the documentation");
+                    PLog.WriteLine("Configuration Settings:");
+                    PLog.WriteLine("Working Directory = {0}", core.WorkingDirectory);
+                    PLog.WriteLine("ERC Version = {0}", core.ErcVersion);
+                    PLog.WriteLine("Author = {0}", core.Author);
+                    PLog.WriteLine("Error Log File = {0}", core.SystemErrorLogPath);
+                    PLog.WriteLine("Standard Pattern Location = {0}", core.PatternStandardPath);
+                    PLog.WriteLine("Standard Pattern Location = {0}", core.PatternExtendedPath);
                     //return null;
-                    PLog.WriteLine("----------------------------------------------------------------------");
+                    PLog.WriteLine("--------------------------------------------");
                     return;
             }
         }
@@ -1787,6 +1814,7 @@ namespace ErcXdbg
             bool showArgs = false;
             bool showProcess = false;
             bool showSystem = false;
+            bool showConfig = false;
 
             foreach (string s in parameters)
             {
@@ -1807,6 +1835,7 @@ namespace ErcXdbg
                 showArgs = true;
                 showProcess = true;
                 showSystem = true;
+                showConfig = true;
             }
 
             for (int i = 0; i < parameters.Count && i >= 0; i++)
@@ -1914,6 +1943,12 @@ namespace ErcXdbg
                 PLog.WriteLine("DEBUG: Args ");
                 PLog.WriteLine("--------------------------------------------");
                 PLog.WriteLine("Args = {0}\n", string.Join(" ", arg.ToArray()));
+            }
+
+            if(showConfig == true)
+            {
+                List<string> nullParams = new List<string>();
+                Config(nullParams, info);
             }
         }
 
@@ -2030,6 +2065,26 @@ namespace ErcXdbg
                 PLog.WriteLine("--------------------------------------------");
                 PLog.WriteLine("Args = {0}\n", string.Join(" ", arg.ToArray()));
             }
+        }
+
+        private static void Reset(ERC.ProcessInfo info, List<string> parameters)
+        {
+            Globals.aslr = false;
+            Globals.safeseh = false;
+            Globals.rebase = false;
+            Globals.nxcompat = false;
+            Globals.osdll = false;
+            Globals.extended = false;
+            Globals.encode = Encoding.ASCII;
+            Globals.bytes = new byte[0];
+            Globals.protection = "read,write";
+
+            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+            path = path.Replace("file:\\", "");
+            File.Delete(path + "ERC_Config.xml");
+
+            PLog.WriteLine("ERC Rests: All configuration settings have been reset to the default values.");
+            PLog.WriteLine("--------------------------------------------");
         }
     }
 }
