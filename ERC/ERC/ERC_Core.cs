@@ -330,8 +330,8 @@ namespace ERC
             PatternExtendedPath = "";
             SystemErrorLogPath = Path.Combine(WorkingDirectory, "System_Error.LOG");
             
-            //ErcVersion = "ERC.Xdbg_32-1.4"; //Uncomment for 32bit.
-            ErcVersion = "ERC.Xdbg_64-1.4"; //Uncomment for 32bit.
+            ErcVersion = "ERC.Xdbg_32-1.3"; //Uncomment for 32bit.
+            //ErcVersion = "ERC.Xdbg_64-1.3"; //Uncomment for 32bit.
 
             bool configRead = false;
             while (configRead == false)
@@ -436,7 +436,6 @@ namespace ERC
 
         private void BuildDefaultConfig()
         {
-            Console.WriteLine("Building ERC_Config.XML file");
             string patternStandardPath = Path.Combine(WorkingDirectory, "Pattern_Standard");
             string patternExtendedPath = Path.Combine(WorkingDirectory, "Pattern_Extended");
             string systemErrorLogPath = Path.Combine(WorkingDirectory, "System_Error.LOG");

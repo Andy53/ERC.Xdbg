@@ -1492,54 +1492,99 @@ namespace ERC
                                 for (int j = 0; j < sehChain.ReturnValue.Count; j++)
                                 {
                                     string SEHValue = "";
+                                    string nSEHValue = "";
                                     switch (searchType)
                                     {
                                         case 0:
-                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 1:
-                                            if(sehChain.ReturnValue[j][0] == 0x00)
+                                            byte[] sehHolder1 = sehChain.ReturnValue[j].Item1;
+                                            byte[] sehHolder2 = sehChain.ReturnValue[j].Item2;
+                                            if (sehChain.ReturnValue[j].Item1[0] == 0x00)
                                             {
-                                                byte[] newSEH = new byte[sehChain.ReturnValue[j].Length];
-                                                Array.Copy(sehChain.ReturnValue[j], 1, newSEH, 0, sehChain.ReturnValue[j].Length - 1);
+                                                byte[] newSEH = new byte[sehChain.ReturnValue[j].Item1.Length];
+                                                Array.Copy(sehChain.ReturnValue[j].Item1, 1, newSEH, 0, sehChain.ReturnValue[j].Item1.Length - 1);
                                                 newSEH[newSEH.Length - 1] = 0x00;
-                                                sehChain.ReturnValue[j] = newSEH;
+                                                sehHolder1 = newSEH;
                                             }
-                                            SEHValue = Encoding.Unicode.GetString(sehChain.ReturnValue[j]);
+                                            if (sehChain.ReturnValue[j].Item2[0] == 0x00)
+                                            {
+                                                byte[] newSEH = new byte[sehChain.ReturnValue[j].Item2.Length];
+                                                Array.Copy(sehChain.ReturnValue[j].Item2, 1, newSEH, 0, sehChain.ReturnValue[j].Item2.Length - 1);
+                                                newSEH[newSEH.Length - 1] = 0x00;
+                                                sehHolder2 = newSEH;
+                                            }
+                                            SEHValue = Encoding.Unicode.GetString(sehHolder1);
+                                            nSEHValue = Encoding.Unicode.GetString(sehHolder2);
                                             break;
                                         case 2:
-                                            SEHValue = Encoding.ASCII.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.ASCII.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.ASCII.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 3:
-                                            SEHValue = Encoding.UTF8.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.UTF8.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.UTF8.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 4:
-                                            SEHValue = Encoding.UTF7.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.UTF7.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.UTF7.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 5:
-                                            SEHValue = Encoding.UTF32.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.UTF32.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.UTF32.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         default:
-                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                     }
                                     char[] sehArray = SEHValue.ToCharArray();
                                     Array.Reverse(sehArray);
                                     string ReversedSEHValue = new string(sehArray);
                                     RegisterInfo SEH = new RegisterInfo();
-                                    if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue))
+                                    char[] nsehArray = nSEHValue.ToCharArray();
+                                    Array.Reverse(nsehArray);
+                                    string nReversedSEHValue = new string(nsehArray);
+                                    string combinedSeh = SEHValue + nSEHValue;
+                                    string reversedCombinedSeh = ReversedSEHValue + nReversedSEHValue;
+                                    if (pattern.Contains(combinedSeh) || pattern.Contains(reversedCombinedSeh))
+                                    {
+                                        SEH.Register = "SEH" + i.ToString();
+                                        if (pattern.Contains(reversedCombinedSeh))
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(reversedCombinedSeh);
+                                        }
+                                        else
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(combinedSeh);
+                                        }
+                                        SEH.ThreadID = ThreadsInfo[i].ThreadID;
+                                        SEH.RegisterValue = (IntPtr)BitConverter.ToInt32(sehChain.ReturnValue[j].Item1, 0);
+                                        registers.Add(SEH);
+                                    }
+                                    else if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue) || pattern.Contains(nSEHValue) || pattern.Contains(nReversedSEHValue))
                                     {
                                         SEH.Register = "SEH" + i.ToString();
                                         if (pattern.Contains(ReversedSEHValue))
                                         {
                                             SEH.StringOffset = pattern.IndexOf(ReversedSEHValue);
                                         }
-                                        else
+                                        else if(pattern.Contains(SEHValue))
                                         {
                                             SEH.StringOffset = pattern.IndexOf(SEHValue);
                                         }
+                                        else if(pattern.Contains(nReversedSEHValue))
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(nReversedSEHValue);
+                                        }
+                                        else
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(nSEHValue);
+                                        }
                                         SEH.ThreadID = ThreadsInfo[i].ThreadID;
-                                        SEH.RegisterValue = (IntPtr)BitConverter.ToInt32(sehChain.ReturnValue[j], 0);
+                                        SEH.RegisterValue = (IntPtr)BitConverter.ToInt32(sehChain.ReturnValue[j].Item1, 0);
                                         registers.Add(SEH);
                                     }
                                 }
@@ -1796,47 +1841,99 @@ namespace ERC
                                 for(int j = 0; j < sehChain.ReturnValue.Count; j++)
                                 {
                                     string SEHValue = "";
+                                    string nSEHValue = "";
                                     switch (searchType)
                                     {
                                         case 0:
-                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 1:
-                                            SEHValue = Encoding.Unicode.GetString(sehChain.ReturnValue[j]);
+                                            byte[] sehHolder1 = sehChain.ReturnValue[j].Item1;
+                                            byte[] sehHolder2 = sehChain.ReturnValue[j].Item2;
+                                            if (sehChain.ReturnValue[j].Item1[0] == 0x00)
+                                            {
+                                                byte[] newSEH = new byte[sehChain.ReturnValue[j].Item1.Length];
+                                                Array.Copy(sehChain.ReturnValue[j].Item1, 1, newSEH, 0, sehChain.ReturnValue[j].Item1.Length - 1);
+                                                newSEH[newSEH.Length - 1] = 0x00;
+                                                sehHolder1 = newSEH;
+                                            }
+                                            if (sehChain.ReturnValue[j].Item2[0] == 0x00)
+                                            {
+                                                byte[] newSEH = new byte[sehChain.ReturnValue[j].Item2.Length];
+                                                Array.Copy(sehChain.ReturnValue[j].Item2, 1, newSEH, 0, sehChain.ReturnValue[j].Item2.Length - 1);
+                                                newSEH[newSEH.Length - 1] = 0x00;
+                                                sehHolder2 = newSEH;
+                                            }
+                                            SEHValue = Encoding.Unicode.GetString(sehHolder1);
+                                            nSEHValue = Encoding.Unicode.GetString(sehHolder2);
                                             break;
                                         case 2:
-                                            SEHValue = Encoding.ASCII.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.ASCII.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.ASCII.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 3:
-                                            SEHValue = Encoding.UTF8.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.UTF8.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.UTF8.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 4:
-                                            SEHValue = Encoding.UTF7.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.UTF7.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.UTF7.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         case 5:
-                                            SEHValue = Encoding.UTF32.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.UTF32.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.UTF32.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                         default:
-                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j]);
+                                            SEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item1);
+                                            nSEHValue = Encoding.Default.GetString(sehChain.ReturnValue[j].Item2);
                                             break;
                                     }
                                     char[] sehArray = SEHValue.ToCharArray();
                                     Array.Reverse(sehArray);
                                     string ReversedSEHValue = new string(sehArray);
                                     RegisterInfo SEH = new RegisterInfo();
-                                    if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue)) ;
+                                    char[] nsehArray = nSEHValue.ToCharArray();
+                                    Array.Reverse(nsehArray);
+                                    string nReversedSEHValue = new string(nsehArray);
+                                    string combinedSeh = SEHValue + nSEHValue;
+                                    string reversedCombinedSeh = ReversedSEHValue + nReversedSEHValue;
+                                    if (pattern.Contains(combinedSeh) || pattern.Contains(reversedCombinedSeh))
+                                    {
+                                        SEH.Register = "SEH" + i.ToString();
+                                        if (pattern.Contains(reversedCombinedSeh))
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(reversedCombinedSeh);
+                                        }
+                                        else
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(combinedSeh);
+                                        }
+                                        SEH.ThreadID = ThreadsInfo[i].ThreadID;
+                                        SEH.RegisterValue = (IntPtr)BitConverter.ToInt64(sehChain.ReturnValue[j].Item1, 0);
+                                        registers.Add(SEH);
+                                    }
+                                    else if (pattern.Contains(SEHValue) || pattern.Contains(ReversedSEHValue) || pattern.Contains(nSEHValue) || pattern.Contains(nReversedSEHValue))
                                     {
                                         SEH.Register = "SEH" + i.ToString();
                                         if (pattern.Contains(ReversedSEHValue))
                                         {
                                             SEH.StringOffset = pattern.IndexOf(ReversedSEHValue);
                                         }
-                                        else
+                                        else if (pattern.Contains(SEHValue))
                                         {
                                             SEH.StringOffset = pattern.IndexOf(SEHValue);
                                         }
+                                        else if (pattern.Contains(nReversedSEHValue))
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(nReversedSEHValue);
+                                        }
+                                        else
+                                        {
+                                            SEH.StringOffset = pattern.IndexOf(nSEHValue);
+                                        }
                                         SEH.ThreadID = ThreadsInfo[i].ThreadID;
-                                        SEH.RegisterValue = (IntPtr)BitConverter.ToInt64(sehChain.ReturnValue[j], 0);
+                                        SEH.RegisterValue = (IntPtr)BitConverter.ToInt64(sehChain.ReturnValue[j].Item1, 0);
                                         registers.Add(SEH);
                                     }
                                 }

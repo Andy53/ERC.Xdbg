@@ -1248,7 +1248,7 @@
             <summary>
             Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
             Passing a list of module paths or names will exclude those modules from the search. 
-            Similar to Search_All_Memory_PPR however provides output in an easily readable format.
+            Similar to Search_All_Memory_PPR however provides output in an easily readable format. This version only returns unicode compliant pointers.
             </summary>
             <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions.</param>
             <param name="aslr">Remove ASLR libraries.</param>
