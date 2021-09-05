@@ -113,7 +113,7 @@ Displays the help message below.
 &nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --help`    
 
 `--Update`
-Downloads the latest release of the plugin from Github and extracts it into the X64Dbg plugin directory for the architecture currently in use. Can be passed a ip:port pair in order to specify a proxy.
+Downloads the latest release of the plugin from Github and extracts it into the X64Dbg plugin directory for the architecture currently in use. Can be passed a ip:port pair in order to specify a proxy.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update 127.0.0.1:8080`
 
 `--config`    
