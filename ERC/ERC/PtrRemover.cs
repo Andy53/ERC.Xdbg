@@ -30,28 +30,20 @@ namespace ERC.Utilities
             for (int i = 0; i < srcList.Count; i++)
             {
                 bool removed = false;
-                byte[] ptr = null;
-                if (mt == MachineType.I386)
-                {
-                   ptr = BitConverter.GetBytes((int)srcList[i]);
-                }
-                else
-                {
-                    ptr = BitConverter.GetBytes((long)srcList[i]);
-                }
+                var ptr = BitConverter.GetBytes((long)srcList[i]);
                 for(int j = 0; j < ptr.Length; j++)
                 {
-                    for (int k = 0; k < bytes.Length; k++)
+                    for(int k = 0; k < bytes.Length; k++)
                     {
                         if (bytes[k] == ptr[j] && removed == false)
                         {
-                            srcList.RemoveAt(i); 
+                            srcList.RemoveAt(i);
                             removed = true;
                             i--;
                         }
                         if(mt == MachineType.I386 && removed == false && nullByte == true)
                         {
-                            if(srcList[i].ToString("X").Length < 7)
+                            if(srcList[i].ToString("X8").Length < 7)
                             {
                                 srcList.RemoveAt(i);
                                 removed = true;
@@ -70,7 +62,6 @@ namespace ERC.Utilities
                     }
                 }
             }
-            Console.WriteLine("Srclist length = {0}", srcList.Count);
             return srcList;
         }
 

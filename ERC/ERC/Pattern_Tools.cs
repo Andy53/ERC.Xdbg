@@ -162,6 +162,37 @@ namespace ERC.Utilities
                 result.ReturnValue = "Value found reversed at postiont " + patternFull.IndexOf(reversed).ToString() + " in pattern.";
                 return result;
             }
+
+            bool validHexString = true;
+            foreach(char c in pattern)
+            {
+                if(c < '0' || c > '9')
+                {
+                    validHexString = false;
+                }
+            }
+
+            if(validHexString == true)
+            {
+                byte[] patternBytes = ERC.Utilities.Convert.HexToBytes(pattern);
+                byte[] patternBytesReversed = ERC.Utilities.Convert.HexToBytes(reversed);
+                byte[] patternFullBytes = Encoding.ASCII.GetBytes(patternFull);
+
+                string hexString = BitConverter.ToString(patternBytes).Replace("-", "");
+                string hexStringReversed = BitConverter.ToString(patternBytesReversed).Replace("-", "");
+                string hexPatternFull = BitConverter.ToString(patternFullBytes).Replace("-", "");
+
+                if (hexPatternFull.Contains(hexString))
+                {
+                    result.ReturnValue = "Value found at postiont " + (hexPatternFull.IndexOf(hexString) / 2).ToString()  + " in pattern.";
+                    return result;
+                }
+                else if (hexPatternFull.Contains(hexStringReversed))
+                {
+                    result.ReturnValue = "Value found reversed at postiont " + (hexPatternFull.IndexOf(hexStringReversed) / 2).ToString() + " in pattern.";
+                    return result;
+                }
+            }
                 
             result.Error = new ERCException("Error: Value not found.");
             result.ReturnValue = "Value not found in pattern.";
