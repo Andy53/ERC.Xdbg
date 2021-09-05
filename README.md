@@ -134,6 +134,7 @@ The ByteArray option allows the generation of a byte array which is displayed in
 
 `--Compare`    
 Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory address from which to start the search and a file path for the binary file.
+&nbsp;&nbsp;&nbsp;&nbsp;    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Compare 0x12345678 C:\Users\You\Desktop\YourBinaryFile.bin`  
 
 `--Convert`    
