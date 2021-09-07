@@ -193,7 +193,13 @@ namespace ErcXdbg
             help += "       Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search \n";
             help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8).\n";        
             help += "       Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's \n";
-            help += "       Example: ERC --SearchMemory HelloWorld 1. Search for the string \"HelloWorld in Unicode\"\n"; 
+            help += "       Example: ERC --SearchMemory HelloWorld 1. Search for the string \"HelloWorld in Unicode\"\n";
+            help += "   --SearchModules   |\n";
+            help += "       Takes a search string of either bytes or a string to search for in a processes loaded modules. Takes an \n";
+            help += "       (optional) integer to specify search \n";
+            help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8).\n";
+            help += "       Example: ERC --SearchModules FF E4. Search for bytes FF E4 including all dll's \n";
+            help += "       Example: ERC --SearchModules FF E4 module1.dll module2.dll. Search for bytes FF E4 only in module1.dll and module2.dll\n";
             help += "   --Dump |\n";
             help += "       Dump contents of memory to a file. Takes an address to start at and a hex number of bytes to be read.\n"; 
             help += "   --ListProcesses |\n";
@@ -286,6 +292,9 @@ namespace ErcXdbg
                         return;
                     case "--searchmemory":
                         SearchMemory(info, parameters);
+                        return;
+                    case "--searchmodules":
+                        SearchModules(info, parameters);
                         return;
                     case "--dump":
                         DumpMemory(info, parameters);
@@ -1614,7 +1623,65 @@ namespace ErcXdbg
                 PLog.WriteLine(s);
             }
         }
-        
+
+        private static void SearchModules(ERC.ProcessInfo info, List<string> parameters)
+        {
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            int searchType = 0;
+            string searchString = "";
+
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i] == "0" || parameters[i] == "1" || parameters[i] == "2" ||
+                    parameters[i] == "3" || parameters[i] == "4" || parameters[i] == "5")
+                {
+                    searchType = Int32.Parse(parameters[i]);
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+            }
+
+            List<string> includedModules = new List<string>();
+
+            foreach(string s in parameters)
+            {
+                bool hex = true;
+                foreach(char c in s)
+                {
+                    if(!(c >= '0' && c <= '9') && !(c >= 'a' && c <= 'f') && !(c >= 'A' && c <= 'F'))
+                    {
+                        hex = false;
+                    }
+                }
+                if(hex == false)
+                {
+                    includedModules.Add(s);
+                    parameters.Remove(s);
+                }
+            }
+
+            if (includedModules.Count <= 0)
+            {
+                includedModules = null;
+            }
+
+            searchString = string.Join("", parameters);
+            var output = ERC.DisplayOutput.SearchModules(info, searchType, searchString, Globals.aslr, Globals.safeseh, Globals.rebase, Globals.nxcompat,
+                Globals.osdll, Globals.bytes, includedModules, Globals.protection);
+            foreach (string s in output)
+            {
+                PLog.WriteLine(s);
+            }
+        }
+
+
         private static void DumpMemory(ERC.ProcessInfo info, List<string> parameters)
         {
             for (int i = 0; i < parameters.Count; i++)

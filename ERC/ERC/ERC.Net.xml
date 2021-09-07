@@ -1217,6 +1217,23 @@
             <param name="protection">String containing protection level returned pointers will.</param>
             <returns></returns>
         </member>
+        <member name="M:ERC.DisplayOutput.SearchModules(ERC.ProcessInfo,System.Int32,System.String,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            Searches the loaded modules of a process for a string or byte combination.
+            </summary>
+            <param name="info">The processInfo object for the process</param>
+            <param name="searchType">The type of data to be searched for.</param>
+            <param name="searchString">The string to search for.</param>
+            <param name="aslr">Remove ASLR libraries.</param>
+            <param name="safeseh">Remove SafeSEH libraries.</param>
+            <param name="rebase">Remove rebasable libraries.</param>
+            <param name="nxcompat">Remove NXCompat libraries.</param>
+            <param name="osdll">Remove OS Dlls.</param>
+            <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+            <param name="modules">List of modules to be searched</param>
+            <param name="protection">String containing protection level returned pointers will.</param>
+            <returns></returns>
+        </member>
         <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.String)">
             <summary>
             Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
@@ -4504,6 +4521,19 @@
             <param name="searchString">String to be searched for (optional)</param>
             <param name="excludes">Modules to be excluded from the search (optional)</param>
             <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>
+        </member>
+        <member name="M:ERC.ProcessInfo.SearchModules(System.Int32,System.Byte[],System.Byte[],System.String,System.Collections.Generic.List{System.String},System.Collections.Generic.List{System.String})">
+            <summary>
+            Searches all modules loaded by a process for a specific string or byte array. Strings can be passed as ASCII, Unicode, UTF7 or UTF8.
+            Search can be limited to specific modules through passing a List of strings containing module names or paths.
+            </summary>
+            <param name="searchType">0 = search term is in bytes\n1 = search term is in unicode\n2 = search term is in ASCII\n3 = Search term is in UTF8\n4 = Search term is in UTF7\n5 = Search term is in UTF32</param>
+            <param name="ptrsToExclude"> Takes a byte array of values used to disqualify pointers</param>
+            <param name="searchBytes">Byte array to be searched for (optional)</param>
+            <param name="searchString">String to be searched for (optional)</param>
+            <param name="includedModules">Modules to be included in the search (optional)</param>
+            <param name="excludedModules">Modules to be excluded from the search (optional)</param>
+            <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>>
         </member>
         <member name="M:ERC.ProcessInfo.FindNRP(System.Int32,System.Boolean)">
             <summary>

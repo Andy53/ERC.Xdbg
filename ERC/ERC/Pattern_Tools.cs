@@ -166,7 +166,7 @@ namespace ERC.Utilities
             bool validHexString = true;
             foreach(char c in pattern)
             {
-                if(c < '0' || c > '9')
+                if((c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F'))
                 {
                     validHexString = false;
                 }

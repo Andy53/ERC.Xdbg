@@ -1211,7 +1211,101 @@ namespace ERC
                     }
                 }
             }
+
             resultAddresses.ReturnValue = Utilities.PtrRemover.RemovePointers(ProcessMachineType, resultAddresses.ReturnValue, ptrsToExclude);
+            
+            return resultAddresses;
+        }
+        #endregion
+
+        #region SearchModules
+        /// <summary>
+        /// Searches all modules loaded by a process for a specific string or byte array. Strings can be passed as ASCII, Unicode, UTF7 or UTF8.
+        /// Search can be limited to specific modules through passing a List of strings containing module names or paths.
+        /// </summary>
+        /// <param name="searchType">0 = search term is in bytes\n1 = search term is in unicode\n2 = search term is in ASCII\n3 = Search term is in UTF8\n4 = Search term is in UTF7\n5 = Search term is in UTF32</param>
+        /// <param name="ptrsToExclude"> Takes a byte array of values used to disqualify pointers</param>
+        /// <param name="searchBytes">Byte array to be searched for (optional)</param>
+        /// <param name="searchString">String to be searched for (optional)</param>
+        /// <param name="includedModules">Modules to be included in the search (optional)</param>
+        /// <param name="excludedModules">Modules to be excluded from the search (optional)</param>
+        /// <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>>
+        public ErcResult<Dictionary<IntPtr, string>> SearchModules(int searchType, byte[] ptrsToExclude, byte[] searchBytes = null, string searchString = null, List<string> includedModules = null, List<string> excludedModules = null)
+        {
+            ErcResult<Dictionary<IntPtr, string>> resultAddresses = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
+            if (searchBytes == null && searchString == null)
+            {
+                resultAddresses.Error = new ERCException("No search term provided. " +
+                    "Either a byte array or string must be provided as the search term or there is nothing to search for.");
+                resultAddresses.LogEvent();
+                return resultAddresses;
+            }
+            resultAddresses.ReturnValue = new Dictionary<IntPtr, string>();
+            switch (searchType)
+            {
+                case 0:
+                    break;
+                case 1:
+                    searchBytes = Encoding.Unicode.GetBytes(searchString);
+                    break;
+                case 2:
+                    searchBytes = Encoding.ASCII.GetBytes(searchString);
+                    break;
+                case 3:
+                    searchBytes = Encoding.UTF8.GetBytes(searchString);
+                    break;
+                case 4:
+                    searchBytes = Encoding.UTF7.GetBytes(searchString);
+                    break;
+                case 5:
+                    searchBytes = Encoding.UTF32.GetBytes(searchString);
+                    break;
+                default:
+                    resultAddresses.Error = new ERCException("Incorrect searchType value provided, value must be 0-4");
+                    resultAddresses.LogEvent();
+                    return resultAddresses;
+            }
+
+            List<ModuleInfo> modules = new List<ModuleInfo>();
+            for (int i = 0; i < ModulesInfo.Count; i++)
+            {
+                if (includedModules != null)
+                {
+                    if (includedModules.Contains(ModulesInfo[i].ModuleName) || includedModules.Contains(ModulesInfo[i].ModulePath))
+                    {
+                        if(excludedModules != null)
+                        {
+                            if(!excludedModules.Contains(ModulesInfo[i].ModuleName) && !excludedModules.Contains(ModulesInfo[i].ModulePath))
+                            {
+                                modules.Add(ModulesInfo[i]);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    modules.Add(ModulesInfo[i]);
+                }
+            }
+            for (int i = 0; i < modules.Count; i++)
+            {
+                var modulePtrs = modules[i].SearchModule(searchBytes);
+                if (modulePtrs.ReturnValue.Count > 0)
+                {
+                    for (int j = 0; j < modulePtrs.ReturnValue.Count; j++)
+                    {
+                        if (!resultAddresses.ReturnValue.ContainsKey(modulePtrs.ReturnValue[j]))
+                        {
+                            resultAddresses.ReturnValue.Add(modulePtrs.ReturnValue[j], modules[i].ModulePath);
+                        }
+                    }
+                }
+            }
+
+            if(ptrsToExclude != null)
+            {
+                resultAddresses.ReturnValue = Utilities.PtrRemover.RemovePointers(ProcessMachineType, resultAddresses.ReturnValue, ptrsToExclude);
+            }
             return resultAddresses;
         }
         #endregion

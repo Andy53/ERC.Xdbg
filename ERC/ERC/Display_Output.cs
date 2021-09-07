@@ -505,6 +505,118 @@ namespace ERC
         }
         #endregion
 
+        #region SearchModules
+        /// <summary>
+        /// Searches the loaded modules of a process for a string or byte combination.
+        /// </summary>
+        /// <param name="info">The processInfo object for the process</param>
+        /// <param name="searchType">The type of data to be searched for.</param>
+        /// <param name="searchString">The string to search for.</param>
+        /// <param name="aslr">Remove ASLR libraries.</param>
+        /// <param name="safeseh">Remove SafeSEH libraries.</param>
+        /// <param name="rebase">Remove rebasable libraries.</param>
+        /// <param name="nxcompat">Remove NXCompat libraries.</param>
+        /// <param name="osdll">Remove OS Dlls.</param>
+        /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
+        /// <param name="modules">List of modules to be searched</param>
+        /// <param name="protection">String containing protection level returned pointers will.</param>
+        /// <returns></returns>
+        public static List<string> SearchModules(ProcessInfo info, int searchType, string searchString, bool aslr = false,
+            bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
+            byte[] unwantedBytes = null, List<string> modules = null, string protection = "exec")
+        {
+            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            Dictionary<IntPtr, string> results = new Dictionary<IntPtr, string>();
+
+            if (searchType == 0)
+            {
+                byte[] searchBytes = StringToByteArray(searchString.Replace(" ", ""));
+                results = info.SearchModules(searchType, unwantedBytes, searchBytes, null, modules, excludedModules).ReturnValue;
+            }
+            else
+            {
+                results = info.SearchModules(searchType, unwantedBytes, null, searchString, modules, excludedModules).ReturnValue;
+            }
+
+            if (unwantedBytes != null)
+            {
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in results)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
+                pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in results.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        results.Remove(k.Key);
+                    }
+                }
+            }
+            else
+            {
+                List<IntPtr> p = new List<IntPtr>();
+                foreach (KeyValuePair<IntPtr, string> k in results)
+                {
+                    p.Add(k.Key);
+                }
+                var pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, p, protection);
+
+                foreach (KeyValuePair<IntPtr, string> k in results.ToList())
+                {
+                    if (!pt.Contains(k.Key))
+                    {
+                        results.Remove(k.Key);
+                    }
+                }
+            }
+            List<string> output = new List<string>();
+            output.Add(String.Format("List created on {0} by {1}. Search string: {2}", DateTime.Now, info.Author, searchString));
+            output.Add("----------------------------------------------------------------------");
+            if (info.ProcessMachineType == ERC.MachineType.I386)
+            {
+                output.Add("  Address  | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
+            }
+            else
+            {
+                output.Add("      Address      | ASLR | SafeSEH  | Rebase | NXCompat | OsDLL | Module Path");
+            }
+            output.Add("----------------------------------------------------------------------");
+            foreach (KeyValuePair<IntPtr, string> v in results)
+            {
+                for (int i = 0; i < info.ModulesInfo.Count; i++)
+                {
+                    if (info.ProcessMachineType == ERC.MachineType.I386)
+                    {
+                        if (info.ModulesInfo[i].ModulePath == v.Value)
+                        {
+                            output.Add(String.Format("0x{0} | {1} |  {2}   |  {3}  |   {4}   |  {5} | {6}",
+                                v.Key.ToString("X8"), info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath));
+                        }
+                    }
+                    else
+                    {
+                        if (info.ModulesInfo[i].ModulePath == v.Value)
+                        {
+                            output.Add(String.Format("0x{0} | {1} |  {2}   |  {3}  |   {4}   |  {5} | {6}",
+                                v.Key.ToString("X16"), info.ModulesInfo[i].ModuleASLR, info.ModulesInfo[i].ModuleSafeSEH,
+                                info.ModulesInfo[i].ModuleRebase, info.ModulesInfo[i].ModuleNXCompat, info.ModulesInfo[i].ModuleOsDll,
+                                info.ModulesInfo[i].ModulePath));
+                        }
+                    }
+                }
+            }
+            WriteToFile(info.WorkingDirectory, "ModuleSearch", ".txt", output);
+            return output;
+        }
+
+        #endregion
+
         #region GetSEHJumps
         /// <summary>
         /// Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
