@@ -1681,7 +1681,6 @@ namespace ErcXdbg
             }
         }
 
-
         private static void DumpMemory(ERC.ProcessInfo info, List<string> parameters)
         {
             for (int i = 0; i < parameters.Count; i++)

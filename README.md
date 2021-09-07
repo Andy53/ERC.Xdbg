@@ -164,6 +164,11 @@ Search memory can take a string or set of bytes to search for within the attache
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --SearchMemory FF E4 false false false false true` Search for bytes FF E4 excluding only OS dlls.         
 &nbsp;&nbsp;&nbsp;&nbsp;Example 3: `ERC --SearchMemory 1 HelloWorld` Search for the ASCII string HelloWorld.
 
+`--SearchModules`    
+Search modules can take a string or set of bytes to search for within the processes loaded modules. Optionally an integer can be passed to specify the search type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8). Modules can be excluded based on certain characteristics (Is ASLR/SafeSEH/Is the binary rebasable/NXCompat(DEP)/Is the binary an OS dll) The values are optional however if you wish to exclude a later value all previous ones must be included. Furthermore the search can be limited to certain modules by passing their name or path as arguments.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example: ERC --SearchModules FF E4. Search for bytes FF E4 including all dll's \n";
+&nbsp;&nbsp;&nbsp;&nbsp;Example: ERC --SearchModules FF E4 module1.dll module2.dll. Search for bytes FF E4 only in module1.dll and module2.dll\n";    
+
 `--Dump`    
 Dumps the contents of process memory to the log and a file in the working directory. Takes a hex start address and a hex number for number of bytes to be read.      
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Dump 0x63428401 0x30`
