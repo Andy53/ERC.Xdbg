@@ -86,4 +86,16 @@
     <NativeLibs Remove="Convert.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <NativeLibs Remove="Heap_Info.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibs Remove="Win32Errors.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\Andy\.nuget\packages\reloaded.assembler\1.0.5\build\FASM-LICENSE.TXT" />
+  </ItemGroup>
+
 </Project>

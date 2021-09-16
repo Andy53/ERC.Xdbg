@@ -430,7 +430,7 @@ namespace ERC
 
         #region Search_Process_Memory
         /// <summary>
-        /// Private function called from Search_Memory. Searches memory regions populated by the process for specific strings.
+        /// Private function called from Search_Memory. Searches memory regions populated by the process for specific patterns.
         /// </summary>
         /// <param name="searchBytes"> Takes a byte array as input to be searched for</param>
         /// <returns>Returns a list of IntPtr for each instance found.</returns>

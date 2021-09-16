@@ -225,6 +225,8 @@ namespace ErcXdbg
             help += "       if any registers pointed into the pattern. Takes an integer for the text to look for (1 = Unicode, 2 = ASCII,\n";
             help += "       3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII). Additionally if the value \"True\" is provided the extended \n";
             help += "       pattern will be used which includes special characters.\n";
+            help += "   --HeapInfo      |\n";
+            help += "       Displays information about the heap.\n";
             help += "   --Rop           |\n";
             help += "       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...\n";
             help += "   --Reset         |\n";
@@ -350,6 +352,9 @@ namespace ErcXdbg
                         return;
                     case "--findnrp":
                         FindNRP(info, parameters);
+                        return;
+                    case "--heapinfo":
+                        HeapInfo(info, parameters);
                         return;
                     case "--rop":
                         rop(info);
@@ -1795,6 +1800,82 @@ namespace ErcXdbg
             }
             //return nrpInfo;
             return;
+        }
+
+        private static void HeapInfo(ERC.ProcessInfo info, List<string> parameters)
+        {
+            bool heapids = false;
+            bool dumpheap = false;
+            bool heapstats = false;
+            bool searchheap = false;
+
+            string hexStartAddress = "";
+            ulong startAddress = 0;
+            ulong heapID = 0;
+
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                if (parameters[i].Contains("--"))
+                {
+                    parameters.Remove(parameters[i]);
+                }
+            }
+
+            if (parameters.Count == 0)
+            {
+                heapstats = true;
+            }
+
+            for (int i = 0; i < parameters.Count && i >= 0; i++)
+            {
+                if (parameters[i].ToLower() == "ids")
+                {
+                    heapids = true;
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+
+                if (parameters[i].ToLower() == "stats")
+                {
+                    heapstats = true;
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+
+                if (parameters[i].ToLower() == "dump")
+                {
+                    dumpheap = true;
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+
+                if (parameters[i].ToLower() == "search")
+                {
+                    searchheap = true;
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+            }
+
+            if (heapids == true)
+            {
+                PLog.WriteLine("HeapIDs is true");
+            }
+
+            if (heapstats == true)
+            {
+                PLog.WriteLine("heapstats is true");
+            }
+
+            if(dumpheap == true)
+            {
+                PLog.WriteLine("dumpheap is true");
+            }
+
+            if (searchheap == true)
+            {
+                PLog.WriteLine("searchheap is true");
+            }
         }
 
         private static void rop(ERC.ProcessInfo info)

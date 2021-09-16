@@ -314,6 +314,69 @@ namespace ERC
         /// <returns>If the function succeeds, the return value is TRUE.</returns>
         [DllImport("Imagehlp.dll", SetLastError = true)]
         internal static extern int MapAndLoad(string ImageName, string DllPath, out LOADED_IMAGE loadedImage, bool Dll, bool readOnly);
+
+        /// <summary>
+        /// Takes a snapshot of the specified processes, as well as the heaps, modules, and threads used by these processes.
+        /// </summary>
+        /// <param name="dwFlags">The portions of the system to be included in the snapshot. </param>
+        /// <param name="th32ProcessID">The process identifier of the process to be included in the snapshot. This parameter can be zero to indicate the current process. This parameter is used when the TH32CS_SNAPHEAPLIST, TH32CS_SNAPMODULE, TH32CS_SNAPMODULE32, or TH32CS_SNAPALL value is specified. Otherwise, it is ignored and all processes are included in the snapshot.</param>
+        /// <returns>If the function succeeds, it returns an open handle to the specified snapshot.</returns>
+        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern IntPtr CreateToolhelp32Snapshot([In] Structures.SnapshotFlags dwFlags, [In] uint th32ProcessID);
+
+        /// <summary>
+        /// Retrieves information about the first process encountered in a system snapshot.
+        /// </summary>
+        /// <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+        /// <param name="lppe">A pointer to a PROCESSENTRY32 structure.</param>
+        /// <returns>Returns TRUE if the first entry of the process list has been copied to the buffer or FALSE otherwise. </returns>
+        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern bool Process32First([In] IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+        /// <summary>
+        /// Retrieves information about the next process recorded in a system snapshot.
+        /// </summary>
+        /// <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+        /// <param name="lppe">A pointer to a PROCESSENTRY32 structure.</param>
+        /// <returns>Returns TRUE if the next entry of the process list has been copied to the buffer or FALSE otherwise.</returns>
+        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern bool Process32Next([In] IntPtr hSnapshot, ref PROCESSENTRY32 lppe);
+
+        /// <summary>
+        /// Retrieves information about the first heap that has been allocated by a specified process.
+        /// </summary>
+        /// <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+        /// <param name="lphl">A pointer to a HEAPLIST32 structure.</param>
+        /// <returns>Returns TRUE if the first entry of the heap list has been copied to the buffer or FALSE otherwise.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern bool Heap32ListFirst(IntPtr hSnapshot, ref HEAPLIST32 lphl);
+
+        /// <summary>
+        /// Retrieves information about the next heap that has been allocated by a specified process.
+        /// </summary>
+        /// <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+        /// <param name="lphl">A pointer to a HEAPLIST32 structure.</param>
+        /// <returns>Returns TRUE if the first entry of the heap list has been copied to the buffer or FALSE otherwise.</returns>
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern bool Heap32ListNext(IntPtr hSnapshot, ref HEAPLIST32 lphl);
+
+        /// <summary>
+        /// Retrieves information about the first block of a heap that has been allocated by a process.
+        /// </summary>
+        /// <param name="heapentry32">A pointer to a HEAPENTRY32 structure.</param>
+        /// <param name="processID">The identifier of the process context that owns the heap.</param>
+        /// <param name="heapID">The identifier of the heap to be enumerated.</param>
+        /// <returns>Returns TRUE if information for the first heap block has been copied to the buffer or FALSE otherwise. </returns>
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern bool Heap32First(ref HEAPENTRY32 heapentry32, uint processID, IntPtr heapID);
+
+        /// <summary>
+        /// Retrieves information about the next block of a heap that has been allocated by a process.
+        /// </summary>
+        /// <param name="heapentry32">A pointer to a HEAPENTRY32 structure.</param>
+        /// <returns>Returns TRUE if information about the next block in the heap has been copied to the buffer or FALSE otherwise. </returns>
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
+        internal static extern bool Heap32Next(ref HEAPENTRY32 heapentry32);
         #endregion
 
         #region Constructor
@@ -2992,6 +3055,85 @@ namespace ERC
             /// ThreadErrorMode
             /// </summary>
             public IntPtr ThreadErrorMode;
+        }
+        #endregion
+
+        #region ToolHelp
+        /// <summary>
+        /// ToolHelp SnapshotFlags
+        /// </summary>
+        [Flags]
+        public enum SnapshotFlags : uint
+        {
+            HeapList = 0x00000001,
+            Process = 0x00000002,
+            Thread = 0x00000004,
+            Module = 0x00000008,
+            Module32 = 0x00000010,
+            Inherit = 0x80000000,
+            All = 0x0000001F,
+            NoHeaps = 0x40000000
+        }
+
+        /// <summary>
+        /// ToolHelp PROCESSENTRY32
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PROCESSENTRY32
+        {
+            const int MAX_PATH = 260;
+            internal uint dwSize;
+            internal uint cntUsage;
+            internal uint th32ProcessID;
+            internal IntPtr th32DefaultHeapID;
+            internal uint th32ModuleID;
+            internal uint cntThreads;
+            internal uint th32ParentProcessID;
+            internal int pcPriClassBase;
+            internal uint dwFlags;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = MAX_PATH)]
+            internal string szExeFile;
+        }
+
+        /// <summary>
+        /// Describes one entry (block) of a heap that is being examined.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct HEAPLIST32
+        {
+            internal IntPtr dwSize;
+            internal uint th32ProcessID;
+            internal IntPtr th32HeapID;
+            internal uint dwFlags;
+        }
+
+        /// <summary>
+        /// Describes one entry (block) of a heap that is being examined.
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct HEAPENTRY32
+        {
+            /** The size of the structure, in bytes **/
+            internal IntPtr dwSize;
+            /** A handle to the heap block **/
+            internal IntPtr hHandle;
+            /** The linear address of the start of the block **/
+            internal IntPtr dwAddress;
+            /** The size of the heap block, in bytes **/
+            internal IntPtr dwBlockSize;
+            /** This member can be one of the following values.
+                LF32_FIXED    0x00000001
+               LF32_FREE     0x00000002
+               LF32_MOVEABLE 0x00000004 **/
+            internal uint dwFlags;
+            /** This member is no longer used and is always set to zero. **/
+            internal uint dwLockCount;
+            /** Reserved; do not use or alter **/
+            internal uint dwResvd;
+            /** The identifier of the process that uses the heap **/
+            internal uint th32ProcessID;
+            /** The heap identifier. This is not a handle, and has meaning only to the tool help functions **/
+            internal IntPtr th32HeapID;
         }
         #endregion
     }
