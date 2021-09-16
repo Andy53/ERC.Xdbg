@@ -1812,6 +1812,9 @@ namespace ErcXdbg
             string hexStartAddress = "";
             ulong startAddress = 0;
             ulong heapID = 0;
+            bool writeToFile = true;
+
+            ERC.HeapInfo hi = new ERC.HeapInfo(info);
 
             for (int i = 0; i < parameters.Count; i++)
             {
@@ -1834,24 +1837,44 @@ namespace ErcXdbg
                     parameters.Remove(parameters[i]);
                     i--;
                 }
-
-                if (parameters[i].ToLower() == "stats")
+                else if (parameters[i].ToLower() == "stats")
                 {
                     heapstats = true;
                     parameters.Remove(parameters[i]);
                     i--;
                 }
-
-                if (parameters[i].ToLower() == "dump")
+                else if (parameters[i].ToLower() == "dump")
                 {
                     dumpheap = true;
                     parameters.Remove(parameters[i]);
                     i--;
                 }
-
-                if (parameters[i].ToLower() == "search")
+                else if (parameters[i].ToLower() == "search")
                 {
                     searchheap = true;
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+                else if (parameters[i].ToLower() == "true" || parameters[i].ToLower() == "false")
+                {
+                    writeToFile = parameters[i].ToLower() == "true";
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+                else if (parameters[i].ToLower() == "1" || parameters[i].ToLower() == "0")
+                {
+                    writeToFile = parameters[i].ToLower() == "1";
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+                else if(ulong.TryParse(parameters[i].ToLower(), out heapID))
+                {
+                    parameters.Remove(parameters[i]);
+                    i--;
+                }
+                else if(Regex.IsMatch(parameters[i], @"\A\b[0-9a-fA-F]+\b\Z"))
+                {
+                    hexStartAddress = parameters[i];
                     parameters.Remove(parameters[i]);
                     i--;
                 }
@@ -1859,22 +1882,63 @@ namespace ErcXdbg
 
             if (heapids == true)
             {
-                PLog.WriteLine("HeapIDs is true");
+                foreach(string s in ERC.DisplayOutput.ListHeapIDs(hi))
+                {
+                    PLog.Write(s);
+                }
+                PLog.Write(Environment.NewLine);
             }
 
             if (heapstats == true)
             {
-                PLog.WriteLine("heapstats is true");
+                var result = ERC.DisplayOutput.HeapStats(hi);
+                if(result.Error == null) {
+                    foreach (string s in result.ReturnValue)
+                    {
+                        PLog.Write(s);
+                    }
+                    PLog.Write(Environment.NewLine);
+                }
+                else
+                {
+                    PrintHelp(result.Error.Message);
+                }
             }
 
             if(dumpheap == true)
             {
-                PLog.WriteLine("dumpheap is true");
+                var result = ERC.DisplayOutput.DumpHeap(hi, heapID, hexStartAddress, writeToFile);
+                if (result.Error == null)
+                {
+                    foreach (string s in result.ReturnValue)
+                    {
+                        PLog.Write(s);
+                    }
+                    PLog.Write(Environment.NewLine);
+                }
+                else
+                {
+                    PrintHelp(result.Error.Message);
+                }
             }
 
             if (searchheap == true)
             {
-                PLog.WriteLine("searchheap is true");
+                /*
+                var result = ERC.DisplayOutput.SearchHeap(hi, heapID, hexStartAddress, writeToFile);
+                if (result.Error == null)
+                {
+                    foreach (string s in result.ReturnValue)
+                    {
+                        PLog.Write(s);
+                    }
+                    PLog.Write(Environment.NewLine);
+                }
+                else
+                {
+                    PrintHelp(result.Error.Message);
+                }
+                */
             }
         }
 

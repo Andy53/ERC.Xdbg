@@ -2904,5 +2904,25 @@ namespace ERC
             return result;
         }
         #endregion
+
+        #region ListHeapIDs
+        public static List<string> ListHeapIDs(HeapInfo hi)
+        {
+            var output = hi.HeapIDs();
+            List<string> result = new List<string>();
+
+            result.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+            result.Add("Heap IDs associated with process: " + hi.HeapProcess.ProcessName + " Created at: " + DateTime.Now + ". Created by: " + hi.HeapProcess.Author + Environment.NewLine);
+            result.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+
+            int heapnum = 1;
+            foreach(ulong ul in output.ReturnValue)
+            {
+                result.Add("Heap " + heapnum + " ID = " + ul + Environment.NewLine);
+            }
+
+            return result;
+        }
+        #endregion
     }
 }

@@ -80,7 +80,11 @@ namespace ERC
                 exceptionThrower.LogEvent();
             }
 
-            PopulateTEB();
+            var errorCheck = PopulateTEB(); //This needs to be revisited.
+            if (errorCheck.Error != null && errorCheck.Error.Message != "Error: No SEH chain has been generated yet. An SEH chain will not be generated until a crash occurs.")
+            {
+                throw errorCheck.Error;
+            }
         }
         #endregion
 
@@ -184,8 +188,7 @@ namespace ERC
 
             if (retInt != 0)
             {
-                Console.WriteLine("NTSTATUS Error was thrown: " + retInt);
-                returnString.Error = new ERCException("NTSTATUS Error was thrown: " + retInt);
+                returnString.Error = new ERCException("NTSTATUS Error was thrown: 0x" + retInt.ToString("X"));
                 return returnString;
             }
 
@@ -206,8 +209,8 @@ namespace ERC
             if (ret == 0)
             {
                 ERCException e = new ERCException("System error: An error occured when executing ReadProcessMemory\n Process Handle = 0x" 
-                    + ThreadProcess.ProcessHandle.ToString("X") + " TEB Base Address = 0x" + ThreadBasicInfo.TebBaseAdress.ToString("X") + 
-                    " Return value = " + ret);
+                    + ThreadProcess.ProcessHandle.ToString("X") + "\nTEB Base Address = 0x" + ThreadBasicInfo.TebBaseAdress.ToString("X") +
+                    "\nWin32Error = " + Utilities.Win32Errors.GetLastWin32Error());
                 returnString.Error = e;
                 return returnString;
             }
