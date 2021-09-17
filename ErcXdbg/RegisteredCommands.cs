@@ -226,7 +226,13 @@ namespace ErcXdbg
             help += "       3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII). Additionally if the value \"True\" is provided the extended \n";
             help += "       pattern will be used which includes special characters.\n";
             help += "   --HeapInfo      |\n";
-            help += "       Displays information about the heap.\n";
+            help += "       Displays information about the heap. Takes commands search, stats, ids, and dump. Takes an integer to\n";
+            help += "       represent the ID of the heap to utilize. Takes a hex value to specify the address of the heap entry to utilize.\n";
+            help += "       If both heap ID and start address are specified heap ID takes precedence. Takes a boolean value of true/false/1/0\n";
+            help += "       to specify if output should be written to disk.\n";
+            help += "       Example: ERC --HeapInfo stats. Display statistics about all heaps associated with the process.\n";
+            help += "       Example: ERC --HeapInfo 0x00453563 search FFE4. Search for FFE4 in the Heap entry starting at 0x00453563\n";
+            help += "       Example: ERC --HeapInfo 0x00453563 dump. Dump all memory from heap entry starting at 0x00453563\n";
             help += "   --Rop           |\n";
             help += "       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...\n";
             help += "   --Reset         |\n";
@@ -1804,6 +1810,7 @@ namespace ErcXdbg
             string hexStartAddress = "";
             ulong heapID = 0;
             bool writeToFile = true;
+            byte[] bytes = null;
 
             ERC.HeapInfo hi = new ERC.HeapInfo(info);
 
@@ -1865,9 +1872,22 @@ namespace ErcXdbg
                 }
                 else if(Regex.IsMatch(parameters[i], @"\A\b[0-9a-fA-F]+\b\Z"))
                 {
-                    hexStartAddress = parameters[i];
-                    parameters.Remove(parameters[i]);
-                    i--;
+                    string searchString = string.Join("", parameters);
+                    if (hexStartAddress == "")
+                    {
+                        hexStartAddress = parameters[i];
+                        parameters.Remove(parameters[i]);
+                        i--;
+                    }
+                    else
+                    {
+                        bytes = ERC.Utilities.Convert.HexToBytes(searchString);
+                    }
+                }
+                else
+                {
+                    string searchString = string.Join("", parameters);
+                    bytes = StringToByteArray(searchString);
                 }
             }
 
@@ -1902,8 +1922,6 @@ namespace ErcXdbg
 
             if (searchheap == true)
             {
-                string searchString = string.Join("", parameters);
-                byte[] bytes = StringToByteArray(searchString);
                 var result = ERC.DisplayOutput.SearchHeap(hi, bytes, heapID, hexStartAddress, writeToFile);
                 foreach (string s in result)
                 {
