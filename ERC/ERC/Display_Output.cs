@@ -2691,11 +2691,11 @@ namespace ERC
         /// <param name="length">The number of bytes to read.</param>
         /// <param name="writeToFile">Bool indicating if output should be written to a file.</param>
         /// <returns>A string containing the bytes read from memory</returns>
-        public static ErcResult<string> DumpMemory(ProcessInfo info, IntPtr startAddress, int length, bool writeToFile = true)
+        public static string DumpMemory(ProcessInfo info, IntPtr startAddress, int length, bool writeToFile = true)
         {
             string dumpFilename = GetFilePath(info.WorkingDirectory, "MemoryDump_", ".txt");
             ErcResult<byte[]> result = info.DumpMemoryRegion(startAddress, length);
-            ErcResult<string> output = new ErcResult<string>(info.ProcessCore);
+            string output = "";
 
             int bytesPerLine = 0;
             Console.WriteLine("Here 1");
@@ -2703,42 +2703,36 @@ namespace ERC
             {
                 bytesPerLine = 8;
             }
-            else if (info.ProcessMachineType == MachineType.x64)
+            else 
             {
                 bytesPerLine = 16;
             }
-            else
-            {
-                output.Error = new ERCException("Unsupported MachineType. MachineType must be I386 or x64");
-                output.ReturnValue = "ERROR: Check exception.";
-                return output;
-            }
 
-            output.ReturnValue += "----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
-            output.ReturnValue += "Contents of memory region 0x" + startAddress.ToString("X" + bytesPerLine) + " - 0x" + (startAddress + length).ToString("X" + bytesPerLine)
+            output += "----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+            output += "Contents of memory region 0x" + startAddress.ToString("X" + bytesPerLine) + " - 0x" + (startAddress + length).ToString("X" + bytesPerLine)
                 + " Created at: " + DateTime.Now + ". Created by: " + info.Author + Environment.NewLine;
-            output.ReturnValue += "----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+            output+= "----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
 
             for (int i = 0; i < result.ReturnValue.Length; i++)
             {
                 if (i == 0)
                 {
-                    output.ReturnValue += startAddress.ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ";
+                    output += startAddress.ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ";
                 }
                 else if (i % bytesPerLine == 0)
                 {
-                    output.ReturnValue += Environment.NewLine;
-                    output.ReturnValue += (startAddress + ((i / bytesPerLine) * bytesPerLine)).ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ";
+                    output += Environment.NewLine;
+                    output += (startAddress + ((i / bytesPerLine) * bytesPerLine)).ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ";
                 }
                 else
                 {
-                    output.ReturnValue += result.ReturnValue[i].ToString("X2") + " ";
+                    output += result.ReturnValue[i].ToString("X2") + " ";
                 }
             }
 
             if (writeToFile == true)
             {
-                File.WriteAllText(dumpFilename, output.ReturnValue);
+                File.WriteAllText(dumpFilename, output);
             }
             Console.WriteLine("Here 3");
             return output;
@@ -2754,11 +2748,10 @@ namespace ERC
         /// <param name="hexStartAddress">The start address of the specific heap block to be dumped in hexadecimal. (optional)</param>
         /// <param name="writeToFile">Bool indicating if output should be written to a file.(optional)</param>
         /// <returns>A string containing the bytes read from memory</returns>
-        public static ErcResult<List<string>> DumpHeap(HeapInfo hi, ulong heapid = 0, string hexStartAddress = "", bool writeToFile = true)
+        public static List<string> DumpHeap(HeapInfo hi, ulong heapid = 0, string hexStartAddress = "", bool writeToFile = true)
         {
-            ErcResult<List<string>> output = new ErcResult<List<string>>(hi.HeapProcess.ProcessCore);
-            output.ReturnValue = new List<string>();
-
+            List<string> output = new List<string>();
+            
             if (hexStartAddress.Contains("0x") || hexStartAddress.Contains("0x") || hexStartAddress.Contains("x") || hexStartAddress.Contains("X"))
             {
                 hexStartAddress = hexStartAddress.Replace("0x", "");
@@ -2774,9 +2767,8 @@ namespace ERC
                 {
                     startAddress = (uint)System.Convert.ToInt32(hexStartAddress, 16);
                 }
-                catch (Exception e)
+                catch 
                 {
-                    output.Error = e;
                 }
 
             }
@@ -2786,18 +2778,15 @@ namespace ERC
                 {
                     startAddress = (ulong)System.Convert.ToInt64(hexStartAddress, 16);
                 }
-                catch (Exception e)
+                catch 
                 {
-                    output.Error = e;
                 }
             }
 
             if (heapid == 0 && startAddress == 0)
             {
-                ErcResult<List<string>> ret = new ErcResult<List<string>>(hi.HeapProcess);
-                ret.ReturnValue = new List<string>();
-                ret.Error = new ERCException("Neither heapID or start address supplied. One must be supplied in order to utilize this method.");
-                ret.ReturnValue.Add("ERROR: Check exception.");
+                List<string> ret = new List<string>();
+                ret.Add("Neither heapID or start address supplied. One must be supplied in order to utilize this method.");
                 return ret;
             }
 
@@ -2834,23 +2823,17 @@ namespace ERC
             string dumpFilename = GetFilePath(hi.HeapProcess.WorkingDirectory, "HeapDump_", ".txt");
             int bytesPerLine = 0;
 
-            output.ReturnValue.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
-            output.ReturnValue.Add("Contents of process heap: " + heapid + " Created at: " + DateTime.Now + ". Created by: " + hi.HeapProcess.Author + Environment.NewLine);
-            output.ReturnValue.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+            output.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+            output.Add("Contents of process heap: " + heapid + " Created at: " + DateTime.Now + ". Created by: " + hi.HeapProcess.Author + Environment.NewLine);
+            output.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
 
             if (hi.HeapProcess.ProcessMachineType == MachineType.I386)
             {
                 bytesPerLine = 8;
             }
-            else if (hi.HeapProcess.ProcessMachineType == MachineType.x64)
+            else 
             {
                 bytesPerLine = 16;
-            }
-            else
-            {
-                output.Error = new ERCException("Unsupported MachineType. MachineType must be I386 or x64");
-                output.ReturnValue.Add("ERROR: Check exception.");
-                return output;
             }
 
             foreach (KeyValuePair<IntPtr, int> kv in searches)
@@ -2861,23 +2844,23 @@ namespace ERC
                 {
                     if (i == 0)
                     {
-                        output.ReturnValue.Add(Environment.NewLine + kv.Key.ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ");
+                        output.Add(Environment.NewLine + kv.Key.ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ");
                     }
                     else if (i % bytesPerLine == 0)
                     {
-                        output.ReturnValue.Add(Environment.NewLine);
-                        output.ReturnValue.Add((kv.Key + ((i / bytesPerLine) * bytesPerLine)).ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ");
+                        output.Add(Environment.NewLine);
+                        output.Add((kv.Key + ((i / bytesPerLine) * bytesPerLine)).ToString("X" + bytesPerLine) + ": " + result.ReturnValue[i].ToString("X2") + " ");
                     }
                     else
                     {
-                        output.ReturnValue.Add(result.ReturnValue[i].ToString("X2") + " ");
+                        output.Add(result.ReturnValue[i].ToString("X2") + " ");
                     }
                 }
             }
 
             if (writeToFile == true)
             {
-                File.WriteAllLines(dumpFilename, output.ReturnValue);
+                File.WriteAllLines(dumpFilename, output);
             }
 
             return output;
@@ -2890,16 +2873,16 @@ namespace ERC
         /// </summary>
         /// <param name="hi"></param>
         /// <returns>Returns a list of strings</returns>
-        public static ErcResult<List<string>> HeapStats(HeapInfo hi, bool extended = false)
+        public static List<string> HeapStats(HeapInfo hi, ulong heapID = 0, string hexStartAddress = "", bool extended = false)
         {
-            ErcResult<List<string>> result = new ErcResult<List<string>>(hi.HeapProcess);
-            result.ReturnValue = new List<string>();
-            result.ReturnValue.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
-            result.ReturnValue.Add("Heap statistics for process: " + hi.HeapProcess.ProcessName + " Created at: " + DateTime.Now + ". Created by: " + hi.HeapProcess.Author + Environment.NewLine);
-            result.ReturnValue.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
-            foreach (string s in hi.HeapStatistics(extended).ReturnValue)
+            List<string> result = new List<string>();
+            result = new List<string>();
+            result.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+            result.Add("Heap statistics for process: " + hi.HeapProcess.ProcessName + " Created at: " + DateTime.Now + ". Created by: " + hi.HeapProcess.Author + Environment.NewLine);
+            result.Add("----------------------------------------------------------------------------------------------------------------------" + Environment.NewLine);
+            foreach (string s in hi.HeapStatistics(extended, heapID, hexStartAddress).ReturnValue)
             {
-                result.ReturnValue.Add(s);
+                result.Add(s);
             }
             return result;
         }
@@ -2921,6 +2904,48 @@ namespace ERC
                 result.Add("Heap " + heapnum + " ID = " + ul + Environment.NewLine);
             }
 
+            return result;
+        }
+        #endregion
+
+        #region Search Heap
+        public static List<string> SearchHeap(HeapInfo hi, byte[] searchBytes, ulong heapID = 0, string hexStartAddress = "", bool writeToFile = true)
+        {
+            var output = hi.SearchHeap(searchBytes, heapID, hexStartAddress);
+            List<string> result = new List<string>();
+            if(output.Error != null)
+            {
+                result.Add("ERROR: " + output.Error.Message + Environment.NewLine);
+            }
+
+            if(output.ReturnValue.Count == 0)
+            {
+                result.Add(String.Format("Search table on {0} by {1}. Search string: 0x{2}", DateTime.Now, hi.HeapProcess.Author, BitConverter.ToString(searchBytes).Replace("-", "")) + Environment.NewLine);
+                result.Add("----------------------------------------------------------------------" + Environment.NewLine);
+                result.Add("No instances of the pattern were found." + Environment.NewLine);
+                return result;
+            }
+
+            result.Add(String.Format("Search table created on {0} by {1}. Search string: 0x{2}", DateTime.Now, hi.HeapProcess.Author, BitConverter.ToString(searchBytes).Replace("-", "")) + Environment.NewLine);
+            result.Add("----------------------------------------------------------------------" + Environment.NewLine);
+            
+            if(hi.HeapProcess.ProcessMachineType == MachineType.I386)
+            {
+                result.Add("  Address   | Heap ID  | Heap Entry Start Address " + Environment.NewLine);
+                foreach (Tuple<IntPtr, IntPtr, IntPtr> t in output.ReturnValue)
+                {
+                    result.Add(" 0x" + t.Item1.ToString("X8") + " | " + (uint)t.Item2 + " | 0x" + t.Item3.ToString("X8") + Environment.NewLine);
+                }
+            }
+            else
+            {
+                result.Add("       Address      |    Heap ID    | Heap Entry Start Address " + Environment.NewLine);
+                foreach (Tuple<IntPtr, IntPtr, IntPtr> t in output.ReturnValue)
+                {
+                    result.Add(" 0x" + t.Item1.ToString("X16") + " | " + (ulong)t.Item2 + " | 0x" + t.Item3.ToString("X16") + Environment.NewLine);
+                }
+            }
+            result.Add(Environment.NewLine);
             return result;
         }
         #endregion

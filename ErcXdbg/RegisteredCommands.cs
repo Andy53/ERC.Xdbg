@@ -1716,15 +1716,7 @@ namespace ErcXdbg
                 values[i] = System.Convert.ToInt64(parameters[i], 16);
             }
 
-            ERC.ErcResult<string> result = ERC.DisplayOutput.DumpMemory(info, (IntPtr)values[0], (int)values[1]);
-            if(result.Error == null)
-            {
-                PLog.WriteLine(result.ReturnValue);
-            }
-            else
-            {
-                PrintHelp(result.Error.Message);
-            }
+            PLog.WriteLine(ERC.DisplayOutput.DumpMemory(info, (IntPtr)values[0], (int)values[1]));
         }
 
         private static void SEH(List<string> parameters, ERC.ProcessInfo info) 
@@ -1810,7 +1802,6 @@ namespace ErcXdbg
             bool searchheap = false;
 
             string hexStartAddress = "";
-            ulong startAddress = 0;
             ulong heapID = 0;
             bool writeToFile = true;
 
@@ -1892,53 +1883,33 @@ namespace ErcXdbg
             if (heapstats == true)
             {
                 var result = ERC.DisplayOutput.HeapStats(hi);
-                if(result.Error == null) {
-                    foreach (string s in result.ReturnValue)
-                    {
-                        PLog.Write(s);
-                    }
-                    PLog.Write(Environment.NewLine);
-                }
-                else
+                foreach (string s in result)
                 {
-                    PrintHelp(result.Error.Message);
+                    PLog.Write(s);
                 }
+                PLog.Write(Environment.NewLine);
             }
 
             if(dumpheap == true)
             {
                 var result = ERC.DisplayOutput.DumpHeap(hi, heapID, hexStartAddress, writeToFile);
-                if (result.Error == null)
+                foreach (string s in result)
                 {
-                    foreach (string s in result.ReturnValue)
-                    {
-                        PLog.Write(s);
-                    }
-                    PLog.Write(Environment.NewLine);
+                    PLog.Write(s);
                 }
-                else
-                {
-                    PrintHelp(result.Error.Message);
-                }
+                PLog.Write(Environment.NewLine);
             }
 
             if (searchheap == true)
             {
-                /*
-                var result = ERC.DisplayOutput.SearchHeap(hi, heapID, hexStartAddress, writeToFile);
-                if (result.Error == null)
+                string searchString = string.Join("", parameters);
+                byte[] bytes = StringToByteArray(searchString);
+                var result = ERC.DisplayOutput.SearchHeap(hi, bytes, heapID, hexStartAddress, writeToFile);
+                foreach (string s in result)
                 {
-                    foreach (string s in result.ReturnValue)
-                    {
-                        PLog.Write(s);
-                    }
-                    PLog.Write(Environment.NewLine);
+                    PLog.Write(s);
                 }
-                else
-                {
-                    PrintHelp(result.Error.Message);
-                }
-                */
+                PLog.Write(Environment.NewLine);
             }
         }
 

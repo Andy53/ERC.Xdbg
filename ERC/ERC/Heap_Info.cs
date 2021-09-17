@@ -77,11 +77,10 @@ namespace ERC
         /// <param name="heapID">ID of the heap to be searched(Optional)</param>
         /// <param name="hexStartAddress">Start address of the heap entry to be searched in hexadecimal(Optional)</param>
         /// <returns>Returns an ERCResult of IntPtr containing pointers to all instances of the pattern found.</returns>
-        public ErcResult<List<IntPtr>> SearchHeap(byte[] searchBytes, ulong heapID = 0, string hexStartAddress = "")
+        public ErcResult<List<Tuple<IntPtr, IntPtr, IntPtr>>> SearchHeap(byte[] searchBytes, ulong heapID = 0, string hexStartAddress = "")
         {
-
-            ErcResult<List<IntPtr>> result = new ErcResult<List<IntPtr>>(HeapProcess);
-            result.ReturnValue = new List<IntPtr>();
+            ErcResult<List<Tuple<IntPtr, IntPtr, IntPtr>>> result = new ErcResult<List<Tuple<IntPtr, IntPtr, IntPtr>>>(HeapProcess);
+            result.ReturnValue = new List<Tuple<IntPtr, IntPtr, IntPtr>>();
 
             if (hexStartAddress.Contains("0x") || hexStartAddress.Contains("0x") || hexStartAddress.Contains("x") || hexStartAddress.Contains("X"))
             {
@@ -91,16 +90,22 @@ namespace ERC
                 hexStartAddress = hexStartAddress.Replace("x", "");
             }
 
-            ulong startAddress = 0;
+            IntPtr startAddress = IntPtr.Zero;
+            IntPtr HeapID = IntPtr.Zero;
+
+            if (heapID != 0)
+            {
+                HeapID = (IntPtr)heapID;
+            }
+
             if (HeapProcess.ProcessMachineType == MachineType.I386)
             {
                 try
                 {
-                    startAddress = (uint)Convert.ToInt32(hexStartAddress, 16);
+                    startAddress = (IntPtr)Convert.ToInt32(hexStartAddress, 16);
                 }
-                catch (Exception e)
+                catch 
                 {
-                    result.Error = e;
                 }
 
             }
@@ -108,11 +113,10 @@ namespace ERC
             {
                 try
                 {
-                    startAddress = (ulong)Convert.ToInt64(hexStartAddress, 16);
+                    startAddress = (IntPtr)Convert.ToInt64(hexStartAddress, 16);
                 }
-                catch (Exception e)
+                catch 
                 {
-                    result.Error = e;
                 }
             }
 
@@ -127,7 +131,7 @@ namespace ERC
             {
                 foreach (HEAPENTRY32 he in HeapEntries)
                 {
-                    if((ulong)he.th32HeapID == heapID)
+                    if(he.th32HeapID == HeapID)
                     {
                         byte[] bytes = HeapProcess.DumpMemoryRegion(he.dwAddress, (int)he.dwBlockSize).ReturnValue;
 
@@ -140,17 +144,21 @@ namespace ERC
                             for (int j = searchBytes.Length - 1; j >= 1; j--)
                             {
                                 if (bytes[i + j] != searchBytes[j]) break;
-                                if (j == 1) result.ReturnValue.Add(he.dwAddress + i);
+                                if (j == 1) 
+                                {
+                                    Tuple<IntPtr, IntPtr, IntPtr> element = new Tuple<IntPtr, IntPtr, IntPtr>(he.dwAddress + i, he.th32HeapID, he.dwAddress);
+                                    result.ReturnValue.Add(element);
+                                } 
                             }
                         }
                     }
                 }
             }
-            else if(startAddress != 0)
+            else if(startAddress != IntPtr.Zero)
             {
                 foreach (HEAPENTRY32 he in HeapEntries)
                 {
-                    if ((ulong)he.dwAddress == startAddress)
+                    if (he.dwAddress == startAddress)
                     {
                         byte[] bytes = HeapProcess.DumpMemoryRegion((IntPtr)startAddress, (int)he.dwBlockSize).ReturnValue;
 
@@ -169,10 +177,10 @@ namespace ERC
                                 {
                                     break;
                                 }
-
                                 if (j == 1)
                                 {
-                                    result.ReturnValue.Add(he.dwAddress + i);
+                                    Tuple<IntPtr, IntPtr, IntPtr> element = new Tuple<IntPtr, IntPtr, IntPtr>(he.dwAddress + i, he.th32HeapID, he.dwAddress);
+                                    result.ReturnValue.Add(element);
                                 }
                             }
                         }
@@ -194,7 +202,11 @@ namespace ERC
                         for (int j = searchBytes.Length - 1; j >= 1; j--)
                         {
                             if (bytes[i + j] != searchBytes[j]) break;
-                            if (j == 1) result.ReturnValue.Add(he.dwAddress + i);
+                            if (j == 1)
+                            {
+                                Tuple<IntPtr, IntPtr, IntPtr> element = new Tuple<IntPtr, IntPtr, IntPtr>(he.dwAddress + i, he.th32HeapID, he.dwAddress);
+                                result.ReturnValue.Add(element);
+                            }
                         }
                     }
                 }
@@ -227,9 +239,8 @@ namespace ERC
                 {
                     startAddress = (uint)Convert.ToInt32(hexStartAddress, 16);
                 }
-                catch(Exception e)
+                catch
                 {
-                    result.Error = e;
                 }
                 
             }
@@ -239,9 +250,8 @@ namespace ERC
                 {
                     startAddress = (ulong)Convert.ToInt64(hexStartAddress, 16);
                 }
-                catch(Exception e)
+                catch
                 {
-                    result.Error = e;
                 }
             }
             
