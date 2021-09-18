@@ -190,7 +190,15 @@ Displays info about the modules loaded by the attached process. Can be passed a 
 `--ThreadInfo`    
 Displays info about threads associated with the attached process. Can be passed a boolean to indicate if the output should be written to disk.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --threadInfo`    
-&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write threadinfo output to disk.      
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write threadinfo output to disk.
+
+`--HeapInfo`
+Displays information about the heap. Takes commands search, stats, ids, and dump. Takes an integer to represent the ID of the heap to utilize. Takes a hex value to specify the address of the heap entry to utilize.
+If both heap ID and start address are specified heap ID takes precedence, if start address and a byte pattern to search for are specified start address must be provided first. Takes a boolean value of true/false/1/0
+to specify if output should be written to disk.
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --HeapInfo stats` Display statistics about all heaps associated with the process.
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --HeapInfo 0x00453563 search FFE4` Search for FFE4 in the Heap entry starting at 0x00453563
+&nbsp;&nbsp;&nbsp;&nbsp;Example: `ERC --HeapInfo 0x00453563 dump` Dump all memory from heap entry starting at 0x00453563     
 
 `--SEH`   
 Displays a list of addresses for pop pop ret instructions. Can be passed a list of module paths to be ignored in the search.    

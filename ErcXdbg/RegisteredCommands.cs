@@ -228,7 +228,8 @@ namespace ErcXdbg
             help += "   --HeapInfo      |\n";
             help += "       Displays information about the heap. Takes commands search, stats, ids, and dump. Takes an integer to\n";
             help += "       represent the ID of the heap to utilize. Takes a hex value to specify the address of the heap entry to utilize.\n";
-            help += "       If both heap ID and start address are specified heap ID takes precedence. Takes a boolean value of true/false/1/0\n";
+            help += "       If both heap ID and start address are specified heap ID takes precedence, if start address and a byte pattern to.\n";
+            help += "       search for are specified start address must be provided first. Takes a boolean value of true/false/1/0\n";
             help += "       to specify if output should be written to disk.\n";
             help += "       Example: ERC --HeapInfo stats. Display statistics about all heaps associated with the process.\n";
             help += "       Example: ERC --HeapInfo 0x00453563 search FFE4. Search for FFE4 in the Heap entry starting at 0x00453563\n";
@@ -1891,6 +1892,22 @@ namespace ErcXdbg
                 }
             }
 
+            if (searchheap == true)
+            {
+                if(hexStartAddress != "" && bytes == null)
+                {
+                    bytes = ERC.Utilities.Convert.HexToBytes(hexStartAddress);
+                    hexStartAddress = "";
+                }
+
+                var result = ERC.DisplayOutput.SearchHeap(hi, bytes, heapID, hexStartAddress, writeToFile);
+                foreach (string s in result)
+                {
+                    PLog.Write(s);
+                }
+                PLog.Write(Environment.NewLine);
+            }
+
             if (heapids == true)
             {
                 foreach(string s in ERC.DisplayOutput.ListHeapIDs(hi))
@@ -1913,16 +1930,6 @@ namespace ErcXdbg
             if(dumpheap == true)
             {
                 var result = ERC.DisplayOutput.DumpHeap(hi, heapID, hexStartAddress, writeToFile);
-                foreach (string s in result)
-                {
-                    PLog.Write(s);
-                }
-                PLog.Write(Environment.NewLine);
-            }
-
-            if (searchheap == true)
-            {
-                var result = ERC.DisplayOutput.SearchHeap(hi, bytes, heapID, hexStartAddress, writeToFile);
                 foreach (string s in result)
                 {
                     PLog.Write(s);
