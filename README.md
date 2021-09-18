@@ -192,7 +192,7 @@ Displays info about threads associated with the attached process. Can be passed 
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --threadInfo`    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --threadinfo false` Does not write threadinfo output to disk.
 
-`--HeapInfo`
+`--HeapInfo`     
 Displays information about the heap. Takes commands search, stats, ids, and dump. Takes an integer to represent the ID of the heap to utilize. Takes a hex value to specify the address of the heap entry to utilize.
 If both heap ID and start address are specified heap ID takes precedence, if start address and a byte pattern to search for are specified start address must be provided first. Takes a boolean value of true/false/1/0
 to specify if output should be written to disk.     
