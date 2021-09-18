@@ -198,7 +198,7 @@ If both heap ID and start address are specified heap ID takes precedence, if sta
 to specify if output should be written to disk.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --HeapInfo stats` Display statistics about all heaps associated with the process.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --HeapInfo 0x00453563 search FFE4` Search for FFE4 in the Heap entry starting at 0x00453563    
-&nbsp;&nbsp;&nbsp;&nbsp;Example 3: `ERC --HeapInfo 0x00453563 dump` Dump all memory from heap entry starting at 0x00453563 
+&nbsp;&nbsp;&nbsp;&nbsp;Example 3: `ERC --HeapInfo 0x00453563 dump` Dump all memory from heap entry starting at 0x00453563      
 &nbsp;&nbsp;&nbsp;&nbsp;Example 4: `ERC --HeapInfo 0x00453563 dump stats` Dump all memory from heap entry starting at 0x00453563 and display stats for the heap entry starting at 0x00453563       
 
 `--SEH`   
