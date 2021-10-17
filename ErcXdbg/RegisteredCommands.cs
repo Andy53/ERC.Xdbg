@@ -1749,22 +1749,22 @@ namespace ErcXdbg
             {
                 if(Globals.encode == Encoding.Unicode)
                 {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection);
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection).ToList();
                 }
                 else
                 {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection);
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, Globals.bytes, Globals.protection).ToList();
                 }
             }
             else
             {
                 if (Globals.encode == Encoding.Unicode)
                 {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection);
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection).ToList();
                 }
                 else
                 {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection);
+                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, null, Globals.protection).ToList();
                 } 
             }
 
@@ -1791,7 +1791,7 @@ namespace ErcXdbg
             }
 
             List<string> nrpInfo = new List<string>();
-            nrpInfo = ERC.DisplayOutput.GenerateFindNRPTable(info, (int)Globals.encode, Globals.extended);
+            nrpInfo = ERC.DisplayOutput.GenerateFindNRPTable(info, (int)Globals.encode, Globals.extended).ToList();
 
             foreach (string s in nrpInfo)
             {

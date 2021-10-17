@@ -406,9 +406,9 @@ namespace ERC
         /// <param name="nxcompat">Remove NXCompat libraries.</param>
         /// <param name="osdll">Remove OS Dlls.</param>
         /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
-        /// <param name="protection">String containing protection level returned pointers will.</param>
+        /// <param name="protection">String array containing protection level returned pointers will.</param>
         /// <returns></returns>
-        public static List<string> SearchMemory(ProcessInfo info, int searchType, string searchString, bool aslr = false, 
+        public static string[] SearchMemory(ProcessInfo info, int searchType, string searchString, bool aslr = false, 
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false, 
             byte[] unwantedBytes = null, string protection = "exec")
         {
@@ -500,7 +500,7 @@ namespace ERC
                 }
             }
             WriteToFile(info.WorkingDirectory, "MemorySearch", ".txt", output);
-            return output;
+            return output.ToArray();
         }
         #endregion
 
@@ -518,9 +518,9 @@ namespace ERC
         /// <param name="osdll">Remove OS Dlls.</param>
         /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
         /// <param name="modules">List of modules to be searched</param>
-        /// <param name="protection">String containing protection level returned pointers will.</param>
+        /// <param name="protection">String array containing protection level returned pointers will.</param>
         /// <returns></returns>
-        public static List<string> SearchModules(ProcessInfo info, int searchType, string searchString, bool aslr = false,
+        public static string[] SearchModules(ProcessInfo info, int searchType, string searchString, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
             byte[] unwantedBytes = null, List<string> modules = null, string protection = "exec")
         {
@@ -611,7 +611,7 @@ namespace ERC
                 }
             }
             WriteToFile(info.WorkingDirectory, "ModuleSearch", ".txt", output);
-            return output;
+            return output.ToArray();
         }
 
         #endregion
@@ -630,8 +630,8 @@ namespace ERC
         /// <param name="osdll">Remove OS Dlls.</param>
         /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
         /// <param name="protection">String containing protection level returned pointers will.</param>
-        /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
-        public static List<string> GetSEHJumps(ProcessInfo info, bool aslr = false,
+        /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+        public static string[] GetSEHJumps(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
             byte[] unwantedBytes = null, string protection = "exec")
         {
@@ -765,7 +765,7 @@ namespace ERC
             }
             
             File.WriteAllLines(sehFilename, ret);
-            return ret;
+            return ret.ToArray();
         }
 
         /// <summary>
@@ -776,8 +776,8 @@ namespace ERC
         /// <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions</param>
         /// <param name="ptrsToExclude">Ptrs containing these byte values will be discarded.</param>
         /// <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
-        /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
-        public static List<string> GetSEHJumps(ProcessInfo info, byte[] ptrsToExclude, List<string> excludes = null)
+        /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+        public static string[] GetSEHJumps(ProcessInfo info, byte[] ptrsToExclude, List<string> excludes = null)
         {
             List<string> ret = new List<string>();
             ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(ptrsToExclude, excludes);
@@ -871,7 +871,7 @@ namespace ERC
             }
             
             File.WriteAllLines(sehFilename, ret);
-            return ret;
+            return ret.ToArray();
         }
 
         /// <summary>
@@ -887,8 +887,8 @@ namespace ERC
         /// <param name="osdll">Remove OS Dlls.</param>
         /// <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
         /// <param name="protection">String containing protection level returned pointers will.</param>
-        /// <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
-        public static List<string> GetSEHJumpsUnicode(ProcessInfo info, bool aslr = false,
+        /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+        public static string[] GetSEHJumpsUnicode(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
             byte[] unwantedBytes = null, string protection = "exec")
         {
@@ -1033,7 +1033,7 @@ namespace ERC
             }
             
             File.WriteAllLines(sehFilename, ret);
-            return ret;
+            return ret.ToArray();
         }
         #endregion
 
@@ -1256,7 +1256,7 @@ namespace ERC
         /// <param name="searchType">Integer specifiying the format of the string: 0 = search term is in bytes\n1 = search term is in unicode\n2 = search term is in ASCII\n3 = Search term is in UTF8\n4 = Search term is in UTF7\n5 = Search term is in UTF32</param>
         /// <param name="extended">Whether the extended character range is to be used when searching for the non repeating pattern</param>
         /// <returns>Returns a List of strings containing the locations the repeating pattern was identified</returns>
-        public static List<string> GenerateFindNRPTable(ProcessInfo info, int searchType = 0, bool extended = false)
+        public static string[] GenerateFindNRPTable(ProcessInfo info, int searchType = 0, bool extended = false)
         {
             List<string> output = new List<string>();
             string fnrpFilename = GetFilePath(info.WorkingDirectory, "Find_NRP_", ".txt");
@@ -1275,7 +1275,7 @@ namespace ERC
             {
                 output.Add(fnrp.Error.ToString());
                 File.WriteAllLines(fnrpFilename, output);
-                return output;
+                return output.ToArray();
             }
 
             for (int i = 0; i < fnrp.ReturnValue.Count; i++)
@@ -1325,7 +1325,7 @@ namespace ERC
 
             output = output.Distinct().ToList();
             File.WriteAllLines(fnrpFilename, output);
-            return output;
+            return output.ToArray();
         }
         #endregion
 
@@ -1334,8 +1334,8 @@ namespace ERC
         /// Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
         /// </summary>
         /// <param name="rcg">The ROP chain generator object</param>
-        /// <returns>Returns a List of strings</returns>
-        public static List<string> RopChainGadgets32(RopChainGenerator32 rcg)
+        /// <returns>Returns an array of strings</returns>
+        public static string[] RopChainGadgets32(RopChainGenerator32 rcg)
         {
             string output = "";
             List<string> totalGadgets = new List<string>();
@@ -1955,7 +1955,7 @@ namespace ERC
             }
             File.WriteAllLines(ropChainPath, ropChain);
  
-            return totalGadgets;
+            return totalGadgets.ToArray();
         }
         #endregion
 
@@ -1964,8 +1964,8 @@ namespace ERC
         /// Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
         /// </summary>
         /// <param name="rcg">The ROP chain generator object</param>
-        /// <returns>Returns a List of strings</returns>
-        public static List<string> RopChainGadgets64(RopChainGenerator64 rcg)
+        /// <returns>Returns an array of strings</returns>
+        public static string[] RopChainGadgets64(RopChainGenerator64 rcg)
         {
             string output = "";
             List<string> totalGadgets = new List<string>();
@@ -2542,7 +2542,7 @@ namespace ERC
                 ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
             }
             File.WriteAllLines(ropChainPath, ropChain);
-            return totalGadgets;
+            return totalGadgets.ToArray();
         }
 
         private static string ConvertRopElementToString(Tuple<IntPtr, string> element)
@@ -2748,7 +2748,7 @@ namespace ERC
         /// <param name="hexStartAddress">The start address of the specific heap block to be dumped in hexadecimal. (optional)</param>
         /// <param name="writeToFile">Bool indicating if output should be written to a file.(optional)</param>
         /// <returns>A string containing the bytes read from memory</returns>
-        public static List<string> DumpHeap(HeapInfo hi, ulong heapid = 0, string hexStartAddress = "", bool writeToFile = true)
+        public static string[] DumpHeap(HeapInfo hi, ulong heapid = 0, string hexStartAddress = "", bool writeToFile = true)
         {
             List<string> output = new List<string>();
             
@@ -2787,7 +2787,7 @@ namespace ERC
             {
                 List<string> ret = new List<string>();
                 ret.Add("Neither heapID or start address supplied. One must be supplied in order to utilize this method.");
-                return ret;
+                return ret.ToArray();
             }
 
             Dictionary<IntPtr, int> searches = new Dictionary<IntPtr, int>();
@@ -2863,7 +2863,7 @@ namespace ERC
                 File.WriteAllLines(dumpFilename, output);
             }
 
-            return output;
+            return output.ToArray();
         }
         #endregion
 
@@ -2872,8 +2872,8 @@ namespace ERC
         /// Returns statistics about the heap information gathered about the current process.
         /// </summary>
         /// <param name="hi"></param>
-        /// <returns>Returns a list of strings</returns>
-        public static List<string> HeapStats(HeapInfo hi, ulong heapID = 0, string hexStartAddress = "", bool extended = false)
+        /// <returns>Returns an of strings</returns>
+        public static string[] HeapStats(HeapInfo hi, ulong heapID = 0, string hexStartAddress = "", bool extended = false)
         {
             List<string> result = new List<string>();
             result = new List<string>();
@@ -2884,12 +2884,17 @@ namespace ERC
             {
                 result.Add(s);
             }
-            return result;
+            return result.ToArray();
         }
         #endregion
 
         #region ListHeapIDs
-        public static List<string> ListHeapIDs(HeapInfo hi)
+        /// <summary>
+        /// Returns a list of IDs for each heap associated with the current process.
+        /// </summary>
+        /// <param name="hi">A HeapInfo object.</param>
+        /// <returns>Retruns an array of strings containing the heapIds.</returns>
+        public static string[] ListHeapIDs(HeapInfo hi)
         {
             var output = hi.HeapIDs();
             List<string> result = new List<string>();
@@ -2904,12 +2909,21 @@ namespace ERC
                 result.Add("Heap " + heapnum + " ID = " + ul + Environment.NewLine);
             }
 
-            return result;
+            return result.ToArray();
         }
         #endregion
 
         #region Search Heap
-        public static List<string> SearchHeap(HeapInfo hi, byte[] searchBytes, ulong heapID = 0, string hexStartAddress = "", bool writeToFile = true)
+        /// <summary>
+        /// Searches the process heap for a specific byte patters. If heapID and hexStartAddress are specified heapID takes precedence. Takes an optional bool indicating if output should be written to file.
+        /// </summary>
+        /// <param name="hi">HeapInfo object.</param>
+        /// <param name="searchBytes">Pattern to be searched for.</param>
+        /// <param name="heapID">Optional parameter indicating which heap to search.</param>
+        /// <param name="hexStartAddress">Optional parameter indicating the start address of the heap object to search</param>
+        /// <param name="writeToFile">Bool indicating if the output should be written to file.</param>
+        /// <returns>Returns an array of strings.</returns>
+        public static string[] SearchHeap(HeapInfo hi, byte[] searchBytes, ulong heapID = 0, string hexStartAddress = "", bool writeToFile = true)
         {
             var output = hi.SearchHeap(searchBytes, heapID, hexStartAddress);
             List<string> result = new List<string>();
@@ -2923,7 +2937,7 @@ namespace ERC
                 result.Add(String.Format("Search table on {0} by {1}. Search string: 0x{2}", DateTime.Now, hi.HeapProcess.Author, BitConverter.ToString(searchBytes).Replace("-", "")) + Environment.NewLine);
                 result.Add("----------------------------------------------------------------------" + Environment.NewLine);
                 result.Add("No instances of the pattern were found." + Environment.NewLine);
-                return result;
+                return result.ToArray();
             }
 
             result.Add(String.Format("Search table created on {0} by {1}. Search string: 0x{2}", DateTime.Now, hi.HeapProcess.Author, BitConverter.ToString(searchBytes).Replace("-", "")) + Environment.NewLine);
@@ -2946,7 +2960,7 @@ namespace ERC
                 }
             }
             result.Add(Environment.NewLine);
-            return result;
+            return result.ToArray();
         }
         #endregion
     }
