@@ -18,7 +18,7 @@ Visual studio
 C#   
 
 ### Documentation
-This library contains the fundamental specifications, documentation, and architecture that underpin ERC.Xdbg. If you're looking to understand the system better, or want to know how to integrate the various components, there is a lot of valuable information contained here.    
+This library contains the fundamental specifications, documentation, and architecture that underpin ERC.Net. If you're looking to understand the system better, or want to know how to integrate the various components, there is a lot of valuable information contained here.    
 
 [📄 Documentation and Specifications](https://andy53.github.io/ERC.net/) 
 
@@ -94,7 +94,7 @@ namespace ERC_Test_App
 }
 ```
 
-Search Process Memory for a string (the string being searched for in "anonymous", the program being searched is notepad) and return a list of pointers to that string in process memory:
+Search Process Memory for a string (the string being searched for is "anonymous", the program being searched is notepad) and return a list of pointers to that string in process memory:
 ```csharp
 using System;
 using System.Collections.Generic;
@@ -414,7 +414,7 @@ namespace ERC_test_app
         {
             public static ErcCore core = new ErcCore();
             Console.WriteLine("Generate RopChain 32");
-            GenerateRopChain32();*/
+            GenerateRopChain32();
             Console.ReadKey();
         }
 
@@ -439,7 +439,7 @@ namespace ERC_test_app
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/Andy53/ERC.net/tags). 
+For the versions available, see the [tags on this repository](https://github.com/Andy53/ERC.net/tags). 
 
 ## Authors
 

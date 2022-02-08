@@ -1230,7 +1230,7 @@ namespace ERC
         /// <param name="includedModules">Modules to be included in the search (optional)</param>
         /// <param name="excludedModules">Modules to be excluded from the search (optional)</param>
         /// <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>>
-        public ErcResult<Dictionary<IntPtr, string>> SearchModules(int searchType, byte[] ptrsToExclude, byte[] searchBytes = null, string searchString = null, List<string> includedModules = null, List<string> excludedModules = null)
+        public ErcResult<Dictionary<IntPtr, string>> SearchModules(int searchType, byte[] ptrsToExclude = null, byte[] searchBytes = null, string searchString = null, List<string> includedModules = null, List<string> excludedModules = null)
         {
             ErcResult<Dictionary<IntPtr, string>> resultAddresses = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
             if (searchBytes == null && searchString == null)

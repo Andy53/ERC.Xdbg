@@ -287,7 +287,7 @@
             <returns>Returns a Dictionary of Intptr, string</returns>
         </member>
         <member name="T:ERC.Utilities.RopChainGenerator32">
-            <summary> Attempts to create Rop chains from 64 bit processes. </summary>
+            <summary> Attempts to create Rop chains from 32 bit processes. </summary>
         </member>
         <member name="F:ERC.Utilities.RopChainGenerator32.VirtualAllocChain">
             <summary>
@@ -1119,6 +1119,12 @@
             sub list.
             </summary>
         </member>
+        <member name="M:ERC.Utilities.Win32Errors.GetLastWin32Error(System.Int32)">
+            <summary>
+            Gets a user friendly string message for a system error code
+            </summary>
+            <returns>Error string</returns>
+        </member>
         <member name="T:ERC.DisplayOutput">
             <summary> Provides output in various human readable formats of data from the library. </summary>
         </member>
@@ -1214,7 +1220,7 @@
             <param name="nxcompat">Remove NXCompat libraries.</param>
             <param name="osdll">Remove OS Dlls.</param>
             <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
-            <param name="protection">String containing protection level returned pointers will.</param>
+            <param name="protection">String array containing protection level returned pointers will.</param>
             <returns></returns>
         </member>
         <member name="M:ERC.DisplayOutput.SearchModules(ERC.ProcessInfo,System.Int32,System.String,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.Collections.Generic.List{System.String},System.String)">
@@ -1231,7 +1237,7 @@
             <param name="osdll">Remove OS Dlls.</param>
             <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
             <param name="modules">List of modules to be searched</param>
-            <param name="protection">String containing protection level returned pointers will.</param>
+            <param name="protection">String array containing protection level returned pointers will.</param>
             <returns></returns>
         </member>
         <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.String)">
@@ -1248,7 +1254,7 @@
             <param name="osdll">Remove OS Dlls.</param>
             <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
             <param name="protection">String containing protection level returned pointers will.</param>
-            <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+            <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         </member>
         <member name="M:ERC.DisplayOutput.GetSEHJumps(ERC.ProcessInfo,System.Byte[],System.Collections.Generic.List{System.String})">
             <summary>
@@ -1259,7 +1265,7 @@
             <param name="info">The ProcessInfo object which will be searched for POP POP RET instructions</param>
             <param name="ptrsToExclude">Ptrs containing these byte values will be discarded.</param>
             <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
-            <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+            <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         </member>
         <member name="M:ERC.DisplayOutput.GetSEHJumpsUnicode(ERC.ProcessInfo,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Byte[],System.String)">
             <summary>
@@ -1275,7 +1281,7 @@
             <param name="osdll">Remove OS Dlls.</param>
             <param name="unwantedBytes">Addresses containing values in this byte array will be ignored.</param>
             <param name="protection">String containing protection level returned pointers will.</param>
-            <returns>Returns an ErcResult containing a list of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
+            <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         </member>
         <member name="M:ERC.DisplayOutput.GenerateByteArray(ERC.ErcCore,System.Byte[])">
             <summary>
@@ -1316,14 +1322,14 @@
             Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
             </summary>
             <param name="rcg">The ROP chain generator object</param>
-            <returns>Returns a List of strings</returns>
+            <returns>Returns an array of strings</returns>
         </member>
         <member name="M:ERC.DisplayOutput.RopChainGadgets64(ERC.Utilities.RopChainGenerator64)">
             <summary>
             Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
             </summary>
             <param name="rcg">The ROP chain generator object</param>
-            <returns>Returns a List of strings</returns>
+            <returns>Returns an array of strings</returns>
         </member>
         <member name="M:ERC.DisplayOutput.AssembleOpcodes(System.String[],System.UInt32)">
             <summary>
@@ -1364,14 +1370,50 @@
             <param name="hex">A string containing hex characters.</param>
             <returns>Returns a byte array.</returns>
         </member>
-        <member name="M:ERC.DisplayOutput.DumpMemory(ERC.ProcessInfo,System.IntPtr,System.Int32)">
+        <member name="M:ERC.DisplayOutput.DumpMemory(ERC.ProcessInfo,System.IntPtr,System.Int32,System.Boolean)">
             <summary>
             Reads a set of bytes from process memory and provides a string contianing the results.
             </summary>
             <param name="info">ProcessInfo object</param>
             <param name="startAddress">The address to start reading from.</param>
             <param name="length">The number of bytes to read.</param>
-            <returns>A string containing the bytes read from memroy</returns>
+            <param name="writeToFile">Bool indicating if output should be written to a file.</param>
+            <returns>A string containing the bytes read from memory</returns>
+        </member>
+        <member name="M:ERC.DisplayOutput.DumpHeap(ERC.HeapInfo,System.UInt64,System.String,System.Boolean)">
+            <summary>
+            Reads a set of bytes from a specific heap and provides a string contianing the results. Either HeapID or startAddress must be supplied. If both are supplied HeapID takes precedence.
+            </summary>
+            <param name="hi">HeapInfo object</param>
+            <param name="heapid">The ID of the heap to be dumped. (optional)</param>
+            <param name="hexStartAddress">The start address of the specific heap block to be dumped in hexadecimal. (optional)</param>
+            <param name="writeToFile">Bool indicating if output should be written to a file.(optional)</param>
+            <returns>A string containing the bytes read from memory</returns>
+        </member>
+        <member name="M:ERC.DisplayOutput.HeapStats(ERC.HeapInfo,System.UInt64,System.String,System.Boolean)">
+            <summary>
+            Returns statistics about the heap information gathered about the current process.
+            </summary>
+            <param name="hi"></param>
+            <returns>Returns an of strings</returns>
+        </member>
+        <member name="M:ERC.DisplayOutput.ListHeapIDs(ERC.HeapInfo)">
+            <summary>
+            Returns a list of IDs for each heap associated with the current process.
+            </summary>
+            <param name="hi">A HeapInfo object.</param>
+            <returns>Retruns an array of strings containing the heapIds.</returns>
+        </member>
+        <member name="M:ERC.DisplayOutput.SearchHeap(ERC.HeapInfo,System.Byte[],System.UInt64,System.String,System.Boolean)">
+            <summary>
+            Searches the process heap for a specific byte patters. If heapID and hexStartAddress are specified heapID takes precedence. Takes an optional bool indicating if output should be written to file.
+            </summary>
+            <param name="hi">HeapInfo object.</param>
+            <param name="searchBytes">Pattern to be searched for.</param>
+            <param name="heapID">Optional parameter indicating which heap to search.</param>
+            <param name="hexStartAddress">Optional parameter indicating the start address of the heap object to search</param>
+            <param name="writeToFile">Bool indicating if the output should be written to file.</param>
+            <returns>Returns an array of strings.</returns>
         </member>
         <member name="T:ERC.ERCException">
             <summary>
@@ -1664,6 +1706,62 @@
             <param name="Dll">True if the file is a DLL, false if the file is an EXE.</param>
             <param name="readOnly">Boolean for the access mode.</param>
             <returns>If the function succeeds, the return value is TRUE.</returns>
+        </member>
+        <member name="M:ERC.ErcCore.CreateToolhelp32Snapshot(ERC.Structures.SnapshotFlags,System.UInt32)">
+            <summary>
+            Takes a snapshot of the specified processes, as well as the heaps, modules, and threads used by these processes.
+            </summary>
+            <param name="dwFlags">The portions of the system to be included in the snapshot. </param>
+            <param name="th32ProcessID">The process identifier of the process to be included in the snapshot. This parameter can be zero to indicate the current process. This parameter is used when the TH32CS_SNAPHEAPLIST, TH32CS_SNAPMODULE, TH32CS_SNAPMODULE32, or TH32CS_SNAPALL value is specified. Otherwise, it is ignored and all processes are included in the snapshot.</param>
+            <returns>If the function succeeds, it returns an open handle to the specified snapshot.</returns>
+        </member>
+        <member name="M:ERC.ErcCore.Process32First(System.IntPtr,ERC.Structures.PROCESSENTRY32@)">
+            <summary>
+            Retrieves information about the first process encountered in a system snapshot.
+            </summary>
+            <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+            <param name="lppe">A pointer to a PROCESSENTRY32 structure.</param>
+            <returns>Returns TRUE if the first entry of the process list has been copied to the buffer or FALSE otherwise. </returns>
+        </member>
+        <member name="M:ERC.ErcCore.Process32Next(System.IntPtr,ERC.Structures.PROCESSENTRY32@)">
+            <summary>
+            Retrieves information about the next process recorded in a system snapshot.
+            </summary>
+            <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+            <param name="lppe">A pointer to a PROCESSENTRY32 structure.</param>
+            <returns>Returns TRUE if the next entry of the process list has been copied to the buffer or FALSE otherwise.</returns>
+        </member>
+        <member name="M:ERC.ErcCore.Heap32ListFirst(System.IntPtr,ERC.Structures.HEAPLIST32@)">
+            <summary>
+            Retrieves information about the first heap that has been allocated by a specified process.
+            </summary>
+            <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+            <param name="lphl">A pointer to a HEAPLIST32 structure.</param>
+            <returns>Returns TRUE if the first entry of the heap list has been copied to the buffer or FALSE otherwise.</returns>
+        </member>
+        <member name="M:ERC.ErcCore.Heap32ListNext(System.IntPtr,ERC.Structures.HEAPLIST32@)">
+            <summary>
+            Retrieves information about the next heap that has been allocated by a specified process.
+            </summary>
+            <param name="hSnapshot">A handle to the snapshot returned from a previous call to the CreateToolhelp32Snapshot function.</param>
+            <param name="lphl">A pointer to a HEAPLIST32 structure.</param>
+            <returns>Returns TRUE if the first entry of the heap list has been copied to the buffer or FALSE otherwise.</returns>
+        </member>
+        <member name="M:ERC.ErcCore.Heap32First(ERC.Structures.HEAPENTRY32@,System.UInt32,System.IntPtr)">
+            <summary>
+            Retrieves information about the first block of a heap that has been allocated by a process.
+            </summary>
+            <param name="heapentry32">A pointer to a HEAPENTRY32 structure.</param>
+            <param name="processID">The identifier of the process context that owns the heap.</param>
+            <param name="heapID">The identifier of the heap to be enumerated.</param>
+            <returns>Returns TRUE if information for the first heap block has been copied to the buffer or FALSE otherwise. </returns>
+        </member>
+        <member name="M:ERC.ErcCore.Heap32Next(ERC.Structures.HEAPENTRY32@)">
+            <summary>
+            Retrieves information about the next block of a heap that has been allocated by a process.
+            </summary>
+            <param name="heapentry32">A pointer to a HEAPENTRY32 structure.</param>
+            <returns>Returns TRUE if information about the next block in the heap has been copied to the buffer or FALSE otherwise. </returns>
         </member>
         <member name="M:ERC.ErcCore.#ctor">
             <summary>
@@ -4267,6 +4365,67 @@
             ThreadErrorMode
             </summary>
         </member>
+        <member name="T:ERC.Structures.SnapshotFlags">
+            <summary>
+            ToolHelp SnapshotFlags
+            </summary>
+        </member>
+        <member name="T:ERC.Structures.PROCESSENTRY32">
+            <summary>
+            ToolHelp PROCESSENTRY32
+            </summary>
+        </member>
+        <member name="T:ERC.Structures.HEAPLIST32">
+            <summary>
+            Describes one entry (block) of a heap that is being examined.
+            </summary>
+        </member>
+        <member name="T:ERC.Structures.HEAPENTRY32">
+            <summary>
+            Describes one entry (block) of a heap that is being examined.
+            </summary>
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.dwSize">
+            The size of the structure, in bytes *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.hHandle">
+            A handle to the heap block *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.dwAddress">
+            The linear address of the start of the block *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.dwBlockSize">
+            The size of the heap block, in bytes *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.dwFlags">
+            This member can be one of the following values.
+                            LF32_FIXED    0x00000001
+                           LF32_FREE     0x00000002
+                           LF32_MOVEABLE 0x00000004 *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.dwLockCount">
+            This member is no longer used and is always set to zero. *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.dwResvd">
+            Reserved; do not use or alter *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.th32ProcessID">
+            The identifier of the process that uses the heap *
+        </member>
+        <member name="F:ERC.Structures.HEAPENTRY32.th32HeapID">
+            The heap identifier. This is not a handle, and has meaning only to the tool help functions *
+        </member>
+        <member name="M:ERC.HeapInfo.SearchHeap(System.Byte[],System.UInt64,System.String)">
+            <summary>
+            Searches heap entries for a specified pattern. Returns pointers to all instances of the pattern. If heapID and startAddress are both supplied heapID takes precedence.
+            </summary>
+            <param name="searchBytes">byte array containing the pattern to search for</param>
+            <param name="heapID">ID of the heap to be searched(Optional)</param>
+            <param name="hexStartAddress">Start address of the heap entry to be searched in hexadecimal(Optional)</param>
+            <returns>Returns an ERCResult of IntPtr containing pointers to all instances of the pattern found.</returns>
+        </member>
+        <!-- Badly formed XML comment ignored for member "M:ERC.HeapInfo.HeapStatistics(System.Boolean,System.UInt64,System.String)" -->
+        <!-- Badly formed XML comment ignored for member "M:ERC.HeapInfo.HeapIDs" -->
         <member name="T:ERC.ModuleInfo">
             <summary>
             Contains all information relating to a specific module.
@@ -4469,7 +4628,7 @@
         </member>
         <member name="M:ERC.ProcessInfo.SearchProcessMemory(System.Byte[])">
             <summary>
-            Private function called from Search_Memory. Searches memory regions populated by the process for specific strings.
+            Private function called from Search_Memory. Searches memory regions populated by the process for specific patterns.
             </summary>
             <param name="searchBytes"> Takes a byte array as input to be searched for</param>
             <returns>Returns a list of IntPtr for each instance found.</returns>

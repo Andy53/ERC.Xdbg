@@ -5,12 +5,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using ERC;
 
 namespace ERC.Utilities
 {
-    /// <summary> Attempts to create Rop chains from 64 bit processes. </summary>
+    /// <summary> Attempts to create Rop chains from 32 bit processes. </summary>
     public class RopChainGenerator32
     {
         #region Class Variables
@@ -241,6 +242,7 @@ namespace ERC.Utilities
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
             x86Opcodes = new X86Lists();
 
+            Console.WriteLine("Getting API Addresses...");
             var ret1 = GetApiAddresses(RcgInfo);
             if (ret1.Error != null && ApiAddresses.Count <= 0)
             {
@@ -250,6 +252,7 @@ namespace ERC.Utilities
                 return failed;
             }
 
+            Console.WriteLine("Getting RopNops...");
             var ret2 = GetRopNops(excludes);
             if (ret1.Error != null && RopNops.Count <= 0)
             {
@@ -259,14 +262,20 @@ namespace ERC.Utilities
                 return failed;
             }
 
+            Console.WriteLine("Populating Opcodes...");
             var ret3 = PopulateOpcodes(RcgInfo);
+
+            Console.WriteLine("Optimizing Lists...");
             optimiseLists(RcgInfo);
 
+            Console.WriteLine("Generating Virtual Allco Chain...");
             var chain = GenerateVirtualAllocChain32(RcgInfo, startAddress);
             if (chain.Error == null)
             {
                 VirtualAllocChain = chain.ReturnValue;
             }
+
+            Console.WriteLine("Complete...");
             DisplayOutput.RopChainGadgets32(this);
             return RopChain;
         }
@@ -358,7 +367,8 @@ namespace ERC.Utilities
             ErcResult<List<IntPtr>> ropNopsResult = new ErcResult<List<IntPtr>>(RcgInfo.ProcessCore);
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
-            var ropPtrs = RcgInfo.SearchMemory(0, searchBytes: ropNop, excludes: excludes);
+            var ropPtrs = RcgInfo.SearchModules(0, searchBytes: ropNop, excludedModules: excludes);
+            //var ropPtrs = RcgInfo.SearchMemory(0, searchBytes: ropNop, excludes: excludes);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -376,7 +386,8 @@ namespace ERC.Utilities
             ErcResult<List<IntPtr>> ropNopsResult = new ErcResult<List<IntPtr>>(info.ProcessCore);
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
-            var ropPtrs = info.SearchMemory(0, searchBytes: ropNop);
+            var ropPtrs = info.SearchModules(0, searchBytes: ropNop);
+            //var ropPtrs = info.SearchMemory(0, searchBytes: ropNop);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -395,6 +406,7 @@ namespace ERC.Utilities
         {
             ErcResult<int> ret = new ErcResult<int>(info.ProcessCore);
 
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             for (int i = 0; i < RopNops.Count; i++)
             {
                 byte[] bytes = new byte[20];
@@ -412,6 +424,9 @@ namespace ERC.Utilities
                     return ret;
                 }
             }
+            watch.Stop();
+            var elapsed = watch.Elapsed;
+            Console.WriteLine("Time to complete = {0} ms", elapsed.ToString("mm\\:ss\\.ff"));
             return ret;
         }
         #endregion
@@ -2011,12 +2026,14 @@ namespace ERC.Utilities
         }
         #endregion
 
+        #region GenerateVirtualProtectChain32
         private ErcResult<Dictionary<byte[], string>> GenerateVirtualProtectChain32(ProcessInfo info)
         {
             ErcResult<Dictionary<byte[], string>> VirtualProtectChain = new ErcResult<Dictionary<byte[], string>>(info.ProcessCore);
             IntPtr VirtualProctect = ApiAddresses["VirtualProtect"];
             return VirtualProtectChain;
         }
+        #endregion
 
         #region BuildRopChain
         private List<Tuple<byte[], string>> BuildRopChain(RegisterLists32 regLists32, RegisterModifiers32 regModified32)
@@ -2035,10 +2052,8 @@ namespace ERC.Utilities
             order = order.Distinct().ToList();
             for (int i = 0; i < order.Count; i++)
             {
-                Console.WriteLine("Order[i] == {0}", order[i]);
                 if((ushort)regModified32.EAX == order[i])
                 {
-                    Console.WriteLine("Adding in EAX");
                     for(int j = 0; j < regLists32.eaxList.Count; j++)
                     {
                         ret.Add(regLists32.eaxList[j]);
@@ -2046,7 +2061,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.EBX == order[i])
                 {
-                    Console.WriteLine("Adding in EBX");
                     for (int j = 0; j < regLists32.ebxList.Count; j++)
                     {
                         ret.Add(regLists32.ebxList[j]);
@@ -2054,7 +2068,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.ECX == order[i])
                 {
-                    Console.WriteLine("Adding in ECX");
                     for (int j = 0; j < regLists32.ecxList.Count; j++)
                     {
                         ret.Add(regLists32.ecxList[j]);
@@ -2062,7 +2075,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.EDX == order[i])
                 {
-                    Console.WriteLine("Adding in EDX");
                     for (int j = 0; j < regLists32.edxList.Count; j++)
                     {
                         ret.Add(regLists32.edxList[j]);
@@ -2070,7 +2082,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.EBP == order[i])
                 {
-                    Console.WriteLine("Adding in EBP");
                     for (int j = 0; j < regLists32.ebpList.Count; j++)
                     {
                         ret.Add(regLists32.ebpList[j]);
@@ -2078,7 +2089,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.ESP == order[i])
                 {
-                    Console.WriteLine("Adding in ESP");
                     for (int j = 0; j < regLists32.espList.Count; j++)
                     {
                         ret.Add(regLists32.espList[j]);
@@ -2086,7 +2096,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.ESI == order[i])
                 {
-                    Console.WriteLine("Adding in ESI");
                     for (int j = 0; j < regLists32.esiList.Count; j++)
                     {
                         ret.Add(regLists32.esiList[j]);
@@ -2094,7 +2103,6 @@ namespace ERC.Utilities
                 }
                 if ((ushort)regModified32.EDI == order[i])
                 {
-                    Console.WriteLine("Adding in EDI");
                     for (int j = 0; j < regLists32.ediList.Count; j++)
                     {
                         ret.Add(regLists32.ediList[j]);

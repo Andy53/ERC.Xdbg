@@ -1353,6 +1353,10 @@ namespace ERC
             {
                 output += "Process Name: " + rcg.RcgInfo.ProcessName + " ROP chain gadget list" + Environment.NewLine;
             }
+            output += "-------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+
+            totalGadgets.Add(output);
+            curatedGadgets.Add(output);
 
             if (rcg.RcgInfo.ProcessMachineType == MachineType.I386)
             {
@@ -1931,6 +1935,7 @@ namespace ERC
                     }
                 }
             }
+
             totalGadgets.Add("pushad: ");
             curatedGadgets.Add("pushad: ");
             foreach (KeyValuePair<IntPtr, string> k in rcg.x86Opcodes.pushad)
@@ -1944,6 +1949,7 @@ namespace ERC
                     }
                 }
             }
+            
             File.WriteAllLines(totalGadgetsPath, totalGadgets);
             File.WriteAllLines(curatedGadgetsPath, curatedGadgets);
 
@@ -1983,6 +1989,10 @@ namespace ERC
             {
                 output += "Process Name: " + rcg.RcgInfo.ProcessName + " ROP chain gadget list" + Environment.NewLine;
             }
+            output += "-------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+
+            totalGadgets.Add(output);
+            curatedGadgets.Add(output);
 
             totalGadgets.Add("pushRax: ");
             curatedGadgets.Add("pushRax: ");
