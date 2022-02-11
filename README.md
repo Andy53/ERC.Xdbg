@@ -216,6 +216,14 @@ Searches process memory for a non repeating pattern specified in the pattern_ext
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format.     
     
+`--Rop`    
+Attempts to build a ROP chain for the current process. Current implementation will only work on 32 bit applications and only utilizes VirtualAlloc.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Rop`          
+     
+`--RopGadgets`    
+Generates lists of ROP gadgets from within the current process. Lists are saved to the working directory.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --RopGadgets`        
+    
 `--Reset`   
 Returns the plugin to a default status. Resets all client variables and configurations.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --reset`    
