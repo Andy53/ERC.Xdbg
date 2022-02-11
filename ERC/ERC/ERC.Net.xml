@@ -300,6 +300,14 @@
             </summary>
             <param name="_info">The ProcessInfo object.</param>
         </member>
+        <member name="M:ERC.Utilities.RopChainGenerator32.GenerateRopGadgets32(System.Byte[],System.Collections.Generic.List{System.String})">
+            <summary>
+            Creates a list of ROP gadgets for a specific process.
+            </summary>
+            <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
+            <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
+            <returns>Returns an ErcResult string containing</returns>
+        </member>
         <member name="M:ERC.Utilities.RopChainGenerator32.GenerateRopChain32(System.Byte[],System.Byte[],System.Collections.Generic.List{System.String})">
             <summary>
             Creates a RopChain for a specific process.
@@ -1317,7 +1325,7 @@
             <param name="extended">Whether the extended character range is to be used when searching for the non repeating pattern</param>
             <returns>Returns a List of strings containing the locations the repeating pattern was identified</returns>
         </member>
-        <member name="M:ERC.DisplayOutput.RopChainGadgets32(ERC.Utilities.RopChainGenerator32)">
+        <member name="M:ERC.DisplayOutput.RopChainGadgets32(ERC.Utilities.RopChainGenerator32,System.Boolean)">
             <summary>
             Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
             </summary>

@@ -24,8 +24,8 @@ namespace Managed.x64dbg.SDK
         public const int MAX_MNEMONIC_SIZE = 64;
         public const int PAGE_SIZE = 4096;
 
-        private const string dll = "x64bridge.dll";   //Uncomment for 64bit
-        //private const string dll = "x32bridge.dll"; //Uncomment for 32bit
+        //private const string dll = "x64bridge.dll";   //Uncomment for 64bit
+        private const string dll = "x32bridge.dll"; //Uncomment for 32bit
         private const CallingConvention cdecl = CallingConvention.Cdecl;
 
         [DllImport(dll, CallingConvention = cdecl)]

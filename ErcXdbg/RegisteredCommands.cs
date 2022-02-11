@@ -236,6 +236,8 @@ namespace ErcXdbg
             help += "       Example: ERC --HeapInfo 0x00453563 dump. Dump all memory from heap entry starting at 0x00453563\n";
             help += "   --Rop           |\n";
             help += "       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...\n";
+            help += "   --RopGadgets    |\n";
+            help += "       Generates lists of ROP gadgets from within the current process. Lists are saved to the working directory.\n";
             help += "   --Reset         |\n";
             help += "       Clears all global variables and user defined configurations.";
             PLog.WriteLine(help);
@@ -362,6 +364,9 @@ namespace ErcXdbg
                         return;
                     case "--heapinfo":
                         HeapInfo(info, parameters);
+                        return;
+                    case "--ropgadgets":
+                        rop(info, true);
                         return;
                     case "--rop":
                         rop(info);
@@ -1938,17 +1943,53 @@ namespace ErcXdbg
             }
         }
 
-        private static void rop(ERC.ProcessInfo info)
+        private static void rop(ERC.ProcessInfo info, bool gadgetsOnly = false)
         {
-            PLog.WriteLine("This functionality is not yet implemented.");
-            /*
-            ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
+            PLog.WriteLine("This takes an incredibly long time to complete. Usually in the region of 30 minutes.");
+            ERC.Utilities.RopChainGenerator32 RCG = new ERC.Utilities.RopChainGenerator32(info);
+            //ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
+            List<string> excludes = new List<string>();
+            foreach(ERC.ModuleInfo mi in info.ModulesInfo)
+            {
+                if(!mi.ModuleASLR == Globals.aslr || !mi.ModuleNXCompat == Globals.nxcompat || !mi.ModuleOsDll == Globals.osdll || !mi.ModuleSafeSEH == Globals.safeseh
+                    || !mi.ModuleRebase == Globals.rebase)
+                {
+                    excludes.Add(mi.ModulePath);
+                }
+            }
+
             try
             {
-                PLog.WriteLine("Generating ROP chain files, this could take some time...");
-                //RCG.GenerateRopChain64();             //Uncomment if 64 bit
-                //RCG.GenerateRopChain32();             //Uncomment if 32 bit
-                PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
+                if(gadgetsOnly == true)
+                {
+                    PLog.WriteLine("Generating ROP chain files...");
+                    if (Globals.bytes.Length > 0 || excludes.Count > 0)
+                    {
+                        RCG.GenerateRopGadgets32(Globals.bytes, excludes);           //Uncomment if 32 bit
+                        //RCG.GenerateRopGadgets64(Globals.bytes, excludes);           //Uncomment if 64 bit
+                    }
+                    else
+                    {
+                        RCG.GenerateRopGadgets32();           //Uncomment if 32 bit
+                        //RCG.GenerateRopGadgets64();           //Uncomment if 64 bit
+                    }
+                    PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
+                }
+                else
+                {
+                    PLog.WriteLine("Generating ROP chain files...");
+                    if(Globals.bytes.Length > 0 || excludes.Count > 0)
+                    {
+                        RCG.GenerateRopChain32(Globals.bytes, excludes);             //Uncomment if 32 bit
+                        //RCG.GenerateRopChain64(Globals.bytes, excludes);             //Uncomment if 64 bit
+                    }
+                    else
+                    {
+                        RCG.GenerateRopChain32();             //Uncomment if 32 bit
+                        //RCG.GenerateRopChain64();             //Uncomment if 64 bit
+                    }
+                    PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
+                }
             }
             catch(Exception e)
             {
@@ -1959,7 +2000,6 @@ namespace ErcXdbg
                 RCG = null;
                 GC.Collect();
             }
-            */
             
             return;
         }

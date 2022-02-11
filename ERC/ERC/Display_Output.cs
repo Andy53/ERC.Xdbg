@@ -1335,7 +1335,7 @@ namespace ERC
         /// </summary>
         /// <param name="rcg">The ROP chain generator object</param>
         /// <returns>Returns an array of strings</returns>
-        public static string[] RopChainGadgets32(RopChainGenerator32 rcg)
+        public static string[] RopChainGadgets32(RopChainGenerator32 rcg, bool gadgetsOnly = false)
         {
             string output = "";
             List<string> totalGadgets = new List<string>();
@@ -1953,14 +1953,16 @@ namespace ERC
             File.WriteAllLines(totalGadgetsPath, totalGadgets);
             File.WriteAllLines(curatedGadgetsPath, curatedGadgets);
 
-
-            List<string> ropChain = new List<string>();
-            foreach(Tuple<byte[], string> k in rcg.VirtualAllocChain)
+            if(gadgetsOnly == false)
             {
-                ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                List<string> ropChain = new List<string>();
+                foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
+                {
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                File.WriteAllLines(ropChainPath, ropChain);
             }
-            File.WriteAllLines(ropChainPath, ropChain);
- 
+
             return totalGadgets.ToArray();
         }
         #endregion
@@ -1971,7 +1973,7 @@ namespace ERC
         /// </summary>
         /// <param name="rcg">The ROP chain generator object</param>
         /// <returns>Returns an array of strings</returns>
-        public static string[] RopChainGadgets64(RopChainGenerator64 rcg)
+        public static string[] RopChainGadgets64(RopChainGenerator64 rcg, bool gadgetsOnly = false)
         {
             string output = "";
             List<string> totalGadgets = new List<string>();
@@ -2546,12 +2548,15 @@ namespace ERC
             File.WriteAllLines(totalGadgetsPath, totalGadgets);
             File.WriteAllLines(curatedGadgetsPath, curatedGadgets);
 
-            List<string> ropChain = new List<string>();
-            foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
-            {
-                ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+            if(gadgetsOnly == true) {
+                List<string> ropChain = new List<string>();
+                foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
+                {
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                File.WriteAllLines(ropChainPath, ropChain);
             }
-            File.WriteAllLines(ropChainPath, ropChain);
+            
             return totalGadgets.ToArray();
         }
 
