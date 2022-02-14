@@ -176,7 +176,7 @@ namespace ERC.Utilities
             var ret3 = PopulateOpcodes(RcgInfo);
             optimiseLists(RcgInfo);
 
-            if(ptrsToExclude != null)
+            if ((ptrsToExclude != null) && (ptrsToExclude.Any()))
             {
                 usableX86Opcodes.pushEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEax, ptrsToExclude);
                 usableX86Opcodes.pushEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEbx, ptrsToExclude);
