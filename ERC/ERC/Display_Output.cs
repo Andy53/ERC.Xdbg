@@ -1171,21 +1171,11 @@ namespace ERC
 
                     byte[] thisByte = new byte[1];
                     thisByte[0] = byteArray[i];
-                    if (byteArray[i] != memoryRegion[i])
-                    {
-                        mismatchingBytes.Add(byteArray[i]);
-                        fromArray += "[color@red]" + BitConverter.ToString(thisByte) + "[stopcolor]";
-                        thisByte[0] = memoryRegion[i];
-                        fromRegion += "[color@red]" + BitConverter.ToString(thisByte) + "[stopcolor]";
-                    }
-                    else
-                    {
-                        fromArray += BitConverter.ToString(thisByte);
-                        thisByte[0] = memoryRegion[i];
-                        fromRegion += BitConverter.ToString(thisByte);
-                    }
-
+                    fromArray += BitConverter.ToString(thisByte);
                     fromArray += " ";
+
+                    thisByte[0] = memoryRegion[i];
+                    fromRegion += BitConverter.ToString(thisByte);
                     fromRegion += " ";
                     counter++;
                 }

@@ -455,7 +455,6 @@ namespace ERC.Utilities
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
             var ropPtrs = RcgInfo.SearchModules(0, searchBytes: ropNop, excludedModules: excludes);
-            //var ropPtrs = RcgInfo.SearchMemory(0, searchBytes: ropNop, excludes: excludes);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -474,7 +473,6 @@ namespace ERC.Utilities
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
             var ropPtrs = info.SearchModules(0, searchBytes: ropNop);
-            //var ropPtrs = info.SearchMemory(0, searchBytes: ropNop);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
