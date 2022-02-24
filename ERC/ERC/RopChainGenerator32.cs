@@ -176,7 +176,7 @@ namespace ERC.Utilities
             var ret3 = PopulateOpcodes(RcgInfo);
             optimiseLists(RcgInfo);
 
-            if ((ptrsToExclude != null) && (ptrsToExclude.Any()))
+            if(ptrsToExclude != null)
             {
                 usableX86Opcodes.pushEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEax, ptrsToExclude);
                 usableX86Opcodes.pushEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEbx, ptrsToExclude);
@@ -455,6 +455,7 @@ namespace ERC.Utilities
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
             var ropPtrs = RcgInfo.SearchModules(0, searchBytes: ropNop, excludedModules: excludes);
+            //var ropPtrs = RcgInfo.SearchMemory(0, searchBytes: ropNop, excludes: excludes);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -473,6 +474,7 @@ namespace ERC.Utilities
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
             var ropPtrs = info.SearchModules(0, searchBytes: ropNop);
+            //var ropPtrs = info.SearchMemory(0, searchBytes: ropNop);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -576,7 +578,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEax.ContainsKey(baseAddress + i) && pushEaxDone == false)
                                 {
                                     pushEaxDone = true;
-                                    x86Opcodes.pushEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 1:
@@ -584,7 +586,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEbx.ContainsKey(baseAddress + i) && pushEbxDone == false)
                                 {
                                     pushEbxDone = true;
-                                    x86Opcodes.pushEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 2:
@@ -592,7 +594,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEcx.ContainsKey(baseAddress + i) && pushEcxDone == false)
                                 {
                                     pushEcxDone = true;
-                                    x86Opcodes.pushEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 3:
@@ -600,7 +602,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEdx.ContainsKey(baseAddress + i) && pushEdxDone == false)
                                 {
                                     pushEdxDone = true;
-                                    x86Opcodes.pushEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 4:
@@ -608,7 +610,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEsp.ContainsKey(baseAddress + i) && pushEspDone == false)
                                 {
                                     pushEspDone = true;
-                                    x86Opcodes.pushEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 5:
@@ -616,7 +618,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEbp.ContainsKey(baseAddress + i) && pushEbpDone == false)
                                 {
                                     pushEbpDone = true;
-                                    x86Opcodes.pushEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 6:
@@ -624,7 +626,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEsi.ContainsKey(baseAddress + i) && pushEsiDone == false)
                                 {
                                     pushEsiDone = true;
-                                    x86Opcodes.pushEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 7:
@@ -632,7 +634,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushEdi.ContainsKey(baseAddress + i) && pushEdiDone == false)
                                 {
                                     pushEdiDone = true;
-                                    x86Opcodes.pushEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 8:
@@ -640,7 +642,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEax.ContainsKey(baseAddress + i) && popEaxDone == false)
                                 {
                                     popEaxDone = true;
-                                    x86Opcodes.popEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 9:
@@ -648,7 +650,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEbx.ContainsKey(baseAddress + i) && popEbxDone == false)
                                 {
                                     popEbxDone = true;
-                                    x86Opcodes.popEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 10:
@@ -656,7 +658,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEcx.ContainsKey(baseAddress + i) && popEcxDone == false)
                                 {
                                     popEcxDone = true;
-                                    x86Opcodes.popEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 11:
@@ -664,7 +666,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEdx.ContainsKey(baseAddress + i) && popEdxDone == false)
                                 {
                                     popEdxDone = true;
-                                    x86Opcodes.popEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 12:
@@ -672,7 +674,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEsp.ContainsKey(baseAddress + i) && popEspDone == false)
                                 {
                                     popEspDone = true;
-                                    x86Opcodes.popEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 13:
@@ -680,7 +682,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEbp.ContainsKey(baseAddress + i) && popEbpDone == false)
                                 {
                                     popEbpDone = true;
-                                    x86Opcodes.popEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 14:
@@ -688,7 +690,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEsi.ContainsKey(baseAddress + i) && popEsiDone == false)
                                 {
                                     popEsiDone = true;
-                                    x86Opcodes.popEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 15:
@@ -696,7 +698,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.popEdi.ContainsKey(baseAddress + i) && popEdiDone == false)
                                 {
                                     popEdiDone = true;
-                                    x86Opcodes.popEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.popEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 16:
@@ -704,7 +706,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.pushad.ContainsKey(baseAddress + i) && pushadDone == false)
                                 {
                                     pushadDone = true;
-                                    x86Opcodes.pushad.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.pushad.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 17:
@@ -712,7 +714,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEax.ContainsKey(baseAddress + i) && incEaxDone == false)
                                 {
                                     incEaxDone = true;
-                                    x86Opcodes.incEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 18:
@@ -720,7 +722,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEbx.ContainsKey(baseAddress + i) && incEbxDone == false)
                                 {
                                     incEbxDone = true;
-                                    x86Opcodes.incEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 19:
@@ -728,7 +730,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEcx.ContainsKey(baseAddress + i) && incEcxDone == false)
                                 {
                                     incEcxDone = true;
-                                    x86Opcodes.incEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 20:
@@ -736,7 +738,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEdx.ContainsKey(baseAddress + i) && incEdxDone == false)
                                 {
                                     incEdxDone = true;
-                                    x86Opcodes.incEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 21:
@@ -744,7 +746,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEbp.ContainsKey(baseAddress + i) && incEbpDone == false)
                                 {
                                     incEbpDone = true;
-                                    x86Opcodes.incEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 22:
@@ -752,7 +754,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEsp.ContainsKey(baseAddress + i) && incEspDone == false)
                                 {
                                     incEspDone = true;
-                                    x86Opcodes.incEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 23:
@@ -760,7 +762,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEsi.ContainsKey(baseAddress + i) && incEsiDone == false)
                                 {
                                     incEsiDone = true;
-                                    x86Opcodes.incEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 24:
@@ -768,7 +770,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.incEdi.ContainsKey(baseAddress + i) && incEdiDone == false)
                                 {
                                     incEdiDone = true;
-                                    x86Opcodes.incEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.incEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 25:
@@ -776,7 +778,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEax.ContainsKey(baseAddress + i) && decEaxDone == false)
                                 {
                                     decEaxDone = true;
-                                    x86Opcodes.decEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 26:
@@ -784,7 +786,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEbx.ContainsKey(baseAddress + i) && decEbxDone == false)
                                 {
                                     decEbxDone = true;
-                                    x86Opcodes.decEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 27:
@@ -792,7 +794,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEcx.ContainsKey(baseAddress + i) && decEcxDone == false)
                                 {
                                     decEcxDone = true;
-                                    x86Opcodes.decEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 28:
@@ -800,7 +802,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEdx.ContainsKey(baseAddress + i) && decEdxDone == false)
                                 {
                                     decEdxDone = true;
-                                    x86Opcodes.decEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 29:
@@ -808,7 +810,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEbp.ContainsKey(baseAddress + i) && decEbpDone == false)
                                 {
                                     decEbpDone = true;
-                                    x86Opcodes.decEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 30:
@@ -816,7 +818,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEsp.ContainsKey(baseAddress + i) && decEspDone == false)
                                 {
                                     decEspDone = true;
-                                    x86Opcodes.decEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 31:
@@ -824,7 +826,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEsi.ContainsKey(baseAddress + i) && decEsiDone == false)
                                 {
                                     decEsiDone = true;
-                                    x86Opcodes.decEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 32:
@@ -832,7 +834,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.decEdi.ContainsKey(baseAddress + i) && decEdiDone == false)
                                 {
                                     decEdiDone = true;
-                                    x86Opcodes.decEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.decEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 41:
@@ -840,7 +842,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.add.ContainsKey(baseAddress + i) && addDone == false)
                                 {
                                     addDone = true;
-                                    x86Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 42:
@@ -848,7 +850,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.sub.ContainsKey(baseAddress + i) && subDone == false)
                                 {
                                     subDone = true;
-                                    x86Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 43:
@@ -856,7 +858,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.mov.ContainsKey(baseAddress + i) && movDone == false)
                                 {
                                     movDone = true;
-                                    x86Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 44:
@@ -864,7 +866,7 @@ namespace ERC.Utilities
                                 if (!x86Opcodes.and.ContainsKey(baseAddress + i) && andDone == false)
                                 {
                                     andDone = true;
-                                    x86Opcodes.and.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x86Opcodes.and.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             default:
@@ -885,7 +887,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.jmpEsp.ContainsKey(baseAddress + i) && jmpEspDone == false)
                                     {
                                         jmpEspDone = true;
-                                        x86Opcodes.jmpEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.jmpEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 34:
@@ -894,7 +896,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.callEsp.ContainsKey(baseAddress + i) && callEspDone == false)
                                     {
                                         callEspDone = true;
-                                        x86Opcodes.callEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.callEsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 35:
@@ -902,7 +904,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.xorEax.ContainsKey(baseAddress + i) && xorEaxDone == false)
                                     {
                                         xorEaxDone = true;
-                                        x86Opcodes.xorEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.xorEax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 36:
@@ -910,7 +912,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.xorEbx.ContainsKey(baseAddress + i) && xorEbxDone == false)
                                     {
                                         xorEbxDone = true;
-                                        x86Opcodes.xorEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.xorEbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 37:
@@ -918,7 +920,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.xorEcx.ContainsKey(baseAddress + i) && xorEcxDone == false)
                                     {
                                         xorEcxDone = true;
-                                        x86Opcodes.xorEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.xorEcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 38:
@@ -926,7 +928,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.xorEdx.ContainsKey(baseAddress + i) && xorEdxDone == false)
                                     {
                                         xorEdxDone = true;
-                                        x86Opcodes.xorEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.xorEdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 39:
@@ -934,7 +936,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.xorEsi.ContainsKey(baseAddress + i) && xorEsiDone == false)
                                     {
                                         xorEsiDone = true;
-                                        x86Opcodes.xorEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.xorEsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 40:
@@ -942,7 +944,7 @@ namespace ERC.Utilities
                                     if (!x86Opcodes.xorEdi.ContainsKey(baseAddress + i) && xorEdiDone == false)
                                     {
                                         xorEdiDone = true;
-                                        x86Opcodes.xorEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x86Opcodes.xorEdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.I386, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 default:

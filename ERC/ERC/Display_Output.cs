@@ -1136,11 +1136,11 @@ namespace ERC
             List<byte> mismatchingBytes = new List<byte>();
             int bytesRead = 0;
             output.Add("                   ----------------------------------------------------");
-            string fromArray  = "        From Array | ";
-            string fromRegion = "From Memory Region | "; 
+            string fromArray = "        From Array | ";
+            string fromRegion = "From Memory Region | ";
             ErcCore.ReadProcessMemory(info.ProcessHandle, startAddress, memoryRegion, byteArray.Length, out bytesRead);
             int counter = 0;
-            for(int i = 0; i <= byteArray.Length; i++)
+            for (int i = 0; i <= byteArray.Length; i++)
             {
                 if (i == byteArray.Length)
                 {
@@ -1171,18 +1171,28 @@ namespace ERC
 
                     byte[] thisByte = new byte[1];
                     thisByte[0] = byteArray[i];
-                    fromArray += BitConverter.ToString(thisByte);
-                    fromArray += " ";
+                    if (byteArray[i] != memoryRegion[i])
+                    {
+                        mismatchingBytes.Add(byteArray[i]);
+                        fromArray += BitConverter.ToString(thisByte);
+                        thisByte[0] = memoryRegion[i];
+                        fromRegion += BitConverter.ToString(thisByte);
+                    }
+                    else
+                    {
+                        fromArray += BitConverter.ToString(thisByte);
+                        thisByte[0] = memoryRegion[i];
+                        fromRegion += BitConverter.ToString(thisByte);
+                    }
 
-                    thisByte[0] = memoryRegion[i];
-                    fromRegion += BitConverter.ToString(thisByte);
+                    fromArray += " ";
                     fromRegion += " ";
                     counter++;
                 }
             }
             output.Add("                   ----------------------------------------------------");
-            output.Add("Mismatching Bytes: [" + String.Join(", ", mismatchingBytes.Select(b => BitConverter.ToString(new byte[]{b}))) + "]");
-            if(mismatchingBytes.Count > 0)
+            output.Add("Mismatching Bytes: [" + String.Join(", ", mismatchingBytes.Select(b => BitConverter.ToString(new byte[] { b }))) + "]");
+            if (mismatchingBytes.Count > 0)
             {
                 output.Add("Remove byte 0x" + BitConverter.ToString(new byte[] { mismatchingBytes.ElementAt(0) }) + " and attempt again.");
             }
