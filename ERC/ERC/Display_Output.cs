@@ -1970,17 +1970,49 @@ namespace ERC
             File.WriteAllLines(totalGadgetsPath, totalGadgets);
             File.WriteAllLines(curatedGadgetsPath, curatedGadgets);
 
-            if(gadgetsOnly == false)
+            List<string> ropChain = new List<string>();
+            if (gadgetsOnly == false)
             {
-                List<string> ropChain = new List<string>();
+                if(rcg.VirtualAllocChain.Count > 0)
+                {
+                    ropChain.Add("-------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: VirtualAlloc Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("-------------------------------------------------------------------------------------------------------------------------");
+                }
                 foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
                 {
                     ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
                 }
+                ropChain.Add(Environment.NewLine);
+
+                if (rcg.HeapCreateChain.Count > 0)
+                {
+                    ropChain.Add("-------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: HeapCreate Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("-------------------------------------------------------------------------------------------------------------------------");
+                }
+                foreach (Tuple<byte[], string> k in rcg.HeapCreateChain)
+                {
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                if (rcg.VirtualProtectChain.Count > 0)
+                {
+                    ropChain.Add("-------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: VirtualProtect Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("-------------------------------------------------------------------------------------------------------------------------");
+                }
+                foreach (Tuple<byte[], string> k in rcg.VirtualProtectChain)
+                {
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
                 File.WriteAllLines(ropChainPath, ropChain);
             }
 
-            return totalGadgets.ToArray();
+            return ropChain.ToArray();
         }
         #endregion
 
