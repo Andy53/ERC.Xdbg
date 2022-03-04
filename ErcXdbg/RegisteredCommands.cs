@@ -33,6 +33,13 @@ namespace ErcXdbg
                     return true; 
                 }
 
+                if (argv[0].ToLower().Contains("--reset"))
+                {
+                    Reset();
+                    ErcXdbg.PluginStart();
+                    return true;
+                }
+
                 //Check a process is attached.
                 if (hProcess == IntPtr.Zero)
                 {
@@ -235,7 +242,8 @@ namespace ErcXdbg
             help += "       Example: ERC --HeapInfo 0x00453563 search FFE4. Search for FFE4 in the Heap entry starting at 0x00453563\n";
             help += "       Example: ERC --HeapInfo 0x00453563 dump. Dump all memory from heap entry starting at 0x00453563\n";
             help += "   --Rop           |\n";
-            help += "       Much like the lottery you can try your luck and your life may get much easier, however it probably wont...\n";
+            help += "       Attempts to build a ROP chain for the current process. Current implementation will only work on 32 bit\n";
+            help += "       applications and only utilizes VirtualAlloc, HeapCreate and VirtualProtect.\n";
             help += "   --RopGadgets    |\n";
             help += "       Generates lists of ROP gadgets from within the current process. Lists are saved to the working directory.\n";
             help += "   --Reset         |\n";
@@ -1980,13 +1988,16 @@ namespace ErcXdbg
                     PLog.WriteLine("Generating ROP chain files...");
                     if(Globals.bytes.Length > 0 || excludes.Count > 0)
                     {
-                        RCG.GenerateRopChain32(Globals.bytes, excludes);             //Uncomment if 32 bit
-                        //RCG.GenerateRopChain64(Globals.bytes, excludes);             //Uncomment if 64 bit
+                        var ropHolder = RCG.GenerateRopChain32(Globals.bytes, excludes); //Uncomment if 32 bit
+                        //var ropHolder = RCG.GenerateRopChain64(Globals.bytes, excludes);             //Uncomment if 64 bit
+                        PLog.WriteLine(ropHolder.ReturnValue);
+
                     }
                     else
                     {
-                        RCG.GenerateRopChain32();             //Uncomment if 32 bit
-                        //RCG.GenerateRopChain64();             //Uncomment if 64 bit
+                        var ropHolder = RCG.GenerateRopChain32();             //Uncomment if 32 bit
+                        //var ropHolder = RCG.GenerateRopChain64();              //Uncomment if 64 bit
+                        PLog.WriteLine(ropHolder.ReturnValue);
                     }
                     PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
                 }
@@ -2315,6 +2326,26 @@ namespace ErcXdbg
         }
 
         private static void Reset(ERC.ProcessInfo info, List<string> parameters)
+        {
+            Globals.aslr = false;
+            Globals.safeseh = false;
+            Globals.rebase = false;
+            Globals.nxcompat = false;
+            Globals.osdll = false;
+            Globals.extended = false;
+            Globals.encode = Encoding.ASCII;
+            Globals.bytes = new byte[0];
+            Globals.protection = "read,write";
+
+            string path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+            path = path.Replace("file:\\", "");
+            File.Delete(path + "ERC_Config.xml");
+
+            PLog.WriteLine("ERC Rests: All configuration settings have been reset to the default values.");
+            PLog.WriteLine("--------------------------------------------");
+        }
+
+        private static void Reset()
         {
             Globals.aslr = false;
             Globals.safeseh = false;

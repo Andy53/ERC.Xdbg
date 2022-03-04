@@ -354,7 +354,8 @@ namespace ERC.Utilities
                 }
             }
 
-            DisplayOutput.RopChainGadgets32(this);
+            var output = DisplayOutput.RopChainGadgets32(this);
+            RopChain.ReturnValue = String.Join("\n", output);
             return RopChain;
         }
 
@@ -425,7 +426,8 @@ namespace ERC.Utilities
                 }
             }
 
-            DisplayOutput.RopChainGadgets32(this);
+            var output = DisplayOutput.RopChainGadgets32(this);
+            RopChain.ReturnValue = String.Join("\n", output);
             return RopChain;
         }
         #endregion
@@ -1626,6 +1628,8 @@ namespace ERC.Utilities
             // EBP: ???????? -> Jmp Esp / Call Esp                        //
             // ESI: ???????? -> ApiAddresses["VirtualAlloc"]              //
             // EDI: ???????? -> RopNop                                    //
+            //                                                            //
+            // + place ptr to "jmp esp" on stack, below PUSHAD            //
             ////////////////////////////////////////////////////////////////
 
             ErcResult<List<Tuple<byte[], string>>> VirtualAlloc = new ErcResult<List<Tuple<byte[], string>>>(info.ProcessCore);
@@ -2166,7 +2170,7 @@ namespace ERC.Utilities
                 }
                 #endregion
             }
-            VirtualAlloc.ReturnValue = BuildRopChain(regLists32, regModified32);
+            VirtualAlloc.ReturnValue = BuildRopChain(regLists32, regModified32, true);
             return VirtualAlloc;
         }
         #endregion
@@ -2648,6 +2652,8 @@ namespace ERC.Utilities
             // EBP: ???????? -> Jmp Esp / Call Esp                        //
             // ESI: ???????? -> ApiAddresses["VirtualProtect"]            //
             // EDI: ???????? -> RopNop                                    //
+            //                                                            //
+            // + place ptr to "jmp esp" on stack, below PUSHAD            //
             ////////////////////////////////////////////////////////////////
 
             ErcResult<List<Tuple<byte[], string>>> VirtualAlloc = new ErcResult<List<Tuple<byte[], string>>>(info.ProcessCore);
@@ -3159,7 +3165,7 @@ namespace ERC.Utilities
                 }
                 #endregion
             }
-            VirtualAlloc.ReturnValue = BuildRopChain(regLists32, regModified32);
+            VirtualAlloc.ReturnValue = BuildRopChain(regLists32, regModified32, true);
             return VirtualAlloc;
         }
         #endregion
@@ -3172,7 +3178,7 @@ namespace ERC.Utilities
         #endregion
 
         #region BuildRopChain
-        private List<Tuple<byte[], string>> BuildRopChain(RegisterLists32 regLists32, RegisterModifiers32 regModified32)
+        private List<Tuple<byte[], string>> BuildRopChain(RegisterLists32 regLists32, RegisterModifiers32 regModified32, bool addJmpEsp = false)
         {
             List<Tuple<byte[], string>> ret = new List<Tuple<byte[], string>>();
             List<ushort> order = new List<ushort>();
@@ -3248,6 +3254,13 @@ namespace ERC.Utilities
             if (usableX86Opcodes.pushad.Count > 0 && usableX86Opcodes.pushad.ElementAt(0).Value.Length <= 15)
             ret.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.pushad.ElementAt(0).Key)), 
                 usableX86Opcodes.pushad.ElementAt(0).Value));
+
+            if(addJmpEsp == true)
+            {
+                ret.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.jmpEsp.ElementAt(0).Key)),
+                    usableX86Opcodes.jmpEsp.ElementAt(0).Value));
+            }
+
             return ret;
         }
         #endregion 
