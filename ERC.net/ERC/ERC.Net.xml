@@ -328,7 +328,7 @@
             <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
             <returns>Returns an ErcResult string containing</returns>
         </member>
-        <member name="M:ERC.Utilities.RopChainGenerator32.GenerateRopChain32(System.Byte[],System.Byte[],System.Collections.Generic.List{System.String},ERC.Utilities.RopChainGenerator32.RopMethods)">
+        <member name="M:ERC.Utilities.RopChainGenerator32.GenerateRopChain32(System.Byte[],System.Byte[],System.Collections.Generic.List{System.String},ERC.Utilities.RopChainGenerator32.RopMethod)">
             <summary>
             Creates a RopChain for a specific process.
             </summary>
@@ -337,7 +337,7 @@
             <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
             <returns>Returns an ErcResult string containing</returns>
         </member>
-        <member name="M:ERC.Utilities.RopChainGenerator32.GenerateRopChain32(System.Byte[],System.Collections.Generic.List{System.String},ERC.Utilities.RopChainGenerator32.RopMethods)">
+        <member name="M:ERC.Utilities.RopChainGenerator32.GenerateRopChain32(System.Byte[],System.Collections.Generic.List{System.String},ERC.Utilities.RopChainGenerator32.RopMethod)">
             <summary>
             Creates a RopChain for a specific process.
             </summary>
@@ -641,7 +641,7 @@
             and list.
             </summary>
         </member>
-        <member name="T:ERC.Utilities.RopChainGenerator32.RopMethods">
+        <member name="T:ERC.Utilities.RopChainGenerator32.RopMethod">
             <summary>
             Enum of methods which can be used to generate a ROP chain.
             </summary>
@@ -650,6 +650,21 @@
             <summary> Attempts to create Rop chains from 64 bit processes. </summary>
         </member>
         <member name="F:ERC.Utilities.RopChainGenerator64.VirtualAllocChain">
+            <summary>
+            Contains a ROP chain which calls the VirtualAlloc method.
+            </summary>
+        </member>
+        <member name="F:ERC.Utilities.RopChainGenerator64.HeapCreateChain">
+            <summary>
+            Contains a ROP chain which calls the VirtualAlloc method.
+            </summary>
+        </member>
+        <member name="F:ERC.Utilities.RopChainGenerator64.VirtualProtectChain">
+            <summary>
+            Contains a ROP chain which calls the VirtualAlloc method.
+            </summary>
+        </member>
+        <member name="F:ERC.Utilities.RopChainGenerator64.WriteProcessMemoryChain">
             <summary>
             Contains a ROP chain which calls the VirtualAlloc method.
             </summary>
@@ -668,7 +683,7 @@
             <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
             <returns>Returns an ErcResult string containing</returns>
         </member>
-        <member name="M:ERC.Utilities.RopChainGenerator64.GenerateRopChain64(System.Byte[],System.Byte[],System.Collections.Generic.List{System.String})">
+        <member name="M:ERC.Utilities.RopChainGenerator64.GenerateRopChain64(System.Byte[],System.Byte[],System.Collections.Generic.List{System.String},ERC.Utilities.RopChainGenerator64.RopMethod)">
             <summary>
             Creates a RopChain for a specific process.
             </summary>
@@ -677,7 +692,7 @@
             <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
             <returns>Returns an ErcResult string containing</returns>
         </member>
-        <member name="M:ERC.Utilities.RopChainGenerator64.GenerateRopChain64(System.Byte[],System.Collections.Generic.List{System.String})">
+        <member name="M:ERC.Utilities.RopChainGenerator64.GenerateRopChain64(System.Byte[],System.Collections.Generic.List{System.String},ERC.Utilities.RopChainGenerator64.RopMethod)">
             <summary>
             Creates a RopChain for a specific process.
             </summary>
@@ -1161,6 +1176,21 @@
             sub list.
             </summary>
         </member>
+        <member name="F:ERC.Utilities.RopChainGenerator64.X64Lists.callRax">
+            <summary>
+            jmpRax list.
+            </summary>
+        </member>
+        <member name="F:ERC.Utilities.RopChainGenerator64.X64Lists.jmpRax">
+            <summary>
+            callRax list.
+            </summary>
+        </member>
+        <member name="T:ERC.Utilities.RopChainGenerator64.RopMethod">
+            <summary>
+            Enum of methods which can be used to generate a ROP chain.
+            </summary>
+        </member>
         <member name="M:ERC.Utilities.Win32Errors.GetLastWin32Error(System.Int32)">
             <summary>
             Gets a user friendly string message for a system error code
@@ -1364,6 +1394,7 @@
             Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
             </summary>
             <param name="rcg">The ROP chain generator object</param>
+            <param name="gadgetsOnly">Bool to indicate if ROP chains should be included or just gadget lists generated</param>
             <returns>Returns an array of strings</returns>
         </member>
         <member name="M:ERC.DisplayOutput.RopChainGadgets64(ERC.Utilities.RopChainGenerator64,System.Boolean)">
@@ -1371,6 +1402,7 @@
             Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
             </summary>
             <param name="rcg">The ROP chain generator object</param>
+            <param name="gadgetsOnly">Bool to indicate if ROP chains should be included or just gadget lists generated</param>
             <returns>Returns an array of strings</returns>
         </member>
         <member name="M:ERC.DisplayOutput.AssembleOpcodes(System.String[],System.UInt32)">

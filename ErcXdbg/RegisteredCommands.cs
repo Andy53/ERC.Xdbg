@@ -1953,7 +1953,7 @@ namespace ErcXdbg
 
         private static void rop(ERC.ProcessInfo info, bool gadgetsOnly = false)
         {
-            PLog.WriteLine("This takes an incredibly long time to complete. Usually in the region of 30 minutes.");
+            PLog.WriteLine("Starting to build ROP Chains.");
             ERC.Utilities.RopChainGenerator32 RCG = new ERC.Utilities.RopChainGenerator32(info);
             //ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
             List<string> excludes = new List<string>();

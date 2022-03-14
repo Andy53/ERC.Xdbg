@@ -37,7 +37,7 @@ namespace ERC.Utilities
         /// </summary>
         public List<Tuple<byte[], string>> WriteProcessMemoryChain = new List<Tuple<byte[], string>>();
 
-        RopMethods Methods;
+        RopMethod Methods;
         Dictionary<string, IntPtr> ApiAddresses = new Dictionary<string, IntPtr>();
         List<IntPtr> RopNops = new List<IntPtr>();
         List<byte[]> opcodes32 = new List<byte[]>();
@@ -254,7 +254,7 @@ namespace ERC.Utilities
         /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain32(byte[] ptrsToExclude, byte[] startAddress = null, List<string> excludes = null, RopMethods methods = RopMethods.All)
+        public ErcResult<string> GenerateRopChain32(byte[] ptrsToExclude, byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -269,13 +269,27 @@ namespace ERC.Utilities
                 return failed;
             }
 
-            var ret2 = GetRopNops(excludes);
-            if (ret1.Error != null && RopNops.Count <= 0)
+            if(excludes != null)
             {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret1.Error;
-                return failed;
+                var ret2 = GetRopNops(excludes);
+                if (ret1.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret1.Error;
+                    return failed;
+                }
+            }
+            else
+            {
+                var ret2 = GetRopNops();
+                if (ret1.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret1.Error;
+                    return failed;
+                }
             }
 
             var ret3 = PopulateOpcodes(RcgInfo);
@@ -327,7 +341,7 @@ namespace ERC.Utilities
             usableX86Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.mov, ptrsToExclude);
             usableX86Opcodes.and = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.and, ptrsToExclude);
 
-            if (Methods.HasFlag(RopMethods.VirtualAlloc))
+            if (Methods.HasFlag(RopMethod.VirtualAlloc))
             {
                 var vpaChain = GenerateVirtualAllocChain32(RcgInfo, startAddress);
                 if (vpaChain.Error == null)
@@ -336,7 +350,7 @@ namespace ERC.Utilities
                 }
             }
 
-            if (Methods.HasFlag(RopMethods.HeapCreate))
+            if (Methods.HasFlag(RopMethod.HeapCreate))
             {
                 var hcChain = GenerateHeapCreateChain32(RcgInfo);
                 if (hcChain.Error == null)
@@ -345,7 +359,7 @@ namespace ERC.Utilities
                 }
             }
 
-            if (Methods.HasFlag(RopMethods.VirtualProtect))
+            if (Methods.HasFlag(RopMethod.VirtualProtect))
             {
                 var vpChain = GenerateVirtualProtectChain32(RcgInfo);
                 if (vpChain.Error == null)
@@ -366,13 +380,12 @@ namespace ERC.Utilities
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets.</param>
         /// <param name="methods">Enum value representing which methods to build rop chains with.</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain32(byte[] startAddress = null, List<string> excludes = null, RopMethods methods = RopMethods.All)
+        public ErcResult<string> GenerateRopChain32(byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
             x86Opcodes = new X86Lists();
 
-            Console.WriteLine("Getting API Addresses...");
             var ret1 = GetApiAddresses(RcgInfo);
             if (ret1.Error != null && ApiAddresses.Count <= 0)
             {
@@ -382,24 +395,33 @@ namespace ERC.Utilities
                 return failed;
             }
 
-            Console.WriteLine("Getting RopNops...");
-            var ret2 = GetRopNops(excludes);
-            if (ret1.Error != null && RopNops.Count <= 0)
+            if(excludes != null)
             {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret1.Error;
-                return failed;
+                var ret2 = GetRopNops(excludes);
+                if (ret1.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret1.Error;
+                    return failed;
+                }
+            }
+            else
+            {
+                var ret2 = GetRopNops();
+                if (ret1.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret1.Error;
+                    return failed;
+                }
             }
 
-            Console.WriteLine("Populating Opcodes...");
             var ret3 = PopulateOpcodes(RcgInfo);
-
-            Console.WriteLine("Optimizing Lists...");
             optimiseLists(RcgInfo);
 
-            Console.WriteLine("Generating ROP Chains...");
-            if (Methods.HasFlag(RopMethods.VirtualAlloc))
+            if (Methods.HasFlag(RopMethod.VirtualAlloc))
             {
                 var vpaChain = GenerateVirtualAllocChain32(RcgInfo, startAddress);
                 if (vpaChain.Error == null)
@@ -408,7 +430,7 @@ namespace ERC.Utilities
                 }
             }
 
-            if (Methods.HasFlag(RopMethods.HeapCreate))
+            if (Methods.HasFlag(RopMethod.HeapCreate))
             {
                 var hcChain = GenerateHeapCreateChain32(RcgInfo);
                 if (hcChain.Error == null)
@@ -417,7 +439,7 @@ namespace ERC.Utilities
                 }
             }
 
-            if (Methods.HasFlag(RopMethods.VirtualProtect))
+            if (Methods.HasFlag(RopMethod.VirtualProtect))
             {
                 var vpChain = GenerateVirtualProtectChain32(RcgInfo);
                 if (vpChain.Error == null)
@@ -519,7 +541,6 @@ namespace ERC.Utilities
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
             var ropPtrs = RcgInfo.SearchModules(0, searchBytes: ropNop, excludedModules: excludes);
-            //var ropPtrs = RcgInfo.SearchMemory(0, searchBytes: ropNop, excludes: excludes);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -538,7 +559,6 @@ namespace ERC.Utilities
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
             var ropPtrs = info.SearchModules(0, searchBytes: ropNop);
-            //var ropPtrs = info.SearchMemory(0, searchBytes: ropNop);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -1648,6 +1668,8 @@ namespace ERC.Utilities
 
             while (!CompleteRegisters32(regState32))
             {
+                byte[] nulls = new byte[] { 0x00, 0x00, 0x00, 0x00 };
+                
                 #region Populate EDI
                 if (!regState32.HasFlag(Register32.EDI))
                 {
@@ -1659,9 +1681,9 @@ namespace ERC.Utilities
                         {
                             if (usableX86Opcodes.popEdi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEdi.ElementAt(i).Value.Contains("invalid"))
                             {
+                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
                                 regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEdi.ElementAt(i).Key)),
                                     usableX86Opcodes.popEdi.ElementAt(i).Value));
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
                                 regState32 |= Register32.EDI;
                             }
                         }
@@ -1680,9 +1702,9 @@ namespace ERC.Utilities
                                 var movInstruction = GetMovInstruction(Register32.EDI, i);
                                 if (movInstruction != null)
                                 {
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                     regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
                                     regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
+                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                     SetRegisterModifier(Register32.EDI, i, regModified32);
                                     regState32 &= ~i;
                                     regState32 |= Register32.EDI;
@@ -1705,7 +1727,7 @@ namespace ERC.Utilities
                     }
                 }
                 #endregion
-
+                
                 #region Populate ESI
                 if (!regState32.HasFlag(Register32.ESI))
                 {
@@ -1717,9 +1739,9 @@ namespace ERC.Utilities
                         {
                             if (usableX86Opcodes.popEsi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEsi.ElementAt(i).Value.Contains("invalid"))
                             {
+                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
                                 regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEsi.ElementAt(i).Key)),
                                     usableX86Opcodes.popEsi.ElementAt(i).Value));
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
                                 regState32 |= Register32.ESI;
                             }
                         }
@@ -1740,8 +1762,8 @@ namespace ERC.Utilities
                                     var movInstruction = GetMovInstruction(Register32.ESI, i);
                                     if (movInstruction != null)
                                     {
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                         regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
+                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                         regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
                                         SetRegisterModifier(Register32.ESI, i, regModified32);
                                         regState32 &= ~i;
@@ -1764,7 +1786,7 @@ namespace ERC.Utilities
                 #endregion
 
                 #region Populate EBP
-                    if (!regState32.HasFlag(Register32.EBP))
+                if (!regState32.HasFlag(Register32.EBP))
                 {
                     regLists32.ebpList = null;
                     regLists32.ebpList = new List<Tuple<byte[], string>>();
@@ -1813,7 +1835,6 @@ namespace ERC.Utilities
                                     var movInstruction = GetMovInstruction(Register32.EBP, i);
                                     if (movInstruction != null)
                                     {
-                                        regLists32.ebpList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                         if (usableX86Opcodes.jmpEsp.Count > 0)
                                         {
                                             regLists32.ebpList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.jmpEsp.ElementAt(0).Key)),
@@ -1824,6 +1845,7 @@ namespace ERC.Utilities
                                             regLists32.ebpList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.callEsp.ElementAt(0).Key)),
                                                 usableX86Opcodes.callEsp.ElementAt(0).Value));
                                         }
+                                        regLists32.ebpList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                         regLists32.ebpList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
                                         SetRegisterModifier(Register32.EBP, i, regModified32);
                                         regState32 &= ~i;
@@ -1887,7 +1909,7 @@ namespace ERC.Utilities
                     {
                         foreach(Register32 i in Enum.GetValues(typeof(Register32)))
                         {
-                            var popInstruction = GetPopInstruction(Register32.EBP, i, regModified32);
+                            var popInstruction = GetPopInstruction(Register32.EBX, i, regModified32);
                             if (popInstruction != null)
                             {
                                 for (int j = 0; j < x86Opcodes.add.Count; j++)
@@ -1950,11 +1972,12 @@ namespace ERC.Utilities
                                         byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
                                         byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01 };
                                         regLists32.edxList.Add(Tuple.Create(xorEDX.Item1, xorEDX.Item2));
-                                        regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
+                                        
                                         regLists32.edxList.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
-                                        regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(addInstruction.Item1), addInstruction.Item2));
                                         regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
+                                        regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(addInstruction.Item1), addInstruction.Item2));
                                         regLists32.edxList.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00001000"));
+                                        regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
                                         regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(addInstruction.Item1), addInstruction.Item2));
                                         SetRegisterModifier(Register32.EDX, i, regModified32);
                                         regState32 &= ~i;
@@ -2189,6 +2212,7 @@ namespace ERC.Utilities
             // ESI: ???????? -> ApiAddresses["HeapCreate"]                //
             // EDI: ???????? -> RopNop                                    //
             ////////////////////////////////////////////////////////////////
+            
             ErcResult<List<Tuple<byte[], string>>> HeapCreate = new ErcResult<List<Tuple<byte[], string>>>(info.ProcessCore);
             HeapCreate.ReturnValue = new List<Tuple<byte[], string>>();
             Register32 regState32 = new Register32();
@@ -2645,7 +2669,7 @@ namespace ERC.Utilities
             ////////////////////////////////////////////////////////////////
             // VirtualProtect Template:                                   //
             // EAX: 90909090 -> Nop sled                                  //
-            // ECX: ???????? -> flAllocationType                          //
+            // ECX: ???????? -> lpflOldProtect                            //
             // EDX: 00000040 -> flNewProtect                              //
             // EBX: ???????? -> Int size (area to be set as executable)   //
             // ESP: ???????? -> No Change                                 //
@@ -3050,7 +3074,7 @@ namespace ERC.Utilities
                         {
                             var movInstruction = GetMovInstruction(Register32.ECX, Register32.ESP);
 
-                            if(movInstruction != null && !movInstruction.Item2.Contains("invalid"))
+                            if (movInstruction != null && !movInstruction.Item2.Contains("invalid"))
                             {
                                 regLists32.ecxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
                                 regState32 |= Register32.ECX;
@@ -3074,10 +3098,10 @@ namespace ERC.Utilities
                                     {
                                         regLists32.ecxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
                                         pushEsp = true;
-                                        i = usableX86Opcodes.pushEsp.Count + 1;
+                                        i = usableX86Opcodes.popEcx.Count + 1;
                                     }
                                 }
-                                if(pushEsp == true && popEcx == true)
+                                if (pushEsp == true && popEcx == true)
                                 {
                                     regState32 |= Register32.ECX;
                                 }
@@ -3921,7 +3945,7 @@ namespace ERC.Utilities
         /// Enum of methods which can be used to generate a ROP chain.
         /// </summary>
         [Flags]
-        public enum RopMethods : ushort
+        public enum RopMethod : ushort
         {
             [Description(" VirtualAlloc")]          VirtualAlloc        = 1, 
             [Description(" HeapCreate")]            HeapCreate          = 2, 
