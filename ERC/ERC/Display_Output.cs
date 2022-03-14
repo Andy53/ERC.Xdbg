@@ -2713,7 +2713,7 @@ namespace ERC
                 File.WriteAllLines(ropChainPath, ropChain);
             }
 
-            return totalGadgets.ToArray();
+            return ropChain.ToArray();
         }
 
         private static string ConvertRopElementToString(Tuple<IntPtr, string> element)
