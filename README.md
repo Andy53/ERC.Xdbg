@@ -114,7 +114,8 @@ Displays the help message below.
 
 `--Update`
 Downloads the latest release of the plugin from Github and extracts it into the X64Dbg plugin directory for the architecture currently in use. Can be passed a ip:port pair in order to specify a proxy.     
-&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update 127.0.0.1:8080`
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update`     
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --update 127.0.0.1:8080`
 
 `--config`    
 The config option can be used to set values in the config.xml file. These options persist between sessions. Can be used to set things such as the project author, current working directory and error log file. These options are predominantly used when writing the output of operations to file.    
