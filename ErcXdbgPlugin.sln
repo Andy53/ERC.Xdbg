@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29503.13
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Managed.x64dbg", "Managed.x64dbg\Managed.x64dbg.csproj", "{3F05E028-6436-4F1C-ABAF-5E7CFBFCB7D7}"
 EndProject
@@ -40,10 +40,10 @@ Global
 		{F2F8BA6A-0112-47CA-9AFA-E8082263AB72}.Release|x86.Build.0 = Release|x86
 		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x64.Build.0 = Debug|Any CPU
-		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x86.Build.0 = Debug|Any CPU
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x64.ActiveCfg = Debug|x64
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x64.Build.0 = Debug|x64
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x86.ActiveCfg = Debug|x86
+		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Debug|x86.Build.0 = Debug|x86
 		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{118C331F-8FC1-4BA6-B5B1-DA397E623CFE}.Release|x64.ActiveCfg = Release|Any CPU

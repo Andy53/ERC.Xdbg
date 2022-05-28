@@ -9,6 +9,7 @@ namespace ERC.Utilities
     /// <summary> Attempts to create Rop chains from 64 bit processes. </summary>
     public class RopChainGenerator64
     {
+        #region Class Variables
         private const int MEM_COMMIT = 0x1000;
 
         /// <summary>
@@ -16,12 +17,29 @@ namespace ERC.Utilities
         /// </summary>
         public List<Tuple<byte[], string>> VirtualAllocChain = new List<Tuple<byte[], string>>();
 
+        /// <summary>
+        /// Contains a ROP chain which calls the VirtualAlloc method.
+        /// </summary>
+        public List<Tuple<byte[], string>> HeapCreateChain = new List<Tuple<byte[], string>>();
+
+        /// <summary>
+        /// Contains a ROP chain which calls the VirtualAlloc method.
+        /// </summary>
+        public List<Tuple<byte[], string>> VirtualProtectChain = new List<Tuple<byte[], string>>();
+
+        /// <summary>
+        /// Contains a ROP chain which calls the VirtualAlloc method.
+        /// </summary>
+        public List<Tuple<byte[], string>> WriteProcessMemoryChain = new List<Tuple<byte[], string>>();
+
+        RopMethod Methods;
         internal X64Lists x64Opcodes;
         internal X64Lists usableX64Opcodes;
         internal ProcessInfo RcgInfo;
         private Dictionary<string, IntPtr> ApiAddresses = new Dictionary<string, IntPtr>();
         private List<IntPtr> RopNops = new List<IntPtr>();
         private List<byte[]> opcodes64 = new List<byte[]>();
+        #endregion
 
         #region Constructor
         /// <summary>
@@ -134,7 +152,8 @@ namespace ERC.Utilities
             byte[] sub2 = new byte[] { 0x4C, 0x29 };
             byte[] sub3 = new byte[] { 0x49, 0x29 };
             byte[] sub4 = new byte[] { 0x4D, 0x29 };
-
+            byte[] jmpRax = new byte[] { 0xFF, 0xD0 };
+            byte[] callRax = new byte[] { 0xFF, 0xE0 };
 
             opcodes64.Add(pushRax);
             opcodes64.Add(pushRcx);
@@ -230,18 +249,19 @@ namespace ERC.Utilities
             opcodes64.Add(sub2);
             opcodes64.Add(sub3);
             opcodes64.Add(sub4);
+            opcodes64.Add(jmpRax);
+            opcodes64.Add(callRax);
         }
         #endregion
 
-        #region GenerateRopChain64
+        #region GenerateRopGadgets64
         /// <summary>
-        /// Creates a RopChain for a specific process.
+        /// Creates a list of ROP gadgets for a specific process.
         /// </summary>
         /// <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
-        /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain64(byte[] ptrsToExclude, byte[] startAddress = null, List<string> excludes = null)
+        public ErcResult<string> GenerateRopGadgets64(byte[] ptrsToExclude = null, List<string> excludes = null)
         {
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
             x64Opcodes = new X64Lists();
@@ -357,31 +377,22 @@ namespace ERC.Utilities
             usableX64Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.mov, ptrsToExclude);
             usableX64Opcodes.sub = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.sub, ptrsToExclude);
 
-            var ret4 = GenerateVirtualAllocChain64(RcgInfo, startAddress);
-            if (ret4.Error != null)
-            {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret4.Error;
-            }
-
-
-            for (int i = 0; i < ret4.ReturnValue.Count; i++)
-            {
-                VirtualAllocChain.Add(ret4.ReturnValue[i]);
-            }
-            DisplayOutput.RopChainGadgets64(this);
+            DisplayOutput.RopChainGadgets64(this, true);
             return RopChain;
         }
+        #endregion 
 
+        #region GenerateRopChain64
         /// <summary>
         /// Creates a RopChain for a specific process.
         /// </summary>
+        /// <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
         /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain64(byte[] startAddress = null, List<string> excludes = null)
+        public ErcResult<string> GenerateRopChain64(byte[] ptrsToExclude, byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
         {
+            Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
             x64Opcodes = new X64Lists();
 
@@ -393,12 +404,27 @@ namespace ERC.Utilities
                 failed.Error = ret1.Error;
             }
 
-            var ret2 = GetRopNops(RcgInfo, excludes);
-            if (ret2.Error != null && RopNops.Count <= 0)
+            if (excludes != null)
             {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret2.Error;
+                var ret2 = GetRopNops(RcgInfo, excludes);
+                if (ret2.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret2.Error;
+                    return failed;
+                }
+            }
+            else
+            {
+                var ret2 = GetRopNops(RcgInfo);
+                if (ret2.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret2.Error;
+                    return failed;
+                }
             }
 
             var ret3 = PopulateOpcodes(RcgInfo);
@@ -409,23 +435,213 @@ namespace ERC.Utilities
                 failed.Error = ret3.Error;
             }
 
-
             OptimiseLists(RcgInfo);
+            usableX64Opcodes.pushRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRax, ptrsToExclude);
+            usableX64Opcodes.pushRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRcx, ptrsToExclude);
+            usableX64Opcodes.pushRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRdx, ptrsToExclude);
+            usableX64Opcodes.pushRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRbx, ptrsToExclude);
+            usableX64Opcodes.pushRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRsp, ptrsToExclude);
+            usableX64Opcodes.pushRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRbp, ptrsToExclude);
+            usableX64Opcodes.pushRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRsi, ptrsToExclude);
+            usableX64Opcodes.pushRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRdi, ptrsToExclude);
+            usableX64Opcodes.pushR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR8, ptrsToExclude);
+            usableX64Opcodes.pushR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR9, ptrsToExclude);
+            usableX64Opcodes.pushR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR10, ptrsToExclude);
+            usableX64Opcodes.pushR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR11, ptrsToExclude);
+            usableX64Opcodes.pushR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR12, ptrsToExclude);
+            usableX64Opcodes.pushR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR13, ptrsToExclude);
+            usableX64Opcodes.pushR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR14, ptrsToExclude);
+            usableX64Opcodes.pushR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR15, ptrsToExclude);
+            usableX64Opcodes.popRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRax, ptrsToExclude);
+            usableX64Opcodes.popRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRbx, ptrsToExclude);
+            usableX64Opcodes.popRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRcx, ptrsToExclude);
+            usableX64Opcodes.popRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRdx, ptrsToExclude);
+            usableX64Opcodes.popRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRsp, ptrsToExclude);
+            usableX64Opcodes.popRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRbp, ptrsToExclude);
+            usableX64Opcodes.popRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRsi, ptrsToExclude);
+            usableX64Opcodes.popRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRdi, ptrsToExclude);
+            usableX64Opcodes.popR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR8, ptrsToExclude);
+            usableX64Opcodes.popR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR9, ptrsToExclude);
+            usableX64Opcodes.popR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR10, ptrsToExclude);
+            usableX64Opcodes.popR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR11, ptrsToExclude);
+            usableX64Opcodes.popR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR12, ptrsToExclude);
+            usableX64Opcodes.popR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR13, ptrsToExclude);
+            usableX64Opcodes.popR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR14, ptrsToExclude);
+            usableX64Opcodes.popR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR15, ptrsToExclude);
+            usableX64Opcodes.xorRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRax, ptrsToExclude);
+            usableX64Opcodes.xorRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRbx, ptrsToExclude);
+            usableX64Opcodes.xorRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRcx, ptrsToExclude);
+            usableX64Opcodes.xorRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRdx, ptrsToExclude);
+            usableX64Opcodes.xorRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRsi, ptrsToExclude);
+            usableX64Opcodes.xorRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRdi, ptrsToExclude);
+            usableX64Opcodes.xorRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRsp, ptrsToExclude);
+            usableX64Opcodes.xorRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRbp, ptrsToExclude);
+            usableX64Opcodes.xorR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR8, ptrsToExclude);
+            usableX64Opcodes.xorR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR9, ptrsToExclude);
+            usableX64Opcodes.xorR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR10, ptrsToExclude);
+            usableX64Opcodes.xorR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR11, ptrsToExclude);
+            usableX64Opcodes.xorR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR12, ptrsToExclude);
+            usableX64Opcodes.xorR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR13, ptrsToExclude);
+            usableX64Opcodes.xorR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR14, ptrsToExclude);
+            usableX64Opcodes.xorR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR15, ptrsToExclude);
+            usableX64Opcodes.jmpRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.jmpRsp, ptrsToExclude);
+            usableX64Opcodes.callRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.callRsp, ptrsToExclude);
+            usableX64Opcodes.incRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRax, ptrsToExclude);
+            usableX64Opcodes.incRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRbx, ptrsToExclude);
+            usableX64Opcodes.incRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRcx, ptrsToExclude);
+            usableX64Opcodes.incRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRdx, ptrsToExclude);
+            usableX64Opcodes.incRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRbp, ptrsToExclude);
+            usableX64Opcodes.incRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRsp, ptrsToExclude);
+            usableX64Opcodes.incRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRsi, ptrsToExclude);
+            usableX64Opcodes.incRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRdi, ptrsToExclude);
+            usableX64Opcodes.incR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR8, ptrsToExclude);
+            usableX64Opcodes.incR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR9, ptrsToExclude);
+            usableX64Opcodes.incR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR10, ptrsToExclude);
+            usableX64Opcodes.incR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR11, ptrsToExclude);
+            usableX64Opcodes.incR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR12, ptrsToExclude);
+            usableX64Opcodes.incR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR13, ptrsToExclude);
+            usableX64Opcodes.incR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR14, ptrsToExclude);
+            usableX64Opcodes.incR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR15, ptrsToExclude);
+            usableX64Opcodes.decRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRax, ptrsToExclude);
+            usableX64Opcodes.decRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRbx, ptrsToExclude);
+            usableX64Opcodes.decRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRcx, ptrsToExclude);
+            usableX64Opcodes.decRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRdx, ptrsToExclude);
+            usableX64Opcodes.decRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRbp, ptrsToExclude);
+            usableX64Opcodes.decRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRsp, ptrsToExclude);
+            usableX64Opcodes.decRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRsi, ptrsToExclude);
+            usableX64Opcodes.decRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRdi, ptrsToExclude);
+            usableX64Opcodes.decR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR8, ptrsToExclude);
+            usableX64Opcodes.decR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR9, ptrsToExclude);
+            usableX64Opcodes.decR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR10, ptrsToExclude);
+            usableX64Opcodes.decR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR11, ptrsToExclude);
+            usableX64Opcodes.decR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR12, ptrsToExclude);
+            usableX64Opcodes.decR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR13, ptrsToExclude);
+            usableX64Opcodes.decR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR14, ptrsToExclude);
+            usableX64Opcodes.decR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR15, ptrsToExclude);
+            usableX64Opcodes.add = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.add, ptrsToExclude);
+            usableX64Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.mov, ptrsToExclude);
+            usableX64Opcodes.sub = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.sub, ptrsToExclude);
 
-            var ret4 = GenerateVirtualAllocChain64(RcgInfo, startAddress);
-            if (ret4.Error != null)
+            if (Methods.HasFlag(RopMethod.VirtualAlloc))
+            {
+                var vpaChain = GenerateVirtualAllocChain64(RcgInfo);
+                if (vpaChain.Error == null)
+                {
+                    VirtualAllocChain = vpaChain.ReturnValue;
+                }
+            }
+
+            if (Methods.HasFlag(RopMethod.HeapCreate))
+            {
+                var hcChain = GenerateHeapCreateChain64(RcgInfo);
+                if (hcChain.Error == null)
+                {
+                    HeapCreateChain = hcChain.ReturnValue;
+                }
+            }
+
+            if (Methods.HasFlag(RopMethod.VirtualProtect))
+            {
+                var vpChain = GenerateVirtualProtectChain64(RcgInfo);
+                if (vpChain.Error == null)
+                {
+                    VirtualProtectChain = vpChain.ReturnValue;
+                }
+            }
+
+            var output = DisplayOutput.RopChainGadgets64(this);
+            RopChain.ReturnValue = String.Join("\n", output);
+            return RopChain;
+        }
+
+        /// <summary>
+        /// Creates a RopChain for a specific process.
+        /// </summary>
+        /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
+        /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
+        /// <returns>Returns an ErcResult string containing</returns>
+        public ErcResult<string> GenerateRopChain64(byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
+        {
+            Methods = methods;
+            ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
+            x64Opcodes = new X64Lists();
+
+            Console.WriteLine("Getting API Addresses...");
+            var ret1 = GetApiAddresses(RcgInfo);
+            if (ret1.Error != null && ApiAddresses.Count <= 0)
             {
                 ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
                 failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret4.Error;
+                failed.Error = ret1.Error;
             }
 
-            List<Tuple<byte[], string>> ropGadgets = new List<Tuple<byte[], string>>();
-            for (int i = 0; i < ret4.ReturnValue.Count; i++)
+            Console.WriteLine("Getting RopNops...");
+            if(excludes != null)
             {
-                ropGadgets.Add(ret4.ReturnValue[i]);
+                var ret2 = GetRopNops(RcgInfo, excludes);
+                if (ret2.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret2.Error;
+                    return failed;
+                }
             }
-            DisplayOutput.RopChainGadgets64(this);
+            else
+            {
+                var ret2 = GetRopNops(RcgInfo);
+                if (ret2.Error != null && RopNops.Count <= 0)
+                {
+                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                    failed.ReturnValue = "An error has occured, check log file for more details.";
+                    failed.Error = ret2.Error;
+                    return failed;
+                }
+            }
+
+            Console.WriteLine("Populating Opcodes...");
+            var ret3 = PopulateOpcodes(RcgInfo);
+            if (ret3.Error != null)
+            {
+                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
+                failed.ReturnValue = "An error has occured, check log file for more details.";
+                failed.Error = ret3.Error;
+            }
+
+            Console.WriteLine("Optimizing Lists...");
+            OptimiseLists(RcgInfo);
+
+            Console.WriteLine("Generating VirtualAlloc Chain...");
+            if (Methods.HasFlag(RopMethod.VirtualAlloc))
+            {
+                var vpaChain = GenerateVirtualAllocChain64(RcgInfo);
+                if (vpaChain.Error == null)
+                {
+                    VirtualAllocChain = vpaChain.ReturnValue;
+                }
+            }
+
+            Console.WriteLine("Generating HeapCreate Chain...");
+            if (Methods.HasFlag(RopMethod.HeapCreate))
+            {
+                var hcChain = GenerateHeapCreateChain64(RcgInfo);
+                if (hcChain.Error == null)
+                {
+                    HeapCreateChain = hcChain.ReturnValue;
+                }
+            }
+
+            if (Methods.HasFlag(RopMethod.VirtualProtect))
+            {
+                var vpChain = GenerateVirtualProtectChain64(RcgInfo);
+                if (vpChain.Error == null)
+                {
+                    VirtualProtectChain = vpChain.ReturnValue;
+                }
+            }
+
+            var output = DisplayOutput.RopChainGadgets64(this);
+            RopChain.ReturnValue = String.Join("\n", output);
             return RopChain;
         }
         #endregion
@@ -499,7 +715,7 @@ namespace ERC.Utilities
             ErcResult<List<IntPtr>> ropNopsResult = new ErcResult<List<IntPtr>>(info.ProcessCore);
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
-            var ropPtrs = info.SearchMemory(0, searchBytes: ropNop, excludes: excludes);
+            var ropPtrs = RcgInfo.SearchModules(0, searchBytes: ropNop, excludedModules: excludes);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -517,7 +733,7 @@ namespace ERC.Utilities
             ErcResult<List<IntPtr>> ropNopsResult = new ErcResult<List<IntPtr>>(info.ProcessCore);
             ropNopsResult.ReturnValue = new List<IntPtr>();
             byte[] ropNop = new byte[] { 0xC3 };
-            var ropPtrs = info.SearchMemory(0, searchBytes: ropNop);
+            var ropPtrs = info.SearchModules(0, searchBytes: ropNop);
             if (ropPtrs.Error != null)
             {
                 ropNopsResult.Error = ropPtrs.Error;
@@ -646,6 +862,9 @@ namespace ERC.Utilities
             bool addDone = false;
             bool movDone = false;
             bool subDone = false;
+            bool jmpRaxDone = false;
+            bool callRaxDone = false;
+
             for (int i = bytes.Length - 1; i > 0; i--)
             {
                 for (int j = 0; j < opcodes64.Count; j++)
@@ -660,7 +879,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRax.ContainsKey(baseAddress + i) && pushRaxDone == false)
                                 {
                                     pushRaxDone = true;
-                                    x64Opcodes.pushRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 1:
@@ -668,7 +887,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRbx.ContainsKey(baseAddress + i) && pushRbxDone == false)
                                 {
                                     pushRbxDone = true;
-                                    x64Opcodes.pushRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 2:
@@ -676,7 +895,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRcx.ContainsKey(baseAddress + i) && pushRcxDone == false)
                                 {
                                     pushRcxDone = true;
-                                    x64Opcodes.pushRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 3:
@@ -684,7 +903,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRdx.ContainsKey(baseAddress + i) && pushRdxDone == false)
                                 {
                                     pushRdxDone = true;
-                                    x64Opcodes.pushRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 4:
@@ -692,7 +911,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRsp.ContainsKey(baseAddress + i) && pushRspDone == false)
                                 {
                                     pushRspDone = true;
-                                    x64Opcodes.pushRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 5:
@@ -700,7 +919,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRbp.ContainsKey(baseAddress + i) && pushRbpDone == false)
                                 {
                                     pushRbpDone = true;
-                                    x64Opcodes.pushRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 6:
@@ -708,7 +927,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRsi.ContainsKey(baseAddress + i) && pushRsiDone == false)
                                 {
                                     pushRsiDone = true;
-                                    x64Opcodes.pushRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 7:
@@ -716,7 +935,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.pushRdi.ContainsKey(baseAddress + i) && pushRdiDone == false)
                                 {
                                     pushRdiDone = true;
-                                    x64Opcodes.pushRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.pushRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 16:
@@ -724,7 +943,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRax.ContainsKey(baseAddress + i) && popRaxDone == false)
                                 {
                                     popRaxDone = true;
-                                    x64Opcodes.popRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 17:
@@ -732,7 +951,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRbx.ContainsKey(baseAddress + i) && popRbxDone == false)
                                 {
                                     popRbxDone = true;
-                                    x64Opcodes.popRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 18:
@@ -740,7 +959,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRcx.ContainsKey(baseAddress + i) && popRcxDone == false)
                                 {
                                     popRcxDone = true;
-                                    x64Opcodes.popRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 19:
@@ -748,7 +967,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRdx.ContainsKey(baseAddress + i) && popRdxDone == false)
                                 {
                                     popRdxDone = true;
-                                    x64Opcodes.popRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 20:
@@ -756,7 +975,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRsp.ContainsKey(baseAddress + i) && popRspDone == false)
                                 {
                                     popRspDone = true;
-                                    x64Opcodes.popRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 21:
@@ -764,7 +983,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRbp.ContainsKey(baseAddress + i) && popRbpDone == false)
                                 {
                                     popRbpDone = true;
-                                    x64Opcodes.popRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 22:
@@ -772,7 +991,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRsi.ContainsKey(baseAddress + i) && popRsiDone == false)
                                 {
                                     popRsiDone = true;
-                                    x64Opcodes.popRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             case 23:
@@ -780,7 +999,7 @@ namespace ERC.Utilities
                                 if (!x64Opcodes.popRdi.ContainsKey(baseAddress + i) && popRdiDone == false)
                                 {
                                     popRdiDone = true;
-                                    x64Opcodes.popRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    x64Opcodes.popRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                 }
                                 break;
                             default:
@@ -800,7 +1019,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR8.ContainsKey(baseAddress + i) && pushR8Done == false)
                                     {
                                         pushR8Done = true;
-                                        x64Opcodes.pushR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 9:
@@ -808,7 +1027,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR9.ContainsKey(baseAddress + i) && pushR9Done == false)
                                     {
                                         pushR9Done = true;
-                                        x64Opcodes.pushR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 10:
@@ -816,7 +1035,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR10.ContainsKey(baseAddress + i) && pushR10Done == false)
                                     {
                                         pushR10Done = true;
-                                        x64Opcodes.pushR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 11:
@@ -824,7 +1043,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR11.ContainsKey(baseAddress + i) && pushR11Done == false)
                                     {
                                         pushR11Done = true;
-                                        x64Opcodes.pushR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 12:
@@ -832,7 +1051,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR12.ContainsKey(baseAddress + i) && pushR12Done == false)
                                     {
                                         pushR12Done = true;
-                                        x64Opcodes.pushR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 13:
@@ -840,7 +1059,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR13.ContainsKey(baseAddress + i) && pushR13Done == false)
                                     {
                                         pushR13Done = true;
-                                        x64Opcodes.pushR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 14:
@@ -848,7 +1067,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR14.ContainsKey(baseAddress + i) && pushR14Done == false)
                                     {
                                         pushR14Done = true;
-                                        x64Opcodes.pushR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 15:
@@ -856,7 +1075,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.pushR15.ContainsKey(baseAddress + i) && pushR15Done == false)
                                     {
                                         pushR15Done = true;
-                                        x64Opcodes.pushR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.pushR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 24:
@@ -864,7 +1083,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR8.ContainsKey(baseAddress + i) && popR8Done == false)
                                     {
                                         popR8Done = true;
-                                        x64Opcodes.popR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 25:
@@ -872,7 +1091,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR9.ContainsKey(baseAddress + i) && popR9Done == false)
                                     {
                                         popR9Done = true;
-                                        x64Opcodes.popR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 26:
@@ -880,7 +1099,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR10.ContainsKey(baseAddress + i) && popR10Done == false)
                                     {
                                         popR10Done = true;
-                                        x64Opcodes.popR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 27:
@@ -888,7 +1107,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR11.ContainsKey(baseAddress + i) && popR11Done == false)
                                     {
                                         popR11Done = true;
-                                        x64Opcodes.popR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 28:
@@ -896,7 +1115,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR12.ContainsKey(baseAddress + i) && popR12Done == false)
                                     {
                                         popR12Done = true;
-                                        x64Opcodes.popR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 29:
@@ -904,7 +1123,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR13.ContainsKey(baseAddress + i) && popR13Done == false)
                                     {
                                         popR13Done = true;
-                                        x64Opcodes.popR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 30:
@@ -912,7 +1131,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR14.ContainsKey(baseAddress + i) && popR14Done == false)
                                     {
                                         popR14Done = true;
-                                        x64Opcodes.popR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 31:
@@ -920,7 +1139,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.popR15.ContainsKey(baseAddress + i) && popR15Done == false)
                                     {
                                         popR15Done = true;
-                                        x64Opcodes.popR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.popR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 48:
@@ -929,7 +1148,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.jmpRsp.ContainsKey(baseAddress + i) && jmpRspDone == false)
                                     {
                                         jmpRspDone = true;
-                                        x64Opcodes.jmpRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.jmpRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 49:
@@ -938,7 +1157,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.callRsp.ContainsKey(baseAddress + i) && callRspDone == false)
                                     {
                                         callRspDone = true;
-                                        x64Opcodes.callRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.callRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 82:
@@ -946,7 +1165,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.add.ContainsKey(baseAddress + i) && addDone == false)
                                     {
                                         addDone = true;
-                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 83:
@@ -954,7 +1173,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.add.ContainsKey(baseAddress + i) && addDone == false)
                                     {
                                         addDone = true;
-                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 84:
@@ -962,7 +1181,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.add.ContainsKey(baseAddress + i) && addDone == false)
                                     {
                                         addDone = true;
-                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 85:
@@ -970,7 +1189,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.add.ContainsKey(baseAddress + i) && addDone == false)
                                     {
                                         addDone = true;
-                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.add.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 86:
@@ -978,7 +1197,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.mov.ContainsKey(baseAddress + i) && movDone == false)
                                     {
                                         movDone = true;
-                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 87:
@@ -986,7 +1205,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.mov.ContainsKey(baseAddress + i) && movDone == false)
                                     {
                                         movDone = true;
-                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 88:
@@ -994,7 +1213,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.mov.ContainsKey(baseAddress + i) && movDone == false)
                                     {
                                         movDone = true;
-                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 89:
@@ -1002,7 +1221,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.mov.ContainsKey(baseAddress + i) && movDone == false)
                                     {
                                         movDone = true;
-                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.mov.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 90:
@@ -1010,7 +1229,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.sub.ContainsKey(baseAddress + i) && subDone == false)
                                     {
                                         subDone = true;
-                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 91:
@@ -1018,7 +1237,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.sub.ContainsKey(baseAddress + i) && subDone == false)
                                     {
                                         subDone = true;
-                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 92:
@@ -1026,7 +1245,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.sub.ContainsKey(baseAddress + i) && subDone == false)
                                     {
                                         subDone = true;
-                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 93:
@@ -1034,7 +1253,23 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.sub.ContainsKey(baseAddress + i) && subDone == false)
                                     {
                                         subDone = true;
-                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.sub.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    }
+                                    break;
+                                case 94:
+                                    Array.Copy(bytes, i, opcodes, 0, bytes.Length - i);
+                                    if (!x64Opcodes.callRax.ContainsKey(baseAddress + i) && callRaxDone == false)
+                                    {
+                                        callRaxDone = true;
+                                        x64Opcodes.callRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
+                                    }
+                                    break;
+                                case 95:
+                                    Array.Copy(bytes, i, opcodes, 0, bytes.Length - i);
+                                    if (!x64Opcodes.jmpRax.ContainsKey(baseAddress + i) && jmpRaxDone == false)
+                                    {
+                                        jmpRaxDone = true;
+                                        x64Opcodes.jmpRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 default:
@@ -1055,7 +1290,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRax.ContainsKey(baseAddress + i) && incRaxDone == false)
                                     {
                                         incRaxDone = true;
-                                        x64Opcodes.incRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 51:
@@ -1063,7 +1298,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRbx.ContainsKey(baseAddress + i) && incRbxDone == false)
                                     {
                                         incRbxDone = true;
-                                        x64Opcodes.incRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 52:
@@ -1071,7 +1306,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRcx.ContainsKey(baseAddress + i) && incRcxDone == false)
                                     {
                                         incRcxDone = true;
-                                        x64Opcodes.incRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 53:
@@ -1079,7 +1314,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRdx.ContainsKey(baseAddress + i) && incRdxDone == false)
                                     {
                                         incRdxDone = true;
-                                        x64Opcodes.incRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 54:
@@ -1087,7 +1322,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRbp.ContainsKey(baseAddress + i) && incRbpDone == false)
                                     {
                                         incRbpDone = true;
-                                        x64Opcodes.incRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 55:
@@ -1095,7 +1330,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRsp.ContainsKey(baseAddress + i) && incRspDone == false)
                                     {
                                         incRspDone = true;
-                                        x64Opcodes.incRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 56:
@@ -1103,7 +1338,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRsi.ContainsKey(baseAddress + i) && incRsiDone == false)
                                     {
                                         incRsiDone = true;
-                                        x64Opcodes.incRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 57:
@@ -1111,7 +1346,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incRdi.ContainsKey(baseAddress + i) && incRdiDone == false)
                                     {
                                         incRdiDone = true;
-                                        x64Opcodes.incRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 58:
@@ -1119,7 +1354,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR8.ContainsKey(baseAddress + i) && incR8Done == false)
                                     {
                                         incR8Done = true;
-                                        x64Opcodes.incR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 59:
@@ -1127,7 +1362,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR9.ContainsKey(baseAddress + i) && incR9Done == false)
                                     {
                                         incR9Done = true;
-                                        x64Opcodes.incR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 60:
@@ -1135,7 +1370,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR10.ContainsKey(baseAddress + i) && incR10Done == false)
                                     {
                                         incR10Done = true;
-                                        x64Opcodes.incR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 61:
@@ -1143,7 +1378,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR11.ContainsKey(baseAddress + i) && incR11Done == false)
                                     {
                                         incR11Done = true;
-                                        x64Opcodes.incR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 62:
@@ -1151,7 +1386,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR12.ContainsKey(baseAddress + i) && incR12Done == false)
                                     {
                                         incR12Done = true;
-                                        x64Opcodes.incR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 63:
@@ -1159,7 +1394,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR13.ContainsKey(baseAddress + i) && incR13Done == false)
                                     {
                                         incR13Done = true;
-                                        x64Opcodes.incR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 64:
@@ -1167,7 +1402,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR14.ContainsKey(baseAddress + i) && incR14Done == false)
                                     {
                                         incR14Done = true;
-                                        x64Opcodes.incR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 65:
@@ -1175,7 +1410,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.incR15.ContainsKey(baseAddress + i) && incR15Done == false)
                                     {
                                         incR15Done = true;
-                                        x64Opcodes.incR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.incR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 66:
@@ -1183,7 +1418,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRax.ContainsKey(baseAddress + i) && decRaxDone == false)
                                     {
                                         decRaxDone = true;
-                                        x64Opcodes.decRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 67:
@@ -1191,7 +1426,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRbx.ContainsKey(baseAddress + i) && decRbxDone == false)
                                     {
                                         decRbxDone = true;
-                                        x64Opcodes.decRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 68:
@@ -1199,7 +1434,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRcx.ContainsKey(baseAddress + i) && decRcxDone == false)
                                     {
                                         decRcxDone = true;
-                                        x64Opcodes.decRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 69:
@@ -1207,7 +1442,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRdx.ContainsKey(baseAddress + i) && decRdxDone == false)
                                     {
                                         decRdxDone = true;
-                                        x64Opcodes.decRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 70:
@@ -1215,7 +1450,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRbp.ContainsKey(baseAddress + i) && decRbpDone == false)
                                     {
                                         decRbpDone = true;
-                                        x64Opcodes.decRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRbp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 71:
@@ -1223,7 +1458,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRsp.ContainsKey(baseAddress + i) && decRspDone == false)
                                     {
                                         decRspDone = true;
-                                        x64Opcodes.decRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRsp.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 72:
@@ -1231,7 +1466,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRsi.ContainsKey(baseAddress + i) && decRsiDone == false)
                                     {
                                         decRsiDone = true;
-                                        x64Opcodes.decRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 73:
@@ -1239,7 +1474,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decRdi.ContainsKey(baseAddress + i) && decRdiDone == false)
                                     {
                                         decRdiDone = true;
-                                        x64Opcodes.decRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 74:
@@ -1247,7 +1482,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR8.ContainsKey(baseAddress + i) && decR8Done == false)
                                     {
                                         decR8Done = true;
-                                        x64Opcodes.decR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 75:
@@ -1255,7 +1490,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR9.ContainsKey(baseAddress + i) && decR9Done == false)
                                     {
                                         decR9Done = true;
-                                        x64Opcodes.decR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 76:
@@ -1263,7 +1498,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR10.ContainsKey(baseAddress + i) && decR10Done == false)
                                     {
                                         decR10Done = true;
-                                        x64Opcodes.decR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 77:
@@ -1271,7 +1506,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR11.ContainsKey(baseAddress + i) && decR11Done == false)
                                     {
                                         decR11Done = true;
-                                        x64Opcodes.decR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 78:
@@ -1279,7 +1514,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR12.ContainsKey(baseAddress + i) && decR12Done == false)
                                     {
                                         decR12Done = true;
-                                        x64Opcodes.decR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 79:
@@ -1287,7 +1522,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR13.ContainsKey(baseAddress + i) && decR13Done == false)
                                     {
                                         decR13Done = true;
-                                        x64Opcodes.decR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 80:
@@ -1295,7 +1530,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR14.ContainsKey(baseAddress + i) && decR14Done == false)
                                     {
                                         decR14Done = true;
-                                        x64Opcodes.decR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 81:
@@ -1303,7 +1538,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.decR15.ContainsKey(baseAddress + i) && decR15Done == false)
                                     {
                                         decR15Done = true;
-                                        x64Opcodes.decR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.decR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 32:
@@ -1311,7 +1546,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorRax.ContainsKey(baseAddress + i) && xorRaxDone == false)
                                     {
                                         xorRaxDone = true;
-                                        x64Opcodes.xorRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorRax.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 33:
@@ -1319,7 +1554,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorRbx.ContainsKey(baseAddress + i) && xorRbxDone == false)
                                     {
                                         xorRbxDone = true;
-                                        x64Opcodes.xorRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorRbx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 34:
@@ -1327,7 +1562,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorRcx.ContainsKey(baseAddress + i) && xorRcxDone == false)
                                     {
                                         xorRcxDone = true;
-                                        x64Opcodes.xorRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorRcx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 35:
@@ -1335,7 +1570,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorRdx.ContainsKey(baseAddress + i) && xorRdxDone == false)
                                     {
                                         xorRdxDone = true;
-                                        x64Opcodes.xorRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorRdx.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 36:
@@ -1343,7 +1578,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorRsi.ContainsKey(baseAddress + i) && xorRsiDone == false)
                                     {
                                         xorRsiDone = true;
-                                        x64Opcodes.xorRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorRsi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 37:
@@ -1351,7 +1586,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorRdi.ContainsKey(baseAddress + i) && xorRdiDone == false)
                                     {
                                         xorRdiDone = true;
-                                        x64Opcodes.xorRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorRdi.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 38:
@@ -1359,7 +1594,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR8.ContainsKey(baseAddress + i) && xorR8Done == false)
                                     {
                                         xorR8Done = true;
-                                        x64Opcodes.xorR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR8.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 39:
@@ -1367,7 +1602,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR9.ContainsKey(baseAddress + i) && xorR9Done == false)
                                     {
                                         xorR9Done = true;
-                                        x64Opcodes.xorR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR9.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 40:
@@ -1375,7 +1610,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR10.ContainsKey(baseAddress + i) && xorR10Done == false)
                                     {
                                         xorR10Done = true;
-                                        x64Opcodes.xorR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR10.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 41:
@@ -1383,7 +1618,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR11.ContainsKey(baseAddress + i) && xorR11Done == false)
                                     {
                                         xorR11Done = true;
-                                        x64Opcodes.xorR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR11.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 42:
@@ -1391,7 +1626,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR12.ContainsKey(baseAddress + i) && xorR12Done == false)
                                     {
                                         xorR12Done = true;
-                                        x64Opcodes.xorR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR12.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 43:
@@ -1399,7 +1634,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR13.ContainsKey(baseAddress + i) && xorR13Done == false)
                                     {
                                         xorR13Done = true;
-                                        x64Opcodes.xorR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR13.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 44:
@@ -1407,7 +1642,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR14.ContainsKey(baseAddress + i) && xorR14Done == false)
                                     {
                                         xorR14Done = true;
-                                        x64Opcodes.xorR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR14.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 case 45:
@@ -1415,7 +1650,7 @@ namespace ERC.Utilities
                                     if (!x64Opcodes.xorR15.ContainsKey(baseAddress + i) && xorR15Done == false)
                                     {
                                         xorR15Done = true;
-                                        x64Opcodes.xorR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64).ReturnValue.Replace(Environment.NewLine, ", "));
+                                        x64Opcodes.xorR15.Add(baseAddress + i, OpcodeDisassembler.Disassemble(opcodes, MachineType.x64, info.ProcessCore).ReturnValue.Replace(Environment.NewLine, ", "));
                                     }
                                     break;
                                 default:
@@ -1542,7 +1777,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r8") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r8") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1555,7 +1790,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r9") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r9") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1568,7 +1803,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r10") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r10") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1581,7 +1816,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r11") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r11") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1594,7 +1829,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r12") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r12") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1607,7 +1842,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r13") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r13") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1620,7 +1855,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r14") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r14") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1633,7 +1868,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("push r15") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("push r15") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1750,7 +1985,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r8") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r8") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1763,7 +1998,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r9") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r9") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1776,7 +2011,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r10") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r10") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1789,7 +2024,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r11") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r11") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1802,7 +2037,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r12") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r12") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1815,7 +2050,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r13") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r13") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1828,7 +2063,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r14") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r14") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1841,7 +2076,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("xor r15") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("xor r15") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1958,7 +2193,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r8") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r8") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1971,7 +2206,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r9") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r9") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1984,7 +2219,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r10") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r10") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -1997,7 +2232,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r11") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r11") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2010,7 +2245,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r12") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r12") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2023,7 +2258,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r13") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r13") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2036,7 +2271,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r14") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r14") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2049,7 +2284,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("pop r15") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("pop r15") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2166,7 +2401,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r8") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r8") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2179,7 +2414,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r9") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r9") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2192,7 +2427,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r10") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r10") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2205,7 +2440,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r11") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r11") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2218,7 +2453,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r12") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r12") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2231,7 +2466,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r13") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r13") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2244,7 +2479,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r14") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r14") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2257,7 +2492,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("inc r15") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("inc r15") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2374,7 +2609,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r8") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r8") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2387,7 +2622,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r9") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r9") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2400,7 +2635,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r10") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r10") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2413,7 +2648,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r11") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r11") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2426,7 +2661,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r12") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r12") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2439,7 +2674,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r13") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r13") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2452,7 +2687,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r14") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r14") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2465,7 +2700,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("dec r15") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("dec r15") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2491,7 +2726,7 @@ namespace ERC.Utilities
             thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
             for (int i = 0; i < thisList.Count; i++)
             {
-                if (!thisList[i].Value.Contains("mov") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
+                if (!thisList[i].Value.Contains("mov") || !thisList[i].Value.Contains("ret"))
                 {
                     thisList.RemoveAt(i);
                 }
@@ -2513,22 +2748,47 @@ namespace ERC.Utilities
                     usableX64Opcodes.sub.Add(thisList[i].Key, thisList[i].Value);
                 }
             }
+            thisList = x64Opcodes.jmpRax.ToList();
+            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
+            for (int i = 0; i < thisList.Count; i++)
+            {
+                if (!thisList[i].Value.Contains("jmp rax"))
+                {
+                    thisList.RemoveAt(i);
+                }
+                else
+                {
+                    usableX64Opcodes.jmpRax.Add(thisList[i].Key, thisList[i].Value);
+                }
+            }
+            thisList = x64Opcodes.callRax.ToList();
+            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
+            for (int i = 0; i < thisList.Count; i++)
+            {
+                if (!thisList[i].Value.Contains("call rax"))
+                {
+                    thisList.RemoveAt(i);
+                }
+                else
+                {
+                    usableX64Opcodes.callRax.Add(thisList[i].Key, thisList[i].Value);
+                }
+            }
         }
         #endregion
 
         #region GenerateVirtualAllocChain64
-        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain64(ProcessInfo info, byte[] startAddress)
+        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain64(ProcessInfo info)
         {
             ////////////////////////////////////////////////////////////////
             // VirtualAlloc Template:                                     //
-            // EAX: 90909090 -> Nop sled                                  //
-            // ECX: 00000040 -> flProtect                                 //
-            // EDX: 00001000 -> flAllocationType                          //
-            // EBX: ???????? -> Int size (area to be set as executable)   //
-            // RSP: ???????? -> No Change                                 //
-            // EBP: ???????? -> Jmp Esp / Call Esp                        //
-            // ESI: ???????? -> ApiAddresses["VirtualAlloc"]              //
-            // EDI: ???????? -> RopNop                                    //
+            // RCX: 0x???????????????? ->  Pointer                        //
+            // RDX: 0x0000000000000500 ->  dwSize                         //
+            // R8 : 0x0000000000001000 ->  flAllocationType               //
+            // R9 : 0x0000000000000040 ->  flProtect                      //
+            //                                                            //
+            // + place a pointer to VirtualAlloc on stack                 //
+            // + place ptr to "jmp rsp" on stack                          //
             ////////////////////////////////////////////////////////////////
 
             ErcResult<List<Tuple<byte[], string>>> VirtualAlloc = new ErcResult<List<Tuple<byte[], string>>>(info.ProcessCore);
@@ -2545,464 +2805,227 @@ namespace ERC.Utilities
 
             RegisterLists64 regLists64 = new RegisterLists64();
 
-            while (!CompleteRegisters64(regState64))
+            #region Populate RCX
+            regLists64.rcxList = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popRcx.Count; i++)
             {
-                #region Populate RDI
-                if (!regState64.HasFlag(Register64.RDI))
+                if (!regState64.HasFlag(Register64.RCX))
                 {
-                    regLists64.rdiList = null;
-                    regLists64.rdiList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX64Opcodes.popRdi.Count; i++)
+                    if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRcx.ElementAt(i).Value.Contains("invalid"))
                     {
-                        if (!regState64.HasFlag(Register64.RDI))
+                        for (int j = 0; j< usableX64Opcodes.pushRsp.Count; j++)
                         {
-                            if (usableX64Opcodes.popRdi.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdi.ElementAt(i).Value.Contains("invalid"))
+                            if (usableX64Opcodes.pushRsp.ElementAt(j).Value.Length <= 15 && !usableX64Opcodes.pushRsp.ElementAt(j).Value.Contains("invalid"))
                             {
-                                regLists64.rdiList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdi.ElementAt(i).Key).Reverse().ToArray(),
-                                    usableX64Opcodes.popRdi.ElementAt(i).Value));
-                                regLists64.rdiList.Add(Tuple.Create(BitConverter.GetBytes((long)RopNops[0]).Reverse().ToArray(), "ROP NOP"));
-                                regState64 |= Register64.RDI;
+                                regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRsp.ElementAt(j).Key),
+                                    usableX64Opcodes.pushRsp.ElementAt(j).Value));
+                                regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key),
+                                    usableX64Opcodes.popRcx.ElementAt(i).Value));
+                                regState64 |= Register64.RCX;
+                                i = usableX64Opcodes.popRcx.Count;
+                                j = usableX64Opcodes.pushRsp.Count;
                             }
-                        }
-                        else
-                        {
-                            i = usableX64Opcodes.popRdi.Count;
-                        }
-                    }
-                    foreach (Register64 i in Enum.GetValues(typeof(Register64)))
-                    {
-                        if (!regState64.HasFlag(Register64.RDI))
-                        {
-                            var popInstruction = GetPopInstruction(Register64.RDI, i, regModified64);
-                            if (popInstruction != null)
-                            {
-                                var movInstruction = GetMovInstruction(Register64.RDI, i, regModified64);
-                                if (movInstruction != null)
-                                {
-                                    regLists64.rdiList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                    regLists64.rdiList.Add(Tuple.Create(BitConverter.GetBytes((long)RopNops[0]).Reverse().ToArray(), "ROP NOP"));
-                                    regLists64.rdiList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
-                                    SetRegisterModifier(Register64.RDI, i, regModified64);
-                                    regState64 &= ~i;
-                                    regState64 |= Register64.RDI;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if (!regState64.HasFlag(Register64.RDI))
-                    {
-                        regLists64.rdiList = null;
-                        regLists64.rdiList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rdiList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. RDI must be allocated manually"));
-                        regState64 |= Register64.RDI;
-                    }
-                }
-                #endregion
-
-                #region Populate RSI
-                if (!regState64.HasFlag(Register64.RSI))
-                {
-                    regLists64.rsiList = null;
-                    regLists64.rsiList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX64Opcodes.popRsi.Count; i++)
-                    {
-                        if (!regState64.HasFlag(Register64.RSI))
-                        {
-                            if (usableX64Opcodes.popRsi.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRsi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists64.rsiList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsi.ElementAt(i).Key).Reverse().ToArray(), 
-                                    usableX64Opcodes.popRsi.ElementAt(i).Value));
-                                regLists64.rsiList.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"]).Reverse().ToArray(), 
-                                    "Pointer to VirtualAlloc."));
-                                regState64 |= Register64.RSI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX64Opcodes.popRsi.Count;
-                        }
-                    }
-                    if (!regState64.HasFlag(Register64.RSI))
-                    {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
-                        {
-                            if (!regState64.HasFlag(Register64.RSI))
-                            {
-                                var popInstruction = GetPopInstruction(Register64.RSI, i, regModified64);
-                                if (popInstruction != null)
-                                {
-                                    var movInstruction = GetMovInstruction(Register64.RSI, i, regModified64);
-                                    if (movInstruction != null)
-                                    {
-                                        regLists64.rsiList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                        regLists64.rsiList.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"]).Reverse().ToArray()
-                                            , "Pointer to VirtualAlloc."));
-                                        regLists64.rsiList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
-                                        SetRegisterModifier(Register64.RSI, i, regModified64);
-                                        regState64 &= ~i;
-                                        regState64 |= Register64.RSI;
-                                    }
-                                }
-                            }
-                        }
-                        if (!regState64.HasFlag(Register64.RSI))
-                        {
-                            regLists64.rsiList = null;
-                            regLists64.rsiList = new List<Tuple<byte[], string>>();
-                            byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                            regLists64.rsiList.Add(Tuple.Create(nullBytes,
-                                "Unable to find appropriate instruction. RSI must be allocated manually"));
-                            regState64 |= Register64.RSI;
                         }
                     }
                 }
-                #endregion
-
-                #region Populate RBP
-                if (!regState64.HasFlag(Register64.RBP))
+                else
                 {
-                    regLists64.rbpList = null;
-                    regLists64.rbpList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX64Opcodes.popRbp.Count; i++)
-                    {
-                        if (!regState64.HasFlag(Register64.RBP))
-                        {
-                            if (usableX64Opcodes.popRbp.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRbp.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists64.rbpList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbp.ElementAt(i).Key).Reverse().ToArray(),
-                                    usableX64Opcodes.popRbp.ElementAt(i).Value));
-                                if (startAddress != null)
-                                {
-                                    regLists64.rbpList.Add(Tuple.Create(startAddress, "User supplied start address"));
-                                }
-                                else
-                                {
-                                    if (usableX64Opcodes.jmpRsp.Count > 0)
-                                    {
-                                        regLists64.rbpList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRsp.ElementAt(0).Key).Reverse().ToArray(),
-                                            usableX64Opcodes.jmpRsp.ElementAt(0).Value));
-                                    }
-                                    else
-                                    {
-                                        regLists64.rbpList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.callRsp.ElementAt(0).Key).Reverse().ToArray(),
-                                            usableX64Opcodes.callRsp.ElementAt(0).Value));
-                                    }
-                                }
-                                regState64 |= Register64.RBP;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX64Opcodes.popRbp.Count;
-                        }
-                    }
-                    if (!regState64.HasFlag(Register64.RBP))
-                    {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
-                        {
-                            if (!regState64.HasFlag(Register64.RBP))
-                            {
-                                var popInstruction = GetPopInstruction(Register64.RBP, i, regModified64);
-                                if (popInstruction != null)
-                                {
-                                    var movInstruction = GetMovInstruction(Register64.RBP, i, regModified64);
-                                    if (movInstruction != null)
-                                    {
-                                        regLists64.rbpList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                        if (usableX64Opcodes.jmpRsp.Count > 0)
-                                        {
-                                            regLists64.rbpList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRsp.ElementAt(0).Key).Reverse().ToArray(),
-                                                usableX64Opcodes.jmpRsp.ElementAt(0).Value));
-                                        }
-                                        else
-                                        {
-                                            regLists64.rbpList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.callRsp.ElementAt(0).Key).Reverse().ToArray(),
-                                                usableX64Opcodes.callRsp.ElementAt(0).Value));
-                                        }
-                                        regLists64.rbpList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
-                                        SetRegisterModifier(Register64.RBP, i, regModified64);
-                                        regState64 &= ~i;
-                                        regState64 |= Register64.RBP;
-                                    }
-                                }
-                            }
-                        }
-                        if (!regState64.HasFlag(Register64.RBP))
-                        {
-                            regLists64.rbpList = null;
-                            regLists64.rbpList = new List<Tuple<byte[], string>>();
-                            byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                            regLists64.rbpList.Add(Tuple.Create(nullBytes,
-                                "Unable to find appropriate instruction. RBP must be allocated manually"));
-                            regState64 |= Register64.RBP;
-                        }
-                    }
+                    i = usableX64Opcodes.popRcx.Count;
                 }
-                #endregion
-
-                #region Populate RBX
-                // Populate EBX
-                if (!regState64.HasFlag(Register64.RBX))
+            }
+            if (!regState64.HasFlag(Register64.RCX))
+            {
+                var movInstruction = GetMovInstruction(Register64.RCX, Register64.RSP, regModified64);
+                if (movInstruction != null)
                 {
-                    regLists64.rbxList = null;
-                    regLists64.rbxList = new List<Tuple<byte[], string>>();
-                    var xorRbx = GetXorInstruction(Register64.RBX);
-                    if (xorRbx != null)
-                    {
-                        regLists64.rbxList.Add(Tuple.Create(xorRbx.Item1, xorRbx.Item2));
-                        if (usableX64Opcodes.incRbx.Count > 0)
-                        {
-                            if (usableX64Opcodes.incRbx.ElementAt(0).Value.Length <= 14)
-                            {
-                                regLists64.rbxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRbx.ElementAt(0).Key).Reverse().ToArray(),
-                                    usableX64Opcodes.incRbx.ElementAt(0).Value));
-                                regState64 |= Register64.RBX;
-                            }
-                        }
-
-                    }
-                    if (!regState64.HasFlag(Register64.RBX))
-                    {
-                        var zeroEbx = ZeroRegister(Register64.RBX, regModified64);
-                        if (zeroEbx != null && usableX64Opcodes.incRbx.Count > 0 && usableX64Opcodes.incRbx.ElementAt(0).Value.Length <= 14)
-                        {
-                            for (int i = 0; i < zeroEbx.Count; i++)
-                            {
-                                regLists64.rbxList.Add(Tuple.Create(zeroEbx[i].Item1, zeroEbx[i].Item2));
-                            }
-                            regLists64.rbxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRbx.ElementAt(0).Key).Reverse().ToArray(),
-                                usableX64Opcodes.incRbx.ElementAt(0).Value));
-                            SetRegisterModifier(Register64.RBX, zeroEbx[0].Item3, regModified64);
-                            regState64 &= ~zeroEbx[0].Item3;
-                            regState64 |= Register64.RBX;
-                        }
-                    }
-                    if (!regState64.HasFlag(Register64.RBX))
-                    {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
-                        {
-                            var popInstruction = GetPopInstruction(Register64.RBP, i, regModified64);
-                            if (popInstruction != null)
-                            {
-                                for (int j = 0; j < x64Opcodes.add.Count; j++)
-                                {
-                                    if (!regState64.HasFlag(Register64.RBX))
-                                    {
-                                        var strings = x64Opcodes.add.ElementAt(j).Value.Split(',');
-                                        if (strings[0].Contains(" rbx") && strings[1].Contains(i.ToString().ToLower()))
-                                        {
-                                            regLists64.rbxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                            byte[] bytes = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };//......................................replace this with a more long term solution. Dynamically allocate size based on the size category in 
-                                            regLists64.rbxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
-                                            regLists64.rbxList.Add(Tuple.Create(BitConverter.GetBytes((long)x64Opcodes.add.ElementAt(j).Key).Reverse().ToArray(),
-                                                x64Opcodes.add.ElementAt(j).Value));
-                                            regLists64.rbxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                            bytes = new byte[] { 0x01, 0x01, 0x10, 0x01 };//......................................replace this with a more long term solution. Dynamically allocate size based on the size category in 
-                                            regLists64.rbxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
-                                            regLists64.rbxList.Add(Tuple.Create(BitConverter.GetBytes((long)x64Opcodes.add.ElementAt(j).Key).Reverse().ToArray(),
-                                            x64Opcodes.add.ElementAt(j).Value));
-                                            SetRegisterModifier(Register64.RBX, i, regModified64);
-                                            regState64 &= ~i;
-                                            regState64 |= Register64.RBX;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
+                    regLists64.rcxList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                    SetRegisterModifier(Register64.RCX, Register64.RSP, regModified64);
+                    regState64 &= ~Register64.RSP;
+                    regState64 |= Register64.RCX;
                 }
-                if (!regState64.HasFlag(Register64.RBX))
-                {
-                    regLists64.rbxList = null;
-                    regLists64.rbxList = new List<Tuple<byte[], string>>();
-                    byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                    regLists64.rbxList.Add(Tuple.Create(nullBytes,
-                        "Unable to find appropriate instruction. RBX must be allocated manually"));
-                    regState64 |= Register64.RBX;
-                }
-                #endregion
+            }
+            if (!regState64.HasFlag(Register64.RCX))
+            {
+                regLists64.rcxList = null;
+                regLists64.rcxList = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.rcxList.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. RCX must be allocated manually"));
+                regState64 |= Register64.RCX;
+            }
+            #endregion
 
-                #region Populate RDX
+            #region Populate RDX
+            SetRegisterModifier(Register64.RDX, Register64.RCX, regModified64);
+            regLists64.rdxList = null;
+            regLists64.rdxList = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popRdx.Count; i++)
+            {
                 if (!regState64.HasFlag(Register64.RDX))
                 {
-                    regLists64.rdxList = null;
-                    regLists64.rdxList = new List<Tuple<byte[], string>>();
-                    var xorRDX = GetXorInstruction(Register64.RDX);
-                    if (xorRDX != null)
+                    if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdx.ElementAt(i).Value.Contains("invalid"))
                     {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
-                        {
-                            if (!regState64.HasFlag(Register64.RDX))
-                            {
-                                var popInstruction = GetPopInstruction(Register64.RDX, i, regModified64);
-                                if (popInstruction != null)
-                                {
-                                    var addInstruction = GetAddInstruction(Register64.RDX, i);
-                                    if (addInstruction != null)
-                                    {
-                                        byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-                                        byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
-                                        regLists64.rdxList.Add(Tuple.Create(xorRDX.Item1, xorRDX.Item2));
-                                        regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                        regLists64.rdxList.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
-                                        regLists64.rdxList.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
-                                        regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                        regLists64.rdxList.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00001000"));
-                                        regLists64.rdxList.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
-                                        SetRegisterModifier(Register64.RDX, i, regModified64);
-                                        regState64 &= ~i;
-                                        regState64 |= Register64.RDX;
-                                    }
-                                }
-                            }
-                        }
+                        byte[] dwSize = { 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
+                        regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key),
+                            usableX64Opcodes.popRdx.ElementAt(i).Value));
+                        regState64 |= Register64.RDX;
+                        i = usableX64Opcodes.popRdx.Count;
                     }
-                    if (!regState64.HasFlag(Register64.RDX))
+                }
+                else
+                {
+                    i = usableX64Opcodes.popRdx.Count;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                var xorEbx = GetXorInstruction(Register64.RDX);
+                if (xorEbx != null)
+                {
+                    regLists64.rdxList.Add(Tuple.Create(xorEbx.Item1, xorEbx.Item2));
+                    if (usableX64Opcodes.incRdx.Count > 0)
                     {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                        if (usableX64Opcodes.incRdx.ElementAt(0).Value.Length <= 14)
                         {
-                            if (!regState64.HasFlag(Register64.RDX))
-                            {
-                                var popInstruction = GetPopInstruction(Register64.RDX, i, regModified64);
-                                if (popInstruction != null)
-                                {
-                                    foreach (Register64 j in Enum.GetValues(typeof(Register64)))
-                                    {
-                                        if (!regState64.HasFlag(Register64.RDX) && i != j)
-                                        {
-                                            var popInstruction2 = GetPopInstruction(Register64.RDX, j, regModified64);
-                                            if (popInstruction2 != null)
-                                            {
-                                                var addInstruction = GetAddInstruction(i, j);
-                                                if (addInstruction != null)
-                                                {
-                                                    var movInstruction = GetMovInstruction(Register64.RDX, i, regModified64);
-                                                    if (movInstruction != null)
-                                                    {
-                                                        byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
-                                                        byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01 };
-                                                        regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                                        regLists64.rdxList.Add(Tuple.Create(add1, "To be placed into " + popInstruction.Item3.ToString()));
-                                                        regLists64.rdxList.Add(Tuple.Create(popInstruction2.Item1, popInstruction2.Item2));
-                                                        regLists64.rdxList.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00001000"));
-                                                        regLists64.rdxList.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
-                                                        regLists64.rdxList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
-                                                        SetRegisterModifier(Register64.RDX, i, regModified64);
-                                                        SetRegisterModifier(Register64.RDX, j, regModified64);
-                                                        regState64 &= ~i;
-                                                        regState64 &= ~j;
-                                                        regState64 |= Register64.RDX;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (!regState64.HasFlag(Register64.RDX))
-                    {
-                        if(x64Opcodes.popRdx.Count > 0)
-                        {
-                            byte[] flallocation = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, };
-                            var popInstruction = GetPopInstruction(Register64.RDX, Register64.RDX, regModified64);
-                            regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                            regLists64.rdxList.Add(Tuple.Create(flallocation, "flAllocationType -> MEM_COMMIT 0x0000000000001000"));
+                            regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRdx.ElementAt(0).Key),
+                                usableX64Opcodes.incRdx.ElementAt(0).Value));
                             regState64 |= Register64.RDX;
                         }
                     }
-                    if (!regState64.HasFlag(Register64.RDX))
-                    {
-                        regLists64.rdxList = null;
-                        regLists64.rdxList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rdxList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. RDX must be allocated manually"));
-                        regState64 |= Register64.RDX;
-                    }
-                }
-                #endregion
 
-                #region Populate RCX
-                if (!regState64.HasFlag(Register64.RCX))
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                var zeroEbx = ZeroRegister(Register64.RDX, regModified64);
+                if (zeroEbx != null && usableX64Opcodes.incRdx.Count > 0 && usableX64Opcodes.incRdx.ElementAt(0).Value.Length <= 14)
                 {
-                    regLists64.rcxList = null;
-                    regLists64.rcxList = new List<Tuple<byte[], string>>();
-                    var xorRCX = GetXorInstruction(Register64.RCX);
-                    if (xorRCX != null)
+                    for (int i = 0; i < zeroEbx.Count; i++)
                     {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                        regLists64.rdxList.Add(Tuple.Create(zeroEbx[i].Item1, zeroEbx[i].Item2));
+                    }
+                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRdx.ElementAt(0).Key),
+                        usableX64Opcodes.incRdx.ElementAt(0).Value));
+                    SetRegisterModifier(Register64.RDX, zeroEbx[0].Item3, regModified64);
+                    regState64 &= ~zeroEbx[0].Item3;
+                    regState64 |= Register64.RDX;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    var popInstruction = GetPopInstruction(Register64.RDX, i, regModified64);
+                    if (popInstruction != null)
+                    {
+                        for (int j = 0; j < usableX64Opcodes.add.Count; j++)
                         {
-                            if (!regState64.HasFlag(Register64.RCX))
+                            if (!regState64.HasFlag(Register64.RDX))
                             {
-                                var popInstruction = GetPopInstruction(Register64.RCX, i, regModified64);
-                                if (popInstruction != null)
+                                var strings = usableX64Opcodes.add.ElementAt(j).Value.Split(',');
+                                if (strings[0].Contains(" rdx") && strings[1].Contains(i.ToString().ToLower()))
                                 {
-                                    var addInstruction = GetAddInstruction(Register64.RCX, i);
-                                    if (addInstruction != null)
-                                    {
-                                        byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
-                                        byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01 };
-                                        regLists64.rcxList.Add(Tuple.Create(xorRCX.Item1, xorRCX.Item2));
-                                        regLists64.rcxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                        regLists64.rcxList.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
-                                        regLists64.rcxList.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
-                                        regLists64.rcxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                        regLists64.rcxList.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00000040"));
-                                        regLists64.rcxList.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
-                                        SetRegisterModifier(Register64.RCX, i, regModified64);
-                                        regState64 &= ~i;
-                                        regState64 |= Register64.RCX;
-                                    }
+                                    regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                    byte[] bytes = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                    regLists64.rdxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                        usableX64Opcodes.add.ElementAt(j).Value));
+                                    regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                    bytes = new byte[] { 0x01, 0x06, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                    regLists64.rdxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                        usableX64Opcodes.add.ElementAt(j).Value));
+                                    SetRegisterModifier(Register64.RDX, i, regModified64);
+                                    regState64 &= ~i;
+                                    regState64 |= Register64.RDX;
                                 }
                             }
                         }
                     }
-                    if (!regState64.HasFlag(Register64.RCX))
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                regLists64.rdxList = null;
+                regLists64.rdxList = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.rdxList.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. EBX must be allocated manually"));
+                regState64 |= Register64.RDX;
+            }
+            #endregion
+
+            #region Populate R8
+            SetRegisterModifier(Register64.R8, Register64.RCX, regModified64);
+            SetRegisterModifier(Register64.R8, Register64.RDX, regModified64);
+            regLists64.r8List = null;
+            regLists64.r8List = new List<Tuple<byte[], string>>();
+            var xorR8 = GetXorInstruction(Register64.R8);
+            if (xorR8 != null)
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R8))
                     {
-                        foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                        var popInstruction = GetPopInstruction(Register64.R8, i, regModified64);
+                        if (popInstruction != null)
                         {
-                            if (!regState64.HasFlag(Register64.RCX))
+                            var addInstruction = GetAddInstruction(Register64.R8, i);
+                            if (addInstruction != null)
                             {
-                                var popInstruction = GetPopInstruction(Register64.RCX, i, regModified64);
-                                if (popInstruction != null)
+                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                regLists64.r8List.Add(Tuple.Create(xorR8.Item1, xorR8.Item2));
+                                regLists64.r8List.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
+                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x0000000000001000"));
+                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                SetRegisterModifier(Register64.R8, i, regModified64);
+                                regState64 &= ~i;
+                                regState64 |= Register64.R8;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        var popInstruction = GetPopInstruction(Register64.R8, i, regModified64);
+                        if (popInstruction != null)
+                        {
+                            foreach (Register64 j in Enum.GetValues(typeof(Register64)))
+                            {
+                                if (!regState64.HasFlag(Register64.R8) && i != j)
                                 {
-                                    foreach (Register64 j in Enum.GetValues(typeof(Register64)))
+                                    var popInstruction2 = GetPopInstruction(Register64.R8, j, regModified64);
+                                    if (popInstruction2 != null)
                                     {
-                                        if (!regState64.HasFlag(Register64.RCX) && i != j)
+                                        var addInstruction = GetAddInstruction(i, j);
+                                        if (addInstruction != null)
                                         {
-                                            var popInstruction2 = GetPopInstruction(Register64.RCX, j, regModified64);
-                                            if (popInstruction2 != null)
+                                            var movInstruction = GetMovInstruction(Register64.R8, i, regModified64);
+                                            if (movInstruction != null)
                                             {
-                                                var addInstruction = GetAddInstruction(i, j);
-                                                if (addInstruction != null)
-                                                {
-                                                    var movInstruction = GetMovInstruction(Register64.RCX, i, regModified64);
-                                                    if (movInstruction != null)
-                                                    {
-                                                        byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
-                                                        byte[] add2 = new byte[] { 0x41, 0x01, 0x01, 0x01 };
-                                                        regLists64.rcxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                                        regLists64.rcxList.Add(Tuple.Create(add1, "To be placed into " + popInstruction.Item3.ToString()));
-                                                        regLists64.rcxList.Add(Tuple.Create(popInstruction2.Item1, popInstruction2.Item2));
-                                                        regLists64.rcxList.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00001000"));
-                                                        regLists64.rcxList.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
-                                                        regLists64.rcxList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
-                                                        SetRegisterModifier(Register64.RCX, i, regModified64);
-                                                        SetRegisterModifier(Register64.RCX, j, regModified64);
-                                                        regState64 &= ~i;
-                                                        regState64 &= ~j;
-                                                        regState64 |= Register64.RCX;
-                                                    }
-                                                }
+                                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                                byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                                regLists64.r8List.Add(Tuple.Create(add1, "To be placed into " + popInstruction.Item3.ToString()));
+                                                regLists64.r8List.Add(Tuple.Create(popInstruction2.Item1, popInstruction2.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x0000000000000500"));
+                                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                                SetRegisterModifier(Register64.R8, i, regModified64);
+                                                SetRegisterModifier(Register64.R8, j, regModified64);
+                                                regState64 &= ~i;
+                                                regState64 &= ~j;
+                                                regState64 |= Register64.R8;
                                             }
                                         }
                                     }
@@ -3010,203 +3033,862 @@ namespace ERC.Utilities
                             }
                         }
                     }
-                    if (!regState64.HasFlag(Register64.RCX))
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                for (int i = 0; i < usableX64Opcodes.popR8.Count; i++)
+                {
+                    if (!regState64.HasFlag(Register64.R8))
                     {
-                        if (x64Opcodes.popRdx.Count > 0)
+                        if (usableX64Opcodes.popR8.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR8.ElementAt(i).Value.Contains("invalid"))
                         {
-                            byte[] flallocation = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40, };
-                            var popInstruction = GetPopInstruction(Register64.RCX, Register64.RCX, regModified64);
-                            regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                            regLists64.rdxList.Add(Tuple.Create(flallocation, "flprotect -> PAGE_EXECUTE_READWRITE 0x0000000000000040"));
-                            regState64 |= Register64.RCX;
+                            byte[] flAllocationType = { 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
+                            regLists64.r8List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key),
+                                usableX64Opcodes.popR8.ElementAt(i).Value));
+                            regState64 |= Register64.R8;
+                            i = usableX64Opcodes.popR8.Count;
                         }
                     }
-                    if (!regState64.HasFlag(Register64.RCX))
+                    else
                     {
-                        regLists64.rdxList = null;
-                        regLists64.rdxList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rdxList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. RCX must be allocated manually"));
-                        regState64 |= Register64.RCX;
+                        i = usableX64Opcodes.popR8.Count;
                     }
                 }
-                #endregion
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                regLists64.r8List = null;
+                regLists64.r8List = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.r8List.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. R8 must be allocated manually"));
+                regState64 |= Register64.R8;
+            }
+            #endregion
 
-                #region Populate RAX
-                if (!regState64.HasFlag(Register64.RAX))
+            #region Populate R9
+            SetRegisterModifier(Register64.R9, Register64.RCX, regModified64);
+            SetRegisterModifier(Register64.R9, Register64.RDX, regModified64);
+            SetRegisterModifier(Register64.R9, Register64.R8, regModified64);
+            regLists64.r9List = null;
+            regLists64.r9List = new List<Tuple<byte[], string>>();
+            var xorECX = GetXorInstruction(Register64.R9);
+            if (xorECX != null)
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
                 {
-                    byte[] nops = new byte[] { 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
-                    regLists64.raxList = null;
-                    regLists64.raxList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX64Opcodes.popRax.Count; i++)
+                    if (!regState64.HasFlag(Register64.R9))
                     {
-                        if (!regState64.HasFlag(Register64.RAX))
+                        var popInstruction = GetPopInstruction(Register64.R9, i, regModified64);
+                        if (popInstruction != null)
                         {
-                            if (usableX64Opcodes.popRax.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRax.ElementAt(i).Value.Contains("invalid"))
+                            var addInstruction = GetAddInstruction(Register64.R9, i);
+                            if (addInstruction != null)
                             {
-                                regLists64.raxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRax.ElementAt(i).Key).Reverse().ToArray(),
-                                    usableX64Opcodes.popRax.ElementAt(i).Value));
-                                regLists64.raxList.Add(Tuple.Create(nops, "NOPS"));
-                                regState64 |= Register64.RAX;
+                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                byte[] add2 = new byte[] { 0x41, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                regLists64.r9List.Add(Tuple.Create(xorECX.Item1, xorECX.Item2));
+                                regLists64.r9List.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
+                                regLists64.r9List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r9List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                regLists64.r9List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00000040"));
+                                regLists64.r9List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r9List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                SetRegisterModifier(Register64.R9, i, regModified64);
+                                regState64 &= ~i;
+                                regState64 |= Register64.R9;
                             }
                         }
-                        else
-                        {
-                            i = usableX64Opcodes.popRax.Count;
-                        }
                     }
-                    foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                }
+            }
+            if (!regState64.HasFlag(Register64.R9))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R9))
                     {
-                        if (!regState64.HasFlag(Register64.RAX))
+                        var popInstruction = GetPopInstruction(Register64.R9, i, regModified64);
+                        if (popInstruction != null)
                         {
-                            var popInstruction = GetPopInstruction(Register64.RAX, i, regModified64);
-                            if (popInstruction != null)
+                            foreach (Register64 j in Enum.GetValues(typeof(Register64)))
                             {
-                                var movInstruction = GetMovInstruction(Register64.RAX, i, regModified64);
-                                if (movInstruction != null)
+                                if (!regState64.HasFlag(Register64.R9) && i != j)
                                 {
-                                    regLists64.raxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
-                                    regLists64.raxList.Add(Tuple.Create(nops, "NOPS"));
-                                    regLists64.raxList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
-                                    SetRegisterModifier(Register64.RAX, i, regModified64);
-                                    regState64 &= ~i;
-                                    regState64 |= Register64.RAX;
+                                    var popInstruction2 = GetPopInstruction(Register64.R9, j, regModified64);
+                                    if (popInstruction2 != null)
+                                    {
+                                        var addInstruction = GetAddInstruction(i, j);
+                                        if (addInstruction != null)
+                                        {
+                                            var movInstruction = GetMovInstruction(Register64.R9, i, regModified64);
+                                            if (movInstruction != null)
+                                            {
+                                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                                byte[] add2 = new byte[] { 0x41, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                                regLists64.r9List.Add(Tuple.Create(add1, "To be placed into " + popInstruction.Item3.ToString()));
+                                                regLists64.r9List.Add(Tuple.Create(popInstruction2.Item1, popInstruction2.Item2));
+                                                regLists64.r9List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x00000000000040"));
+                                                regLists64.r9List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                                regLists64.r9List.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                                                regLists64.r9List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                                SetRegisterModifier(Register64.R9, i, regModified64);
+                                                SetRegisterModifier(Register64.R9, j, regModified64);
+                                                regState64 &= ~i;
+                                                regState64 &= ~j;
+                                                regState64 |= Register64.R9;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if (!regState64.HasFlag(Register64.RAX))
-                    {
-                        regLists64.raxList = null;
-                        regLists64.raxList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.raxList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. RAX must be allocated manually"));
-                        regState64 |= Register64.RAX;
                     }
                 }
-                #endregion
-
-                regState64 |= Register64.R8;
-                regState64 |= Register64.R9;
-                regState64 |= Register64.R10;
-                regState64 |= Register64.R11;
-                regState64 |= Register64.R12;
-                regState64 |= Register64.R13;
-                regState64 |= Register64.R14;
-                regState64 |= Register64.R15;
             }
-            VirtualAlloc.ReturnValue = BuildRopChain(regLists64, regModified64);
+            if (!regState64.HasFlag(Register64.R9))
+            {
+                for (int i = 0; i < usableX64Opcodes.popR9.Count; i++)
+                {
+                    if (!regState64.HasFlag(Register64.R9))
+                    {
+                        if (usableX64Opcodes.popR9.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR9.ElementAt(i).Value.Contains("invalid"))
+                        {
+                            byte[] flProtect = { 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                            regLists64.r9List.Add(Tuple.Create(flProtect, "flProtect"));
+                            regLists64.r9List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR9.ElementAt(i).Key),
+                                usableX64Opcodes.popR9.ElementAt(i).Value));
+                            regState64 |= Register64.R9;
+                            i = usableX64Opcodes.popR9.Count;
+                        }
+                    }
+                    else
+                    {
+                        i = usableX64Opcodes.popR9.Count;
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R9))
+            {
+                regLists64.r9List = null;
+                regLists64.r9List = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.r9List.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. R9 must be allocated manually"));
+                regState64 |= Register64.R9;
+            }
+            #endregion
+
+            VirtualAlloc.ReturnValue = BuildRopChain(RopMethod.VirtualAlloc, regLists64, regModified64);
             return VirtualAlloc;
         }
         #endregion
 
+        #region GenerateHeapCreateChain
+        private ErcResult<List<Tuple<byte[], string>>> GenerateHeapCreateChain64(ProcessInfo info)
+        {
+            ////////////////////////////////////////////////////////////////
+            // HeapCreate Template:                                       //
+            // RCX: 0x0000000000040000 ->  flOptions                      //
+            // RDX: 0x0000000000000500 ->  dwInitialSize                  //
+            // R8 : 0x0000000000001000 ->  dwMaximumSize                  //
+            //                                                            //
+            // + place a pointer to HeapCreate on stack                   //
+            // + place ptr to "jmp rsp" on stack                          //
+            ////////////////////////////////////////////////////////////////
+
+            ErcResult<List<Tuple<byte[], string>>> HeapCreate = new ErcResult<List<Tuple<byte[], string>>>(info.ProcessCore);
+            HeapCreate.ReturnValue = new List<Tuple<byte[], string>>();
+            Register64 regState64 = new Register64();
+            regState64 |= Register64.RSP;
+            RegisterModifiers64 regModified64 = new RegisterModifiers64();
+
+            foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+            {
+                SetRegisterModifier(regModified64.RSP, i, regModified64);
+                SetRegisterModifier(i, regModified64.RSP, regModified64);
+            }
+
+            RegisterLists64 regLists64 = new RegisterLists64();
+
+            #region Populate RCX
+            regLists64.rcxList = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popRcx.Count; i++)
+            {
+                if (!regState64.HasFlag(Register64.RCX))
+                {
+                    if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRcx.ElementAt(i).Value.Contains("invalid"))
+                    {
+                        byte[] flOptions = new byte[] { 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                        regLists64.rcxList.Add(Tuple.Create(flOptions,"flOptions"));
+                        regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key),
+                            usableX64Opcodes.popRcx.ElementAt(i).Value));
+                        regState64 |= Register64.RCX;
+                        i = usableX64Opcodes.popRcx.Count;
+                    }
+                }
+                else
+                {
+                    i = usableX64Opcodes.popRcx.Count;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RCX))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    var popInstruction = GetPopInstruction(Register64.RCX, i, regModified64);
+                    if (popInstruction != null)
+                    {
+                        for (int j = 0; j < usableX64Opcodes.add.Count; j++)
+                        {
+                            var strings = usableX64Opcodes.add.ElementAt(j).Value.Split(',');
+                            if (strings[0].Contains(" rcx") && strings[1].Contains(i.ToString().ToLower()))
+                            {
+
+                                byte[] bytes = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                regLists64.rcxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                regLists64.rcxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                    usableX64Opcodes.add.ElementAt(j).Value));
+                                bytes = new byte[] { 0x01, 0x06, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                regLists64.rcxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                regLists64.rcxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                    usableX64Opcodes.add.ElementAt(j).Value));
+                                SetRegisterModifier(Register64.RCX, i, regModified64);
+                                regState64 &= ~i;
+                                regState64 |= Register64.RCX;
+                                j = usableX64Opcodes.add.Count + 1;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.RCX))
+            {
+                regLists64.rcxList = null;
+                regLists64.rcxList = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.rcxList.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. RCX must be allocated manually"));
+                regState64 |= Register64.RCX;
+            }
+            #endregion
+
+            #region Populate RDX
+            SetRegisterModifier(Register64.RDX, Register64.RCX, regModified64);
+            regLists64.rdxList = null;
+            regLists64.rdxList = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popRdx.Count; i++)
+            {
+                if (!regState64.HasFlag(Register64.RDX))
+                {
+                    if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdx.ElementAt(i).Value.Contains("invalid"))
+                    {
+                        byte[] dwSize = { 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
+                        regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key),
+                            usableX64Opcodes.popRdx.ElementAt(i).Value));
+                        regState64 |= Register64.RDX;
+                        i = usableX64Opcodes.popRdx.Count;
+                    }
+                }
+                else
+                {
+                    i = usableX64Opcodes.popRdx.Count;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                var xorEbx = GetXorInstruction(Register64.RDX);
+                if (xorEbx != null)
+                {
+                    regLists64.rdxList.Add(Tuple.Create(xorEbx.Item1, xorEbx.Item2));
+                    if (usableX64Opcodes.incRdx.Count > 0)
+                    {
+                        if (usableX64Opcodes.incRdx.ElementAt(0).Value.Length <= 14)
+                        {
+                            regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRdx.ElementAt(0).Key),
+                                usableX64Opcodes.incRdx.ElementAt(0).Value));
+                            regState64 |= Register64.RDX;
+                        }
+                    }
+
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                var zeroEbx = ZeroRegister(Register64.RDX, regModified64);
+                if (zeroEbx != null && usableX64Opcodes.incRdx.Count > 0 && usableX64Opcodes.incRdx.ElementAt(0).Value.Length <= 14)
+                {
+                    for (int i = 0; i < zeroEbx.Count; i++)
+                    {
+                        regLists64.rdxList.Add(Tuple.Create(zeroEbx[i].Item1, zeroEbx[i].Item2));
+                    }
+                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRdx.ElementAt(0).Key),
+                        usableX64Opcodes.incRdx.ElementAt(0).Value));
+                    SetRegisterModifier(Register64.RDX, zeroEbx[0].Item3, regModified64);
+                    regState64 &= ~zeroEbx[0].Item3;
+                    regState64 |= Register64.RDX;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    var popInstruction = GetPopInstruction(Register64.RDX, i, regModified64);
+                    if (popInstruction != null)
+                    {
+                        for (int j = 0; j < usableX64Opcodes.add.Count; j++)
+                        {
+                            if (!regState64.HasFlag(Register64.RDX))
+                            {
+                                var strings = usableX64Opcodes.add.ElementAt(j).Value.Split(',');
+                                if (strings[0].Contains(" rdx") && strings[1].Contains(i.ToString().ToLower()))
+                                {
+                                    
+                                    byte[] bytes = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                    regLists64.rdxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                    regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                        usableX64Opcodes.add.ElementAt(j).Value));
+                                    bytes = new byte[] { 0x01, 0x06, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                    regLists64.rdxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                    regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                        usableX64Opcodes.add.ElementAt(j).Value));
+                                    SetRegisterModifier(Register64.RDX, i, regModified64);
+                                    regState64 &= ~i;
+                                    regState64 |= Register64.RDX;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                regLists64.rdxList = null;
+                regLists64.rdxList = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.rdxList.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. EBX must be allocated manually"));
+                regState64 |= Register64.RDX;
+            }
+            #endregion
+
+            #region Populate R8
+            SetRegisterModifier(Register64.R8, Register64.RCX, regModified64);
+            SetRegisterModifier(Register64.R8, Register64.RDX, regModified64);
+            regLists64.r8List = null;
+            regLists64.r8List = new List<Tuple<byte[], string>>();
+            var xorR8 = GetXorInstruction(Register64.R8);
+            if (xorR8 != null)
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        var popInstruction = GetPopInstruction(Register64.R8, i, regModified64);
+                        if (popInstruction != null)
+                        {
+                            var addInstruction = GetAddInstruction(Register64.R8, i);
+                            if (addInstruction != null)
+                            {
+                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                regLists64.r8List.Add(Tuple.Create(xorR8.Item1, xorR8.Item2));
+                                regLists64.r8List.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
+                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x0000000000001000"));
+                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                SetRegisterModifier(Register64.R8, i, regModified64);
+                                regState64 &= ~i;
+                                regState64 |= Register64.R8;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        var popInstruction = GetPopInstruction(Register64.R8, i, regModified64);
+                        if (popInstruction != null)
+                        {
+                            foreach (Register64 j in Enum.GetValues(typeof(Register64)))
+                            {
+                                if (!regState64.HasFlag(Register64.R8) && i != j)
+                                {
+                                    var popInstruction2 = GetPopInstruction(Register64.R8, j, regModified64);
+                                    if (popInstruction2 != null)
+                                    {
+                                        var addInstruction = GetAddInstruction(i, j);
+                                        if (addInstruction != null)
+                                        {
+                                            var movInstruction = GetMovInstruction(Register64.R8, i, regModified64);
+                                            if (movInstruction != null)
+                                            {
+                                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                                byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                                regLists64.r8List.Add(Tuple.Create(add1, "To be placed into " + popInstruction.Item3.ToString()));
+                                                regLists64.r8List.Add(Tuple.Create(popInstruction2.Item1, popInstruction2.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x0000000000000500"));
+                                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                                SetRegisterModifier(Register64.R8, i, regModified64);
+                                                SetRegisterModifier(Register64.R8, j, regModified64);
+                                                regState64 &= ~i;
+                                                regState64 &= ~j;
+                                                regState64 |= Register64.R8;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                for (int i = 0; i < usableX64Opcodes.popR8.Count; i++)
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        if (usableX64Opcodes.popR8.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR8.ElementAt(i).Value.Contains("invalid"))
+                        {
+                            byte[] flAllocationType = { 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
+                            regLists64.r8List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key),
+                                usableX64Opcodes.popR8.ElementAt(i).Value));
+                            regState64 |= Register64.R8;
+                            i = usableX64Opcodes.popR8.Count;
+                        }
+                    }
+                    else
+                    {
+                        i = usableX64Opcodes.popR8.Count;
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                regLists64.r8List = null;
+                regLists64.r8List = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.r8List.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. R8 must be allocated manually"));
+                regState64 |= Register64.R8;
+            }
+            #endregion
+
+            HeapCreate.ReturnValue = BuildRopChain(RopMethod.HeapCreate, regLists64, regModified64);
+            return HeapCreate;
+
+        }
+        #endregion
+
+        #region GenerateVirtualProtectChain
+        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualProtectChain64(ProcessInfo info)
+        {
+            ////////////////////////////////////////////////////////////////
+            // VirtualProtect Template:                                   //
+            // RCX: 0x???????????????? ->  Pointer                        //
+            // RDX: 0x0000000000000500 ->  dwSize                         //
+            // R8 : 0x0000000000001000 ->  flNewProtect                   //
+            // R9 : 0x???????????????? ->  lpflOldProtect                 //
+            //                                                            //
+            // + place a pointer to VirtualProtect on stack               //
+            // + place ptr to "jmp rsp" on stack                          //
+            ////////////////////////////////////////////////////////////////
+
+            ErcResult<List<Tuple<byte[], string>>> VirtualProtect = new ErcResult<List<Tuple<byte[], string>>>(info.ProcessCore);
+            VirtualProtect.ReturnValue = new List<Tuple<byte[], string>>();
+            Register64 regState64 = new Register64();
+            regState64 |= Register64.RSP;
+            RegisterModifiers64 regModified64 = new RegisterModifiers64();
+
+            foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+            {
+                SetRegisterModifier(regModified64.RSP, i, regModified64);
+                SetRegisterModifier(i, regModified64.RSP, regModified64);
+            }
+
+            RegisterLists64 regLists64 = new RegisterLists64();
+
+            #region Populate RCX
+            regLists64.rcxList = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popRcx.Count; i++)
+            {
+                if (!regState64.HasFlag(Register64.RCX))
+                {
+                    if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRcx.ElementAt(i).Value.Contains("invalid"))
+                    {
+                        for (int j = 0; j < usableX64Opcodes.pushRsp.Count; j++)
+                        {
+                            if (usableX64Opcodes.pushRsp.ElementAt(j).Value.Length <= 15 && !usableX64Opcodes.pushRsp.ElementAt(j).Value.Contains("invalid"))
+                            {
+                                regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRsp.ElementAt(j).Key),
+                                    usableX64Opcodes.pushRsp.ElementAt(j).Value));
+                                regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key),
+                                    usableX64Opcodes.popRcx.ElementAt(i).Value));
+                                regState64 |= Register64.RCX;
+                                i = usableX64Opcodes.popRcx.Count;
+                                j = usableX64Opcodes.pushRsp.Count;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    i = usableX64Opcodes.popRcx.Count;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RCX))
+            {
+                var movInstruction = GetMovInstruction(Register64.RCX, Register64.RSP, regModified64);
+                if (movInstruction != null)
+                {
+                    regLists64.rcxList.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                    SetRegisterModifier(Register64.RCX, Register64.RSP, regModified64);
+                    regState64 &= ~Register64.RSP;
+                    regState64 |= Register64.RCX;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RCX))
+            {
+                regLists64.rcxList = null;
+                regLists64.rcxList = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.rcxList.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. RCX must be allocated manually"));
+                regState64 |= Register64.RCX;
+            }
+            #endregion
+
+            #region Populate RDX
+            SetRegisterModifier(Register64.RDX, Register64.RCX, regModified64);
+            regLists64.rdxList = null;
+            regLists64.rdxList = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popRdx.Count; i++)
+            {
+                if (!regState64.HasFlag(Register64.RDX))
+                {
+                    if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdx.ElementAt(i).Value.Contains("invalid"))
+                    {
+                        byte[] dwSize = { 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
+                        regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key),
+                            usableX64Opcodes.popRdx.ElementAt(i).Value));
+                        regState64 |= Register64.RDX;
+                        i = usableX64Opcodes.popRdx.Count;
+                    }
+                }
+                else
+                {
+                    i = usableX64Opcodes.popRdx.Count;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                var xorEbx = GetXorInstruction(Register64.RDX);
+                if (xorEbx != null)
+                {
+                    regLists64.rdxList.Add(Tuple.Create(xorEbx.Item1, xorEbx.Item2));
+                    if (usableX64Opcodes.incRdx.Count > 0)
+                    {
+                        if (usableX64Opcodes.incRdx.ElementAt(0).Value.Length <= 14)
+                        {
+                            regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRdx.ElementAt(0).Key),
+                                usableX64Opcodes.incRdx.ElementAt(0).Value));
+                            regState64 |= Register64.RDX;
+                        }
+                    }
+
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                var zeroEbx = ZeroRegister(Register64.RDX, regModified64);
+                if (zeroEbx != null && usableX64Opcodes.incRdx.Count > 0 && usableX64Opcodes.incRdx.ElementAt(0).Value.Length <= 14)
+                {
+                    for (int i = 0; i < zeroEbx.Count; i++)
+                    {
+                        regLists64.rdxList.Add(Tuple.Create(zeroEbx[i].Item1, zeroEbx[i].Item2));
+                    }
+                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRdx.ElementAt(0).Key),
+                        usableX64Opcodes.incRdx.ElementAt(0).Value));
+                    SetRegisterModifier(Register64.RDX, zeroEbx[0].Item3, regModified64);
+                    regState64 &= ~zeroEbx[0].Item3;
+                    regState64 |= Register64.RDX;
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    var popInstruction = GetPopInstruction(Register64.RDX, i, regModified64);
+                    if (popInstruction != null)
+                    {
+                        for (int j = 0; j < usableX64Opcodes.add.Count; j++)
+                        {
+                            if (!regState64.HasFlag(Register64.RDX))
+                            {
+                                var strings = usableX64Opcodes.add.ElementAt(j).Value.Split(',');
+                                if (strings[0].Contains(" rdx") && strings[1].Contains(i.ToString().ToLower()))
+                                {
+                                    regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                    byte[] bytes = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                    regLists64.rdxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                        usableX64Opcodes.add.ElementAt(j).Value));
+                                    regLists64.rdxList.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                    bytes = new byte[] { 0x01, 0x06, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                    regLists64.rdxList.Add(Tuple.Create(bytes, "To be popped into " + i.ToString()));
+                                    regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(j).Key),
+                                        usableX64Opcodes.add.ElementAt(j).Value));
+                                    SetRegisterModifier(Register64.RDX, i, regModified64);
+                                    regState64 &= ~i;
+                                    regState64 |= Register64.RDX;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.RDX))
+            {
+                regLists64.rdxList = null;
+                regLists64.rdxList = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.rdxList.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. EBX must be allocated manually"));
+                regState64 |= Register64.RDX;
+            }
+            #endregion
+
+            #region Populate R8
+            SetRegisterModifier(Register64.R8, Register64.RCX, regModified64);
+            SetRegisterModifier(Register64.R8, Register64.RDX, regModified64);
+            regLists64.r8List = null;
+            regLists64.r8List = new List<Tuple<byte[], string>>();
+            var xorR8 = GetXorInstruction(Register64.R8);
+            if (xorR8 != null)
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        var popInstruction = GetPopInstruction(Register64.R8, i, regModified64);
+                        if (popInstruction != null)
+                        {
+                            var addInstruction = GetAddInstruction(Register64.R8, i);
+                            if (addInstruction != null)
+                            {
+                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                regLists64.r8List.Add(Tuple.Create(xorR8.Item1, xorR8.Item2));
+                                regLists64.r8List.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
+                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x0000000000001000"));
+                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                SetRegisterModifier(Register64.R8, i, regModified64);
+                                regState64 &= ~i;
+                                regState64 |= Register64.R8;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                foreach (Register64 i in Enum.GetValues(typeof(Register64)))
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        var popInstruction = GetPopInstruction(Register64.R8, i, regModified64);
+                        if (popInstruction != null)
+                        {
+                            foreach (Register64 j in Enum.GetValues(typeof(Register64)))
+                            {
+                                if (!regState64.HasFlag(Register64.R8) && i != j)
+                                {
+                                    var popInstruction2 = GetPopInstruction(Register64.R8, j, regModified64);
+                                    if (popInstruction2 != null)
+                                    {
+                                        var addInstruction = GetAddInstruction(i, j);
+                                        if (addInstruction != null)
+                                        {
+                                            var movInstruction = GetMovInstruction(Register64.R8, i, regModified64);
+                                            if (movInstruction != null)
+                                            {
+                                                byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+                                                byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01 };
+                                                regLists64.r8List.Add(Tuple.Create(add1, "To be placed into " + popInstruction.Item3.ToString()));
+                                                regLists64.r8List.Add(Tuple.Create(popInstruction2.Item1, popInstruction2.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(add2, "To be placed into " + addInstruction.Item3.ToString() + " combined = 0x0000000000001000"));
+                                                regLists64.r8List.Add(Tuple.Create(addInstruction.Item1, addInstruction.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                                                regLists64.r8List.Add(Tuple.Create(popInstruction.Item1, popInstruction.Item2));
+                                                SetRegisterModifier(Register64.R8, i, regModified64);
+                                                SetRegisterModifier(Register64.R8, j, regModified64);
+                                                regState64 &= ~i;
+                                                regState64 &= ~j;
+                                                regState64 |= Register64.R8;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                for (int i = 0; i < usableX64Opcodes.popR8.Count; i++)
+                {
+                    if (!regState64.HasFlag(Register64.R8))
+                    {
+                        if (usableX64Opcodes.popR8.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR8.ElementAt(i).Value.Contains("invalid"))
+                        {
+                            byte[] flAllocationType = { 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
+                            regLists64.r8List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key),
+                                usableX64Opcodes.popR8.ElementAt(i).Value));
+                            regState64 |= Register64.R8;
+                            i = usableX64Opcodes.popR8.Count;
+                        }
+                    }
+                    else
+                    {
+                        i = usableX64Opcodes.popR8.Count;
+                    }
+                }
+            }
+            if (!regState64.HasFlag(Register64.R8))
+            {
+                regLists64.r8List = null;
+                regLists64.r8List = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.r8List.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. R8 must be allocated manually"));
+                regState64 |= Register64.R8;
+            }
+            #endregion
+
+            #region Populate R9
+            regLists64.r9List = new List<Tuple<byte[], string>>();
+            for (int i = 0; i < usableX64Opcodes.popR9.Count; i++)
+            {
+                if (!regState64.HasFlag(Register64.R9))
+                {
+                    if (usableX64Opcodes.popR9.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR9.ElementAt(i).Value.Contains("invalid"))
+                    {
+                        for (int j = 0; j < usableX64Opcodes.pushRsp.Count; j++)
+                        {
+                            if (usableX64Opcodes.pushRsp.ElementAt(j).Value.Length <= 15 && !usableX64Opcodes.pushRsp.ElementAt(j).Value.Contains("invalid"))
+                            {
+                                regLists64.r9List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRsp.ElementAt(j).Key),
+                                    usableX64Opcodes.pushRsp.ElementAt(j).Value));
+                                regLists64.r9List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR9.ElementAt(i).Key),
+                                    usableX64Opcodes.popR9.ElementAt(i).Value));
+                                regState64 |= Register64.R9;
+                                i = usableX64Opcodes.popR9.Count;
+                                j = usableX64Opcodes.pushRsp.Count;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    i = usableX64Opcodes.popR9.Count;
+                }
+            }
+            if (!regState64.HasFlag(Register64.R9))
+            {
+                var movInstruction = GetMovInstruction(Register64.R9, Register64.RSP, regModified64);
+                if (movInstruction != null)
+                {
+                    regLists64.r9List.Add(Tuple.Create(movInstruction.Item1, movInstruction.Item2));
+                    SetRegisterModifier(Register64.R9, Register64.RSP, regModified64);
+                    regState64 &= ~Register64.RSP;
+                    regState64 |= Register64.R9;
+                }
+            }
+            if (!regState64.HasFlag(Register64.R9))
+            {
+                regLists64.r9List = null;
+                regLists64.r9List = new List<Tuple<byte[], string>>();
+                byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+                regLists64.r9List.Add(Tuple.Create(nullBytes,
+                    "Unable to find appropriate instruction. R9 must be allocated manually"));
+                regState64 |= Register64.R9;
+            }
+            #endregion
+
+            VirtualProtect.ReturnValue = BuildRopChain(RopMethod.VirtualProtect, regLists64, regModified64);
+            return VirtualProtect;
+        }
+        #endregion
+
         #region BuildRopChain
-        private List<Tuple<byte[], string>> BuildRopChain(RegisterLists64 regLists64, RegisterModifiers64 regModified64)
+            private List<Tuple<byte[], string>> BuildRopChain(RopMethod method, RegisterLists64 regLists64, RegisterModifiers64 regModified64)
         {
             List<Tuple<byte[], string>> ret = new List<Tuple<byte[], string>>();
             List<ushort> order = new List<ushort>();
-            order.Add((ushort)regModified64.RAX);
-            order.Add((ushort)regModified64.RBX);
-            order.Add((ushort)regModified64.RCX);
-            order.Add((ushort)regModified64.RDX);
-            order.Add((ushort)regModified64.RBP);
-            order.Add((ushort)regModified64.RSP);
-            order.Add((ushort)regModified64.RSI);
-            order.Add((ushort)regModified64.RDI);
-            order = order.OrderByDescending(x => x).ToList();
-            order = order.Distinct().ToList();
-            for (int i = 0; i < order.Count; i++)
-            {
 
-                if ((ushort)regModified64.RAX == order[i])
-                {
-                    for (int j = 0; j < regLists64.raxList.Count; j++)
-                    {
-                        ret.Add(regLists64.raxList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RBX == order[i])
-                {
-                    for (int j = 0; j < regLists64.rbxList.Count; j++)
-                    {
-                        ret.Add(regLists64.rbxList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RCX == order[i])
-                {
-                    for (int j = 0; j < regLists64.rcxList.Count; j++)
-                    {
-                        ret.Add(regLists64.rcxList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RDX == order[i])
-                {
-                    for (int j = 0; j < regLists64.rdxList.Count; j++)
-                    {
-                        ret.Add(regLists64.rdxList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RBP == order[i])
-                {
-                    for (int j = 0; j < regLists64.rbpList.Count; j++)
-                    {
-                        ret.Add(regLists64.rbpList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RSP == order[i])
-                {
-                    for (int j = 0; j < regLists64.rspList.Count; j++)
-                    {
-                        ret.Add(regLists64.rspList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RSI == order[i])
-                {
-                    for (int j = 0; j < regLists64.rsiList.Count; j++)
-                    {
-                        ret.Add(regLists64.rsiList[j]);
-                    }
-                }
-                if ((ushort)regModified64.RDI == order[i])
-                {
-                    for (int j = 0; j < regLists64.rdiList.Count; j++)
-                    {
-                        ret.Add(regLists64.rdiList[j]);
-                    }
-                }
-            }
-            if (usableX64Opcodes.incRsp.Count > 0 && usableX64Opcodes.incRsp.ElementAt(0).Value.Length <= 15)
+            for (int i = 0; i < regLists64.rcxList.Count; i++)
             {
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRsp.ElementAt(0).Key),
-                    usableX64Opcodes.incRsp.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRsp.ElementAt(0).Key),
-                    usableX64Opcodes.incRsp.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRsp.ElementAt(0).Key),
-                    usableX64Opcodes.incRsp.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.incRsp.ElementAt(0).Key),
-                    usableX64Opcodes.incRsp.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRax.ElementAt(0).Key),
-                    usableX64Opcodes.pushRax.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRcx.ElementAt(0).Key),
-                    usableX64Opcodes.pushRcx.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRdx.ElementAt(0).Key),
-                    usableX64Opcodes.pushRdx.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRbx.ElementAt(0).Key),
-                    usableX64Opcodes.pushRbx.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRbp.ElementAt(0).Key),
-                    usableX64Opcodes.pushRbp.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRsi.ElementAt(0).Key),
-                    usableX64Opcodes.pushRsi.ElementAt(0).Value));
-                ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.pushRdi.ElementAt(0).Key),
-                    usableX64Opcodes.pushRdi.ElementAt(0).Value));
+                ret.Add(regLists64.rcxList[i]);
             }
-                
+
+            for (int i = 0; i < regLists64.rdxList.Count; i++)
+            {
+                ret.Add(regLists64.rdxList[i]);
+            }
+
+            for (int i = 0; i < regLists64.r8List.Count; i++)
+            {
+                ret.Add(regLists64.r8List[i]);
+            }
+
+            for (int i = 0; i < regLists64.r9List.Count; i++)
+            {
+                ret.Add(regLists64.r9List[i]);
+            }
+
+            switch (method)
+            {
+                case RopMethod.VirtualAlloc:
+                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"]), "Pointer to VirtualAlloc."));
+                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRsp.ElementAt(0).Key),
+                        usableX64Opcodes.jmpRsp.ElementAt(0).Value));
+                    break;
+                case RopMethod.HeapCreate:
+                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["HeapCreate"]), "Pointer to HeapCreate."));
+                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRax.ElementAt(0).Key), usableX64Opcodes.jmpRax.ElementAt(0).Value));
+                    break;
+                case RopMethod.VirtualProtect:
+                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["VirtualProtect"]), "Pointer to VirtualProtect."));
+                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRsp.ElementAt(0).Key),
+                        usableX64Opcodes.jmpRsp.ElementAt(0).Value));
+                    break;
+                default:
+                    break;
+            }
+
             return ret;
         }
         #endregion
@@ -3404,14 +4086,14 @@ namespace ERC.Utilities
         #endregion
 
         #region GetPopInstruction 64 bit
-        private Tuple<byte[], string, Register64> GetPopInstruction(Register64 destReg, Register64 srcReg, RegisterModifiers64 regModified32)
+        private Tuple<byte[], string, Register64> GetPopInstruction(Register64 destReg, Register64 srcReg, RegisterModifiers64 regModified64)
         {
             switch (srcReg)
             {
                 case Register64.RAX:
                     for (int i = 0; i < usableX64Opcodes.popRax.Count; i++)
                     {
-                        if (usableX64Opcodes.popRax.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RAX, regModified32))
+                        if (usableX64Opcodes.popRax.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RAX, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRax.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRax.ElementAt(i).Value, Register64.RAX);
                         }
@@ -3420,7 +4102,7 @@ namespace ERC.Utilities
                 case Register64.RBX:
                     for (int i = 0; i < usableX64Opcodes.popRbx.Count; i++)
                     {
-                        if (usableX64Opcodes.popRbx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RBX, regModified32))
+                        if (usableX64Opcodes.popRbx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RBX, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbx.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRbx.ElementAt(i).Value, Register64.RBX);
                         }
@@ -3429,7 +4111,7 @@ namespace ERC.Utilities
                 case Register64.RCX:
                     for (int i = 0; i < usableX64Opcodes.popRcx.Count; i++)
                     {
-                        if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RCX, regModified32))
+                        if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RCX, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRcx.ElementAt(i).Value, Register64.RCX);
                         }
@@ -3438,7 +4120,7 @@ namespace ERC.Utilities
                 case Register64.RDX:
                     for (int i = 0; i < usableX64Opcodes.popRdx.Count; i++)
                     {
-                        if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RDX, regModified32))
+                        if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RDX, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRdx.ElementAt(i).Value, Register64.RDX);
                         }
@@ -3447,7 +4129,7 @@ namespace ERC.Utilities
                 case Register64.RBP:
                     for (int i = 0; i < usableX64Opcodes.popRbp.Count; i++)
                     {
-                        if (usableX64Opcodes.popRbp.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RBP, regModified32))
+                        if (usableX64Opcodes.popRbp.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RBP, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbp.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRbp.ElementAt(i).Value, Register64.RBP);
                         }
@@ -3456,7 +4138,7 @@ namespace ERC.Utilities
                 case Register64.RSP:
                     for (int i = 0; i < usableX64Opcodes.popRsp.Count; i++)
                     {
-                        if (usableX64Opcodes.popRsp.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RSP, regModified32))
+                        if (usableX64Opcodes.popRsp.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RSP, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsp.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRsp.ElementAt(i).Value, Register64.RSP);
                         }
@@ -3465,7 +4147,7 @@ namespace ERC.Utilities
                 case Register64.RSI:
                     for (int i = 0; i < usableX64Opcodes.popRsi.Count; i++)
                     {
-                        if (usableX64Opcodes.popRsi.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RSI, regModified32))
+                        if (usableX64Opcodes.popRsi.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RSI, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsi.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRsi.ElementAt(i).Value, Register64.RSI);
                         }
@@ -3474,9 +4156,81 @@ namespace ERC.Utilities
                 case Register64.RDI:
                     for (int i = 0; i < usableX64Opcodes.popRdi.Count; i++)
                     {
-                        if (usableX64Opcodes.popRdi.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RDI, regModified32))
+                        if (usableX64Opcodes.popRdi.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RDI, regModified64))
                         {
                             return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdi.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRdi.ElementAt(i).Value, Register64.RDI);
+                        }
+                    }
+                    break;
+                case Register64.R8:
+                    for (int i = 0; i < usableX64Opcodes.popR8.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR8.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R8, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR8.ElementAt(i).Value, Register64.R8);
+                        }
+                    }
+                    break;
+                case Register64.R9:
+                    for (int i = 0; i < usableX64Opcodes.popR9.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR9.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R9, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR9.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR9.ElementAt(i).Value, Register64.R9);
+                        }
+                    }
+                    break;
+                case Register64.R10:
+                    for (int i = 0; i < usableX64Opcodes.popR10.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR10.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R10, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR10.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR10.ElementAt(i).Value, Register64.R10);
+                        }
+                    }
+                    break;
+                case Register64.R11:
+                    for (int i = 0; i < usableX64Opcodes.popR11.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR11.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R11, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR11.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR11.ElementAt(i).Value, Register64.R11);
+                        }
+                    }
+                    break;
+                case Register64.R12:
+                    for (int i = 0; i < usableX64Opcodes.popR12.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR12.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R12, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR12.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR12.ElementAt(i).Value, Register64.R12);
+                        }
+                    }
+                    break;
+                case Register64.R13:
+                    for (int i = 0; i < usableX64Opcodes.popR13.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR13.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R13, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR13.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR13.ElementAt(i).Value, Register64.R13);
+                        }
+                    }
+                    break;
+                case Register64.R14:
+                    for (int i = 0; i < usableX64Opcodes.popR14.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR14.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R14, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR14.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR14.ElementAt(i).Value, Register64.R14);
+                        }
+                    }
+                    break;
+                case Register64.R15:
+                    for (int i = 0; i < usableX64Opcodes.popR15.Count; i++)
+                    {
+                        if (usableX64Opcodes.popR15.ElementAt(i).Value.Length == 15 && !GetRegisterModified(destReg, Register64.R15, regModified64))
+                        {
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR15.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR15.ElementAt(i).Value, Register64.R15);
                         }
                     }
                     break;
@@ -4141,6 +4895,14 @@ namespace ERC.Utilities
             /// sub list.
             /// </summary>
             public Dictionary<IntPtr, string> sub = new Dictionary<IntPtr, string>();
+            /// <summary>
+            /// jmpRax list.
+            /// </summary>
+            public Dictionary<IntPtr, string> callRax = new Dictionary<IntPtr, string>();
+            /// <summary>
+            /// callRax list.
+            /// </summary>
+            public Dictionary<IntPtr, string> jmpRax = new Dictionary<IntPtr, string>();
         }
         #endregion
 
@@ -4162,6 +4924,19 @@ namespace ERC.Utilities
             public List<Tuple<byte[], string>> r13List = new List<Tuple<byte[], string>>();
             public List<Tuple<byte[], string>> r14List = new List<Tuple<byte[], string>>();
             public List<Tuple<byte[], string>> r15List = new List<Tuple<byte[], string>>();
+        }
+
+        /// <summary>
+        /// Enum of methods which can be used to generate a ROP chain.
+        /// </summary>
+        [Flags]
+        public enum RopMethod : ushort
+        {
+            [Description(" VirtualAlloc")] VirtualAlloc = 1,
+            [Description(" HeapCreate")] HeapCreate = 2,
+            [Description(" VirtualProtect")] VirtualProtect = 4,
+            [Description(" WriteProcessMemory")] WriteProcessMemory = 8,
+            [Description(" All")] All = 15
         }
     }
 }

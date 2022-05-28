@@ -114,7 +114,8 @@ Displays the help message below.
 
 `--Update`
 Downloads the latest release of the plugin from Github and extracts it into the X64Dbg plugin directory for the architecture currently in use. Can be passed a ip:port pair in order to specify a proxy.     
-&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update 127.0.0.1:8080`
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --update`     
+&nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --update 127.0.0.1:8080`
 
 `--config`    
 The config option can be used to set values in the config.xml file. These options persist between sessions. Can be used to set things such as the project author, current working directory and error log file. These options are predominantly used when writing the output of operations to file.    
@@ -215,11 +216,15 @@ Prints a list of egghunters which can be used for various machine types. Can be 
 Searches process memory for a non repeating pattern specified in the pattern_extended and pattern_standard files. Takes an integer optional to specify the text formatting (1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII) and can have the parameter "true" passed to indicate the extended pattern should be used.     
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --FindNRP`        
 &nbsp;&nbsp;&nbsp;&nbsp;Example 2: `ERC --FindNRP 2 true` Generates FindNRP table after searching for the extended NRP in Unicode format.     
-
-`--Debug`   
-Prints information about the plugin.    
-&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --reset`    
-
+    
+`--Rop`    
+Attempts to build a ROP chain for the current process. Current implementation utilizes VirtualAlloc, VirtualProtect and HeapCreate.   
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --Rop`          
+     
+`--RopGadgets`    
+Generates lists of ROP gadgets from within the current process. Lists are saved to the working directory.    
+&nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --RopGadgets`        
+    
 `--Reset`   
 Returns the plugin to a default status. Resets all client variables and configurations.    
 &nbsp;&nbsp;&nbsp;&nbsp;Example 1: `ERC --reset`    

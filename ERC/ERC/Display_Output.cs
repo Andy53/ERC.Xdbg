@@ -1142,7 +1142,7 @@ namespace ERC
             string fromRegion = Convert.htmlWhitespaceFix("From Memory Region | "); 
             ErcCore.ReadProcessMemory(info.ProcessHandle, startAddress, memoryRegion, byteArray.Length, out bytesRead);
             int counter = 0;
-            for(int i = 0; i <= byteArray.Length; i++)
+            for (int i = 0; i <= byteArray.Length; i++)
             {
                 if (i == byteArray.Length)
                 {
@@ -1353,8 +1353,9 @@ namespace ERC
         /// Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
         /// </summary>
         /// <param name="rcg">The ROP chain generator object</param>
+        /// <param name="gadgetsOnly">Bool to indicate if ROP chains should be included or just gadget lists generated</param>
         /// <returns>Returns an array of strings</returns>
-        public static string[] RopChainGadgets32(RopChainGenerator32 rcg)
+        public static string[] RopChainGadgets32(RopChainGenerator32 rcg, bool gadgetsOnly = false)
         {
             string output = "";
             List<string> totalGadgets = new List<string>();
@@ -1363,7 +1364,7 @@ namespace ERC
             string curatedGadgetsPath = GetFilePath(rcg.RcgInfo.WorkingDirectory, "curated_gadgest_", ".txt");
             string ropChainPath = GetFilePath(rcg.RcgInfo.WorkingDirectory, "rop_chain_", ".txt");
 
-            output += "-------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+            output += "------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
             if (rcg.RcgInfo.Author != "No_Author_Set")
             {
                 output += "Process Name: " + rcg.RcgInfo.ProcessName + " Gadget list created by: " + rcg.RcgInfo.Author + " " + Environment.NewLine;
@@ -1372,6 +1373,10 @@ namespace ERC
             {
                 output += "Process Name: " + rcg.RcgInfo.ProcessName + " ROP chain gadget list" + Environment.NewLine;
             }
+            output += "------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+
+            totalGadgets.Add(output);
+            curatedGadgets.Add(output);
 
             if (rcg.RcgInfo.ProcessMachineType == MachineType.I386)
             {
@@ -1382,7 +1387,7 @@ namespace ERC
                     if(k.Value.Contains("push eax") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if(!k.Value.Any(char.IsDigit))
+                        if(!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1396,7 +1401,7 @@ namespace ERC
                     if (k.Value.Contains("push ebx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1409,7 +1414,7 @@ namespace ERC
                     if (k.Value.Contains("push ecx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1422,7 +1427,7 @@ namespace ERC
                     if (k.Value.Contains("push edx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1435,7 +1440,7 @@ namespace ERC
                     if (k.Value.Contains("push esp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1448,7 +1453,7 @@ namespace ERC
                     if (k.Value.Contains("push ebp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1461,7 +1466,7 @@ namespace ERC
                     if (k.Value.Contains("push esi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1474,7 +1479,7 @@ namespace ERC
                     if (k.Value.Contains("push edi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1487,7 +1492,7 @@ namespace ERC
                     if (k.Value.Contains("jmp esp"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1500,7 +1505,7 @@ namespace ERC
                     if (k.Value.Contains("call esp"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1513,7 +1518,7 @@ namespace ERC
                     if (k.Value.Contains("xor eax") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1526,7 +1531,7 @@ namespace ERC
                     if (k.Value.Contains("xor ebx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1539,7 +1544,7 @@ namespace ERC
                     if (k.Value.Contains("xor ecx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1552,7 +1557,7 @@ namespace ERC
                     if (k.Value.Contains("xor edx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1565,7 +1570,7 @@ namespace ERC
                     if (k.Value.Contains("xor esi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1578,7 +1583,7 @@ namespace ERC
                     if (k.Value.Contains("xor edi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1591,7 +1596,7 @@ namespace ERC
                     if (k.Value.Contains("pop eax") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1604,7 +1609,7 @@ namespace ERC
                     if (k.Value.Contains("pop ebx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1617,7 +1622,7 @@ namespace ERC
                     if (k.Value.Contains("pop ecx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1630,7 +1635,7 @@ namespace ERC
                     if (k.Value.Contains("pop edx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1643,7 +1648,7 @@ namespace ERC
                     if (k.Value.Contains("pop esp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1656,7 +1661,7 @@ namespace ERC
                     if (k.Value.Contains("pop ebp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1669,7 +1674,7 @@ namespace ERC
                     if (k.Value.Contains("pop esi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1682,7 +1687,7 @@ namespace ERC
                     if (k.Value.Contains("pop edo") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1695,7 +1700,7 @@ namespace ERC
                     if (k.Value.Contains("inc eax") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1708,7 +1713,7 @@ namespace ERC
                     if (k.Value.Contains("dec eax") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1721,7 +1726,7 @@ namespace ERC
                     if (k.Value.Contains("inc ebx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1734,7 +1739,7 @@ namespace ERC
                     if (k.Value.Contains("dec ebx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1747,7 +1752,7 @@ namespace ERC
                     if (k.Value.Contains("inc ecx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1760,7 +1765,7 @@ namespace ERC
                     if (k.Value.Contains("dec ecx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1773,7 +1778,7 @@ namespace ERC
                     if (k.Value.Contains("inc edx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1786,7 +1791,7 @@ namespace ERC
                     if (k.Value.Contains("dec edx") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1799,7 +1804,7 @@ namespace ERC
                     if (k.Value.Contains("inc ebp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1813,7 +1818,7 @@ namespace ERC
                     if (k.Value.Contains("dec ebp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1826,7 +1831,7 @@ namespace ERC
                     if (k.Value.Contains("inc esp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1839,7 +1844,7 @@ namespace ERC
                     if (k.Value.Contains("dec esp") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1852,7 +1857,7 @@ namespace ERC
                     if (k.Value.Contains("inc esi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1865,7 +1870,7 @@ namespace ERC
                     if (k.Value.Contains("dec esi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1878,7 +1883,7 @@ namespace ERC
                     if (k.Value.Contains("inc edi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1891,7 +1896,7 @@ namespace ERC
                     if (k.Value.Contains("dec edi") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1904,7 +1909,7 @@ namespace ERC
                     if (k.Value.Contains("add") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1917,7 +1922,7 @@ namespace ERC
                     if (k.Value.Contains("sub") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1930,7 +1935,7 @@ namespace ERC
                     if (k.Value.Contains("mov") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
@@ -1943,38 +1948,107 @@ namespace ERC
                     if (k.Value.Contains("and") && k.Value.Contains("ret"))
                     {
                         totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                        if (!k.Value.Any(char.IsDigit))
+                        if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                         {
                             curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
                         }
                     }
                 }
             }
-            totalGadgets.Add("pushad: ");
-            curatedGadgets.Add("pushad: ");
-            foreach (KeyValuePair<IntPtr, string> k in rcg.x86Opcodes.pushad)
-            {
-                if (k.Value.Contains("pushad") && k.Value.Contains("ret"))
-                {
-                    totalGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
-                    {
-                        curatedGadgets.Add("0x" + k.Key.ToString("X8") + " | " + k.Value);
-                    }
-                }
-            }
+            
             File.WriteAllLines(totalGadgetsPath, totalGadgets);
             File.WriteAllLines(curatedGadgetsPath, curatedGadgets);
 
-
             List<string> ropChain = new List<string>();
-            foreach(Tuple<byte[], string> k in rcg.VirtualAllocChain)
+            if (gadgetsOnly == false)
             {
-                ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                if(rcg.VirtualAllocChain.Count > 0)
+                {
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: VirtualAlloc Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("## VirtualAlloc Template:                                     ##");
+                    ropChain.Add("## EAX: 90909090 -> Nop sled                                  ##");
+                    ropChain.Add("## ECX: 00000040 -> flProtect                                 ##");
+                    ropChain.Add("## EDX: 00001000 -> flAllocationType                          ##");
+                    ropChain.Add("## EBX: ???????? -> Int size (area to be set as executable)   ##");
+                    ropChain.Add("## ESP: ???????? -> No Change                                 ##");
+                    ropChain.Add("## EBP: ???????? -> Jmp Esp # Call Esp                        ##");
+                    ropChain.Add("## ESI: ???????? -> ApiAddresses[\"VirtualAlloc\"]              ##");
+                    ropChain.Add("## EDI: ???????? -> RopNop                                    ##");
+                    ropChain.Add("##                                                            ##");
+                    ropChain.Add("## + place ptr to \"jmp esp\" on stack, below PUSHAD            ##");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("");
+
+                }
+                foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
+                {
+                    Array.Reverse(k.Item1, 0, k.Item1.Length);
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                if (rcg.HeapCreateChain.Count > 0)
+                {
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: HeapCreate Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("## HeapCreate Template:                                       ##");
+                    ropChain.Add("## EAX: 90909090 -> Nop sled                                  ##");
+                    ropChain.Add("## ECX: 00010000 -> dwMaximumSize                             ##");
+                    ropChain.Add("## EDX: 00001000 -> dwInitialSize                             ##");
+                    ropChain.Add("## EBX: 00040000 -> flOptions                                 ##");
+                    ropChain.Add("## ESP: ???????? -> No Change                                 ##");
+                    ropChain.Add("## EBP: ???????? -> Jmp Esp # Call Esp                        ##");
+                    ropChain.Add("## ESI: ???????? -> ApiAddresses[\"HeapCreate\"]                ##");
+                    ropChain.Add("## EDI: ???????? -> RopNop                                    ##");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("");
+                }
+                foreach (Tuple<byte[], string> k in rcg.HeapCreateChain)
+                {
+                    Array.Reverse(k.Item1, 0, k.Item1.Length);
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                if (rcg.VirtualProtectChain.Count > 0)
+                {
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: VirtualProtect Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("## VirtualProtect Template:                                   ##");
+                    ropChain.Add("## EAX: 90909090 -> Nop sled                                  ##");
+                    ropChain.Add("## ECX: ???????? -> flAllocationType                          ##");
+                    ropChain.Add("## EDX: 00000040 -> flNewProtect                              ##");
+                    ropChain.Add("## EBX: ???????? -> Int size (area to be set as executable)   ##");
+                    ropChain.Add("## ESP: ???????? -> No Change                                 ##");
+                    ropChain.Add("## EBP: ???????? -> Jmp Esp # Call Esp                        ##");
+                    ropChain.Add("## ESI: ???????? -> ApiAddresses[\"VirtualProtect\"]            ##");
+                    ropChain.Add("## EDI: ???????? -> RopNop                                    ##");
+                    ropChain.Add("##                                                            ##");
+                    ropChain.Add("## + place ptr to \"jmp esp\" on stack, below PUSHAD            ##");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("");
+                }
+                foreach (Tuple<byte[], string> k in rcg.VirtualProtectChain)
+                {
+                    Array.Reverse(k.Item1, 0, k.Item1.Length);
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                File.WriteAllLines(ropChainPath, ropChain);
             }
-            File.WriteAllLines(ropChainPath, ropChain);
- 
-            return totalGadgets.ToArray();
+
+            return ropChain.ToArray();
         }
         #endregion
 
@@ -1983,8 +2057,9 @@ namespace ERC
         /// Produces output files containing information about the associated ROP chain, produces files containing ROP gadgets and the associated ROP chain.
         /// </summary>
         /// <param name="rcg">The ROP chain generator object</param>
+        /// <param name="gadgetsOnly">Bool to indicate if ROP chains should be included or just gadget lists generated</param>
         /// <returns>Returns an array of strings</returns>
-        public static string[] RopChainGadgets64(RopChainGenerator64 rcg)
+        public static string[] RopChainGadgets64(RopChainGenerator64 rcg, bool gadgetsOnly = false)
         {
             string output = "";
             List<string> totalGadgets = new List<string>();
@@ -2002,6 +2077,10 @@ namespace ERC
             {
                 output += "Process Name: " + rcg.RcgInfo.ProcessName + " ROP chain gadget list" + Environment.NewLine;
             }
+            output += "-------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
+
+            totalGadgets.Add(output);
+            curatedGadgets.Add(output);
 
             totalGadgets.Add("pushRax: ");
             curatedGadgets.Add("pushRax: ");
@@ -2010,7 +2089,7 @@ namespace ERC
                 if (k.Value.Contains("push rax") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2024,7 +2103,7 @@ namespace ERC
                 if (k.Value.Contains("push rbx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2037,7 +2116,7 @@ namespace ERC
                 if (k.Value.Contains("push rcx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2050,7 +2129,7 @@ namespace ERC
                 if (k.Value.Contains("push rdx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2063,7 +2142,7 @@ namespace ERC
                 if (k.Value.Contains("push rsp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2076,7 +2155,7 @@ namespace ERC
                 if (k.Value.Contains("push rbp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2089,7 +2168,7 @@ namespace ERC
                 if (k.Value.Contains("push rsi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2102,7 +2181,7 @@ namespace ERC
                 if (k.Value.Contains("push rdi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2115,7 +2194,7 @@ namespace ERC
                 if (k.Value.Contains("jmp rsp"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2128,7 +2207,7 @@ namespace ERC
                 if (k.Value.Contains("call rsp"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2141,7 +2220,7 @@ namespace ERC
                 if (k.Value.Contains("xor eax") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2154,7 +2233,7 @@ namespace ERC
                 if (k.Value.Contains("xor rbx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2167,7 +2246,7 @@ namespace ERC
                 if (k.Value.Contains("xor rcx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2180,7 +2259,7 @@ namespace ERC
                 if (k.Value.Contains("xor rdx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2193,7 +2272,7 @@ namespace ERC
                 if (k.Value.Contains("xor rsi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2206,7 +2285,7 @@ namespace ERC
                 if (k.Value.Contains("xor rdi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2219,7 +2298,7 @@ namespace ERC
                 if (k.Value.Contains("pop rax") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2232,7 +2311,7 @@ namespace ERC
                 if (k.Value.Contains("pop rbx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2245,7 +2324,7 @@ namespace ERC
                 if (k.Value.Contains("pop rcx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2258,7 +2337,7 @@ namespace ERC
                 if (k.Value.Contains("pop rdx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2271,7 +2350,7 @@ namespace ERC
                 if (k.Value.Contains("pop rsp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2284,7 +2363,7 @@ namespace ERC
                 if (k.Value.Contains("pop rbp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2297,7 +2376,7 @@ namespace ERC
                 if (k.Value.Contains("pop rsi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2310,7 +2389,7 @@ namespace ERC
                 if (k.Value.Contains("pop rdi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2323,7 +2402,7 @@ namespace ERC
                 if (k.Value.Contains("inc rax") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2336,7 +2415,7 @@ namespace ERC
                 if (k.Value.Contains("dec eax") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2349,7 +2428,7 @@ namespace ERC
                 if (k.Value.Contains("inc rbx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2362,7 +2441,7 @@ namespace ERC
                 if (k.Value.Contains("dec ebx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2375,7 +2454,7 @@ namespace ERC
                 if (k.Value.Contains("inc rcx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2388,7 +2467,7 @@ namespace ERC
                 if (k.Value.Contains("dec ecx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2401,7 +2480,7 @@ namespace ERC
                 if (k.Value.Contains("inc rdx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2414,7 +2493,7 @@ namespace ERC
                 if (k.Value.Contains("dec edx") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2427,7 +2506,7 @@ namespace ERC
                 if (k.Value.Contains("inc rbp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2441,7 +2520,7 @@ namespace ERC
                 if (k.Value.Contains("dec ebp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2454,7 +2533,7 @@ namespace ERC
                 if (k.Value.Contains("inc rsp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2467,7 +2546,7 @@ namespace ERC
                 if (k.Value.Contains("dec esp") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2480,7 +2559,7 @@ namespace ERC
                 if (k.Value.Contains("inc rsi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2493,7 +2572,7 @@ namespace ERC
                 if (k.Value.Contains("dec esi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2506,7 +2585,7 @@ namespace ERC
                 if (k.Value.Contains("inc rdi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2519,7 +2598,7 @@ namespace ERC
                 if (k.Value.Contains("dec edi") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2532,7 +2611,7 @@ namespace ERC
                 if (k.Value.Contains("add") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2545,7 +2624,7 @@ namespace ERC
                 if (k.Value.Contains("mov") && k.Value.Contains("ret"))
                 {
                     totalGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
-                    if (!k.Value.Any(char.IsDigit))
+                    if (!k.Value.Any(char.IsDigit) && !k.Value.ToLower().Contains("invalid"))
                     {
                         curatedGadgets.Add("0x" + k.Key.ToString("X16") + " | " + k.Value);
                     }
@@ -2556,12 +2635,87 @@ namespace ERC
             File.WriteAllLines(curatedGadgetsPath, curatedGadgets);
 
             List<string> ropChain = new List<string>();
-            foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
+            if (gadgetsOnly == false)
             {
-                ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                if (rcg.VirtualAllocChain.Count > 0)
+                {
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: VirtualAlloc Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("## VirtualAlloc Template:                                     ##");
+                    ropChain.Add("## RCX: 0x???????????????? ->  Pointer (copys RSP)            ##");
+                    ropChain.Add("## RDX: 0x0000000000000500 ->  dwSize                         ##");
+                    ropChain.Add("## R8 : 0x0000000000001000 ->  flAllocationType               ##");
+                    ropChain.Add("## R9 : 0x0000000000000040 ->  flProtect                      ##");
+                    ropChain.Add("##                                                            ##");
+                    ropChain.Add("## + place a pointer to VirtualAlloc on stack                 ##");
+                    ropChain.Add("## + place ptr to \"jmp rsp\" on stack                          ##");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("");
+
+                }
+                foreach (Tuple<byte[], string> k in rcg.VirtualAllocChain)
+                {
+                    Array.Reverse(k.Item1, 0, k.Item1.Length);
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                if (rcg.HeapCreateChain.Count > 0)
+                {
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: HeapCreate Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("## HeapCreate Template:                                       ##");
+                    ropChain.Add("## RCX: 0x0000000000040000 ->  flOptions                      ##");
+                    ropChain.Add("## RDX: 0x0000000000000500 ->  dwInitialSize                  ##");
+                    ropChain.Add("## R8 : 0x0000000000001000 ->  dwMaximumSize                  ##");
+                    ropChain.Add("##                                                            ##");
+                    ropChain.Add("## + place a pointer to VirtualAlloc on stack                 ##");
+                    ropChain.Add("## + place ptr to \"jmp rax\" on stack                          ##");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("");
+                }
+                foreach (Tuple<byte[], string> k in rcg.HeapCreateChain)
+                {
+                    Array.Reverse(k.Item1, 0, k.Item1.Length);
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                if (rcg.VirtualProtectChain.Count > 0)
+                {
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("Method: VirtualProtect Process Name: " + rcg.RcgInfo.ProcessName);
+                    ropChain.Add("------------------------------------------------------------------------------------------------------------------------");
+                    ropChain.Add("");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("## VirtualProtect Template:                                   ##");
+                    ropChain.Add("## RCX: 0x???????????????? ->  Pointer (copys RSP)            ##");
+                    ropChain.Add("## RDX: 0x0000000000000500 ->  dwSize                         ##");
+                    ropChain.Add("## R8 : 0x0000000000001000 ->  flAllocationType               ##");
+                    ropChain.Add("## R9 : 0x???????????????? ->  flProtect (copys RSP)          ##");
+                    ropChain.Add("##                                                            ##");
+                    ropChain.Add("## + place a pointer to VirtualAlloc on stack                 ##");
+                    ropChain.Add("## + place ptr to \"jmp rsp\" on stack                          ##");
+                    ropChain.Add("################################################################");
+                    ropChain.Add("");
+                }
+                foreach (Tuple<byte[], string> k in rcg.VirtualProtectChain)
+                {
+                    Array.Reverse(k.Item1, 0, k.Item1.Length);
+                    ropChain.Add(BitConverter.ToString(k.Item1).Replace("-", "\\x") + " | " + k.Item2);
+                }
+                ropChain.Add(Environment.NewLine);
+
+                File.WriteAllLines(ropChainPath, ropChain);
             }
-            File.WriteAllLines(ropChainPath, ropChain);
-            return totalGadgets.ToArray();
+
+            return ropChain.ToArray();
         }
 
         private static string ConvertRopElementToString(Tuple<IntPtr, string> element)
