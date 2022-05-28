@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Convert = ERC.Utilities.Convert;
 
 namespace ERC
 {
@@ -1122,6 +1123,7 @@ namespace ERC
         #endregion
 
         #region CompareByteArrays
+
         /// <summary>
         /// Compares a the values contained in a memory region to the values in the supplied byte array.
         /// </summary>
@@ -1135,9 +1137,9 @@ namespace ERC
             byte[] memoryRegion = new byte[byteArray.Length];
             List<byte> mismatchingBytes = new List<byte>();
             int bytesRead = 0;
-            output.Add("                   ----------------------------------------------------");
-            string fromArray  = "        From Array | ";
-            string fromRegion = "From Memory Region | "; 
+            output.Add(Convert.htmlWhitespaceFix("                   ----------------------------------------------------"));
+            string fromArray  = Convert.htmlWhitespaceFix("        From Array | ");
+            string fromRegion = Convert.htmlWhitespaceFix("From Memory Region | "); 
             ErcCore.ReadProcessMemory(info.ProcessHandle, startAddress, memoryRegion, byteArray.Length, out bytesRead);
             int counter = 0;
             for(int i = 0; i <= byteArray.Length; i++)
@@ -1145,28 +1147,28 @@ namespace ERC
                 if (i == byteArray.Length)
                 {
                     counter = 0;
-                    fromArray += " | ";
-                    fromRegion += " | ";
-                    string newLine = "                   |                                                  | ";
+                    fromArray += Convert.htmlWhitespaceFix(" | ");
+                    fromRegion += Convert.htmlWhitespaceFix(" | ");
+                    string newLine = Convert.htmlWhitespaceFix("                   |                                                  | ");
                     output.Add(fromArray);
                     output.Add(fromRegion);
                     output.Add(newLine);
-                    fromArray = "        From Array | ";
-                    fromRegion = "From Memory Region | ";
+                    fromArray = Convert.htmlWhitespaceFix("        From Array | ");
+                    fromRegion = Convert.htmlWhitespaceFix("From Memory Region | ");
                 }
                 else
                 {
                     if (counter == 16)
                     {
                         counter = 0;
-                        fromArray += " | ";
-                        fromRegion += " | ";
-                        string newLine = "                   |                                                  | ";
+                        fromArray += Convert.htmlWhitespaceFix(" | ");
+                        fromRegion += Convert.htmlWhitespaceFix(" | ");
+                        string newLine = Convert.htmlWhitespaceFix("                   |                                                  | ");
                         output.Add(fromArray);
                         output.Add(fromRegion);
                         output.Add(newLine);
-                        fromArray = "        From Array | ";
-                        fromRegion = "From Memory Region | ";
+                        fromArray = Convert.htmlWhitespaceFix("        From Array | ");
+                        fromRegion = Convert.htmlWhitespaceFix("From Memory Region | ");
                     }
 
                     byte[] thisByte = new byte[1];
@@ -1174,9 +1176,9 @@ namespace ERC
                     if (byteArray[i] != memoryRegion[i])
                     {
                         mismatchingBytes.Add(byteArray[i]);
-                        fromArray += "[color@red]" + BitConverter.ToString(thisByte) + "[stopcolor]";
+                        fromArray += "<b><span style='color:red;'>" + BitConverter.ToString(thisByte) + "</span></b>";
                         thisByte[0] = memoryRegion[i];
-                        fromRegion += "[color@red]" + BitConverter.ToString(thisByte) + "[stopcolor]";
+                        fromRegion += "<b><span style='color:red;'>" + BitConverter.ToString(thisByte) + "</span></b>";
                     }
                     else
                     {
@@ -1185,12 +1187,12 @@ namespace ERC
                         fromRegion += BitConverter.ToString(thisByte);
                     }
 
-                    fromArray += " ";
-                    fromRegion += " ";
+                    fromArray += Convert.htmlWhitespaceFix(" ");
+                    fromRegion += Convert.htmlWhitespaceFix(" ");
                     counter++;
                 }
             }
-            output.Add("                   ----------------------------------------------------");
+            output.Add(Convert.htmlWhitespaceFix("                   ----------------------------------------------------"));
             output.Add("Mismatching Bytes: [" + String.Join(", ", mismatchingBytes.Select(b => BitConverter.ToString(new byte[]{b}))) + "]");
             if(mismatchingBytes.Count > 0)
             {

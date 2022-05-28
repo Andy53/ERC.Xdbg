@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Managed.x64dbg.SDK;
 using System.Management;
+using System.Threading;
 
 namespace ErcXdbg
 {
@@ -1364,10 +1365,20 @@ namespace ErcXdbg
 
             byte[] bytes = File.ReadAllBytes(path);
             string[] output = ERC.DisplayOutput.CompareByteArrayToMemoryRegion(info, address, bytes);
+
+            /* Race condition: Order of logged items is not guaranteed to be the order presented due to fault in x64dbg. */
+            // Dirty thread sleep - ideally wouldn't have to do this.
+            Thread.Sleep(500);
             PLog.WriteLine("Comparing memory region starting at 0x{0} to bytes in file {1}", 
                 address.ToString("X"), path);
-            PLog.WriteLine(string.Join("\n", output));
-            //return string.Join("\n", output);
+            Thread.Sleep(200);
+            /* There is a maximum length of accepted string on x64dbg side, so let's output line-by-line */
+            foreach (string l in output)
+            {
+                PLog.WriteLineHtml(l);
+            }
+            /* Sleep upon completion so ERC register/unregister messages don't collide with above */
+            Thread.Sleep(200);
             return;
         }
 

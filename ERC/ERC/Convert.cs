@@ -187,5 +187,17 @@ namespace ERC.Utilities
             return BitConverter.ToString(Encoding.UTF32.GetBytes(utf32)).Replace("-", " ");
         }
         #endregion
+
+        #region HTML
+        /// <summary>
+        /// Converts the spaces in a string to Html fixed width character.
+        /// </summary>
+        /// <param name="str">A UTF-8 string.</param>
+        /// <returns>A string with spaces converted to HTML entities.</returns>
+        public static string htmlWhitespaceFix(string str)
+        {
+            return str.Replace(" ", "&nbsp;");
+        }
+        #endregion
     }
 }

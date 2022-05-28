@@ -27,6 +27,9 @@ namespace Managed.x64dbg.SDK
         public static extern void _plugin_logprintf(string format);
 
         [DllImport(dll, CallingConvention = cdecl)]
+        public static extern void _plugin_logprintf_html(string format);
+
+        [DllImport(dll, CallingConvention = cdecl)]
         public static extern void _plugin_logputs(string text);
 
         [DllImport(dll, CallingConvention = cdecl)]
