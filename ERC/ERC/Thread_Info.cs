@@ -80,7 +80,7 @@ namespace ERC
                 exceptionThrower.LogEvent();
             }
 
-            var errorCheck = PopulateTEB(); //This needs to be revisited.
+            var errorCheck = PopulateTEB(); 
             if (errorCheck.Error != null && errorCheck.Error.Message != "Error: No SEH chain has been generated yet. An SEH chain will not be generated until a crash occurs.")
             {
                 throw errorCheck.Error;
