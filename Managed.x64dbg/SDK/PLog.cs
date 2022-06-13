@@ -25,7 +25,7 @@ namespace Managed.x64dbg.SDK
 
         public static void WriteHtml(string format, params object[] args)
         {
-            Plugins._plugin_logprintf_html(string.Format(format.Replace("%", "%%"), args));
+            Plugins._plugin_lograw_html(string.Format(format.Replace("%", "%%"), args));
         }
 
     }
