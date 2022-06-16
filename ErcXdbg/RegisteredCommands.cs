@@ -1381,15 +1381,16 @@ namespace ErcXdbg
 
             /* Race condition: Order of logged items is not guaranteed to be the order presented due to fault in x64dbg. */
             // Dirty thread sleep - ideally wouldn't have to do this.
-            Thread.Sleep(500);
+            //Thread.Sleep(500);
             PLog.WriteLine("Comparing memory region starting at 0x{0} to bytes in file {1}", 
                 address.ToString("X"), path);
-            Thread.Sleep(200);
+            //Thread.Sleep(200);
+            PLog.WriteHtml(String.Join("<br>", output));
             /* There is a maximum length of accepted string on x64dbg side, so let's output line-by-line */
-            foreach (string l in output)
+            /*foreach (string l in output)
             {
                 PLog.WriteLineHtml(l);
-            }
+            }*/
             /* Sleep upon completion so ERC register/unregister messages don't collide with above */
             Thread.Sleep(200);
             return;
