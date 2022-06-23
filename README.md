@@ -231,7 +231,8 @@ Returns the plugin to a default status. Resets all client variables and configur
 
 
 
-## Author
+## Contributors
 [Andy Bowden](mailto:andy@evilrobots.club) | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2FAndy53_">
+[Josh Brown](https://github.com/Montycarlo) | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https://twitter.com/epidevJosh">
 
 
