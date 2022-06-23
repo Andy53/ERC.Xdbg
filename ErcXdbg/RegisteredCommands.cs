@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Managed.x64dbg.SDK;
 using System.Management;
+using System.Threading;
 
 namespace ErcXdbg
 {
@@ -1377,10 +1378,12 @@ namespace ErcXdbg
 
             byte[] bytes = File.ReadAllBytes(path);
             string[] output = ERC.DisplayOutput.CompareByteArrayToMemoryRegion(info, address, bytes);
+
             PLog.WriteLine("Comparing memory region starting at 0x{0} to bytes in file {1}", 
                 address.ToString("X"), path);
-            PLog.WriteLine(string.Join("\n", output));
-            //return string.Join("\n", output);
+            PLog.WriteHtml(String.Join("<br>", output));
+            /* Sleep upon completion so ERC register/unregister messages don't collide with above */
+            Thread.Sleep(200);
             return;
         }
 

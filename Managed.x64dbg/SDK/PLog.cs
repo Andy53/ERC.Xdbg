@@ -18,6 +18,16 @@ namespace Managed.x64dbg.SDK
         {
             Plugins._plugin_logprintf(string.Format(format.Replace("%", "%%"), args));
         }
+        public static void WriteLineHtml(string format, params object[] args)
+        {
+            WriteHtml(format + "<br>", args);
+        }
+
+        public static void WriteHtml(string format, params object[] args)
+        {
+            Plugins._plugin_lograw_html(string.Format(format, args));
+        }
+
     }
 
     public class TextWriterPLog : TextWriter
