@@ -19,7 +19,7 @@ namespace Managed.x64dbg.SDK
 
 
         private const string dll = "x64dbg.dll";   //Uncomment for 64bit
-        // private const string dll = "x32dbg.dll"; //Uncomment for 32bit
+        //private const string dll = "x32dbg.dll"; //Uncomment for 32bit
 
         private const CallingConvention cdecl = CallingConvention.Cdecl;
 

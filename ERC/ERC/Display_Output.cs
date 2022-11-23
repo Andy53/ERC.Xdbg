@@ -433,8 +433,10 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
-                var pt = ERC.Utilities.PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
-                pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
+                List<string> outText = new List<string>();
+
+                var pt = PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
+                pt = PtrRemover.RemovePointersProtection(info, pt, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
                 {
@@ -451,7 +453,7 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
-                var pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, p, protection);
+                var pt = PtrRemover.RemovePointersProtection(info, p, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
                 {
@@ -465,7 +467,7 @@ namespace ERC
             List<string> output = new List<string>();
             output.Add(String.Format("List created on {0} by {1}. Search string: {2}", DateTime.Now, info.Author, searchString));
             output.Add("----------------------------------------------------------------------");
-            if (info.ProcessMachineType == ERC.MachineType.I386)
+            if (info.ProcessMachineType == MachineType.I386)
             {
                 output.Add("  Address  | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
             }
@@ -545,8 +547,8 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
-                var pt = ERC.Utilities.PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
-                pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, pt, protection);
+                var pt = PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
+                pt = PtrRemover.RemovePointersProtection(info, pt, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
                 {
@@ -563,7 +565,7 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
-                var pt = ERC.Utilities.PtrRemover.RemovePointersProtection(info, p, protection);
+                var pt = PtrRemover.RemovePointersProtection(info, p, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
                 {
@@ -576,7 +578,7 @@ namespace ERC
             List<string> output = new List<string>();
             output.Add(String.Format("List created on {0} by {1}. Search string: {2}", DateTime.Now, info.Author, searchString));
             output.Add("----------------------------------------------------------------------");
-            if (info.ProcessMachineType == ERC.MachineType.I386)
+            if (info.ProcessMachineType == MachineType.I386)
             {
                 output.Add("  Address  | ASLR | SafeSEH | Rebase | NXCompat | OsDLL | Module Path");
             }
@@ -589,7 +591,7 @@ namespace ERC
             {
                 for (int i = 0; i < info.ModulesInfo.Count; i++)
                 {
-                    if (info.ProcessMachineType == ERC.MachineType.I386)
+                    if (info.ProcessMachineType == MachineType.I386)
                     {
                         if (info.ModulesInfo[i].ModulePath == v.Value)
                         {

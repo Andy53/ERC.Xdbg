@@ -18,6 +18,7 @@ namespace ERC.Utilities
         /// <returns>Returns a ErcResult of List IntPtr</returns>
         public static List<IntPtr> RemovePointers(MachineType mt, List<IntPtr> srcList, byte[] bytes)
         {
+            List<string> outText = new List<string>();
             bool nullByte = false;
             foreach (byte b in bytes)
             {
@@ -26,11 +27,11 @@ namespace ERC.Utilities
                     nullByte = true;
                 }
             }
-
+ 
             for (int i = 0; i < srcList.Count; i++)
             {
                 bool removed = false;
-                var ptr = BitConverter.GetBytes((long)srcList[i]);
+                var ptr = BitConverter.GetBytes((int)srcList[i]);
                 for(int j = 0; j < ptr.Length; j++)
                 {
                     for(int k = 0; k < bytes.Length; k++)
@@ -40,6 +41,7 @@ namespace ERC.Utilities
                             srcList.RemoveAt(i);
                             removed = true;
                             i--;
+                            continue;
                         }
                         if(mt == MachineType.I386 && removed == false && nullByte == true)
                         {
@@ -48,6 +50,7 @@ namespace ERC.Utilities
                                 srcList.RemoveAt(i);
                                 removed = true;
                                 i--;
+                                continue;
                             }
                         }
                         else if(mt == MachineType.x64 && removed == false && nullByte == true)
@@ -57,11 +60,13 @@ namespace ERC.Utilities
                                 srcList.RemoveAt(i);
                                 removed = true;
                                 i--;
+                                continue;
                             }
                         }
                     }
                 }
             }
+
             return srcList;
         }
 
@@ -96,6 +101,7 @@ namespace ERC.Utilities
                             srcList.Remove(srcList.ElementAt(i).Key);
                             removed = true;
                             i--;
+                            continue;
                         }
                         if (mt == MachineType.I386 && removed == false && nullByte == true)
                         {
@@ -104,6 +110,7 @@ namespace ERC.Utilities
                                 srcList.Remove(srcList.ElementAt(i).Key);
                                 removed = true;
                                 i--;
+                                continue;
                             }
                         }
                         else if (mt == MachineType.x64 && removed == false && nullByte == true)
@@ -113,6 +120,7 @@ namespace ERC.Utilities
                                 srcList.Remove(srcList.ElementAt(i).Key);
                                 removed = true;
                                 i--;
+                                continue;
                             }
                         }
                     }

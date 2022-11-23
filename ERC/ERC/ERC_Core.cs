@@ -393,8 +393,8 @@ namespace ERC
             PatternExtendedPath = "";
             SystemErrorLogPath = Path.Combine(WorkingDirectory, "System_Error.LOG");
             
-            ErcVersion = "ERC.Xdbg_32-2.0"; //Uncomment for 32bit.
-            //ErcVersion = "ERC.Xdbg_64-2.0"; //Uncomment for 32bit.
+            //ErcVersion = "ERC.Xdbg_32-2.0"; //Uncomment for 32bit.
+            ErcVersion = "ERC.Xdbg_64-2.0"; //Uncomment for 64bit.
 
             bool configRead = false;
             while (configRead == false)
