@@ -207,7 +207,8 @@ namespace ErcXdbg
             help += "       (optional) integer to specify search \n";
             help += "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 4 = UTF7, 5 = UTF8).\n";
             help += "       Example: ERC --SearchModules FF E4. Search for bytes FF E4 including all dll's \n";
-            help += "       Example: ERC --SearchModules FF E4 module1.dll module2.dll. Search for bytes FF E4 only in module1.dll and module2.dll\n";
+            help += "       Example: ERC --SearchModules FF E4 module1.dll module2.dll. Search for bytes FF E4 only in module1.dll and\n";
+            help += "       module2.dll\n";
             help += "   --Dump |\n";
             help += "       Dump contents of memory to a file. Takes an address to start at and a hex number of bytes to be read.\n"; 
             help += "   --ListProcesses |\n";
