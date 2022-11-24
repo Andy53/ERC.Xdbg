@@ -1645,8 +1645,9 @@ namespace ErcXdbg
             }
 
             searchString = string.Join("", parameters);
+
             var output = ERC.DisplayOutput.SearchMemory(info, searchType, searchString, Globals.aslr, Globals.safeseh, Globals.rebase, Globals.nxcompat,
-                Globals.osdll, Globals.bytes, Globals.protection) ;
+                Globals.osdll, Globals.bytes, Globals.protection);
             foreach(string s in output)
             {
                 PLog.WriteLine(s);

@@ -18,6 +18,11 @@ namespace ERC.Utilities
         /// <returns>Returns a ErcResult of List IntPtr</returns>
         public static List<IntPtr> RemovePointers(MachineType mt, List<IntPtr> srcList, byte[] bytes)
         {
+            if (bytes == null || bytes.Length == 0)
+            {
+                return srcList;
+            }
+
             List<string> outText = new List<string>();
             bool nullByte = false;
             foreach (byte b in bytes)
@@ -79,6 +84,11 @@ namespace ERC.Utilities
         /// <returns>Returns a ErcResult of Dictionary IntPtr, String</returns>
         public static Dictionary<IntPtr, string> RemovePointers(MachineType mt, Dictionary<IntPtr, string> srcList, byte[] bytes)
         {
+            if(bytes == null || bytes.Length == 0)
+            {
+                return srcList;
+            }
+
             bool nullByte = false;
             foreach(byte b in bytes)
             {
@@ -139,6 +149,11 @@ namespace ERC.Utilities
         /// <returns>Returns a Dictionary of Intptr, string</returns>
         public static List<IntPtr> RemovePointersProtection(ProcessInfo info, List<IntPtr> srcList, string protection = "exec")
         {
+            if (protection == null)
+            {
+                return srcList;
+            }
+
             string[] elements = protection.Split(',');
             if(elements.Length > 3)
             {
