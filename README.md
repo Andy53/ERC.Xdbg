@@ -232,7 +232,7 @@ Returns the plugin to a default status. Resets all client variables and configur
 
 
 ## Contributors
-[Andy Bowden](mailto:andy@evilrobots.club) | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https://twitter.com/Andy53_">         
-[Josh Brown](https://github.com/ropwareJB) | <img alt="Twitter URL" src="https://img.shields.io/twitter/url?style=social&url=https://twitter.com/ropwareJB">
+[Andy Bowden](mailto:andy@evilrobots.club)         
+[Josh Brown](https://github.com/ropwareJB)
 
 
