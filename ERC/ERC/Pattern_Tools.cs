@@ -154,12 +154,12 @@ namespace ERC.Utilities
 
             if (patternFull.Contains(pattern))
             {
-                result.ReturnValue = "Value found at postiont " + patternFull.IndexOf(pattern).ToString() + " in pattern.";
+                result.ReturnValue = "Value found at position " + patternFull.IndexOf(pattern).ToString() + " in pattern.";
                 return result;
             }
             else if (patternFull.Contains(reversed))
             {
-                result.ReturnValue = "Value found reversed at postiont " + patternFull.IndexOf(reversed).ToString() + " in pattern.";
+                result.ReturnValue = "Value found reversed at position " + patternFull.IndexOf(reversed).ToString() + " in pattern.";
                 return result;
             }
 
@@ -184,12 +184,12 @@ namespace ERC.Utilities
 
                 if (hexPatternFull.Contains(hexString))
                 {
-                    result.ReturnValue = "Value found at postiont " + (hexPatternFull.IndexOf(hexString) / 2).ToString()  + " in pattern.";
+                    result.ReturnValue = "Value found at position " + (hexPatternFull.IndexOf(hexString) / 2).ToString()  + " in pattern.";
                     return result;
                 }
                 else if (hexPatternFull.Contains(hexStringReversed))
                 {
-                    result.ReturnValue = "Value found reversed at postiont " + (hexPatternFull.IndexOf(hexStringReversed) / 2).ToString() + " in pattern.";
+                    result.ReturnValue = "Value found reversed at position " + (hexPatternFull.IndexOf(hexStringReversed) / 2).ToString() + " in pattern.";
                     return result;
                 }
             }
