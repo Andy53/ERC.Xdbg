@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Managed.x64dbg.SDK;
+using Managed.x64dbg.SDK; 
 using RGiesecke.DllExport;
 
 namespace ErcXdbg
