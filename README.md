@@ -1,6 +1,6 @@
 <img src="Icon.png" align="right" alt="Image" height="80" width="80"/>
 
-# ERC.Xdbg    
+# ERC.Xdbg     
 [![License](https://img.shields.io/github/license/Andy53/ERC.Xdbg)](license.txt)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/tags)
 [![GitHub issues](https://img.shields.io/github/issues-raw/Andy53/ERC.Xdbg?style=flat)](https://github.com/Andy53/ERC.Xdbg/issues)
