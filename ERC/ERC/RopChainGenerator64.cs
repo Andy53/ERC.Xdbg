@@ -2664,7 +2664,7 @@ namespace ERC.Utilities
                         if (xorReg != null && !GetRegisterModified(modifyingReg, reg, regModified64))
                         {
                             instructions.Add(xorReg);
-                            instructions.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.mov.ElementAt(i).Key).Reverse().ToArray(),
+                            instructions.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.mov.ElementAt(i).Key).Reversed(),
                                 usableX64Opcodes.mov.ElementAt(i).Value, reg));
                             return instructions;
                         }
@@ -2819,7 +2819,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRax.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RAX, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRax.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRax.ElementAt(i).Value, Register64.RAX);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRax.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRax.ElementAt(i).Value, Register64.RAX);
                         }
                     }
                     break;
@@ -2828,7 +2828,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRbx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RBX, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbx.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRbx.ElementAt(i).Value, Register64.RBX);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbx.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRbx.ElementAt(i).Value, Register64.RBX);
                         }
                     }
                     break;
@@ -2837,7 +2837,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RCX, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRcx.ElementAt(i).Value, Register64.RCX);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRcx.ElementAt(i).Value, Register64.RCX);
                         }
                     }
                     break;
@@ -2846,7 +2846,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RDX, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRdx.ElementAt(i).Value, Register64.RDX);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRdx.ElementAt(i).Value, Register64.RDX);
                         }
                     }
                     break;
@@ -2855,7 +2855,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRbp.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RBP, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbp.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRbp.ElementAt(i).Value, Register64.RBP);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRbp.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRbp.ElementAt(i).Value, Register64.RBP);
                         }
                     }
                     break;
@@ -2864,7 +2864,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRsp.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RSP, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsp.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRsp.ElementAt(i).Value, Register64.RSP);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsp.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRsp.ElementAt(i).Value, Register64.RSP);
                         }
                     }
                     break;
@@ -2873,7 +2873,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRsi.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RSI, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsi.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRsi.ElementAt(i).Value, Register64.RSI);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRsi.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRsi.ElementAt(i).Value, Register64.RSI);
                         }
                     }
                     break;
@@ -2882,7 +2882,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popRdi.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.RDI, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdi.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popRdi.ElementAt(i).Value, Register64.RDI);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdi.ElementAt(i).Key).Reversed(), usableX64Opcodes.popRdi.ElementAt(i).Value, Register64.RDI);
                         }
                     }
                     break;
@@ -2891,7 +2891,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR8.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R8, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR8.ElementAt(i).Value, Register64.R8);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR8.ElementAt(i).Value, Register64.R8);
                         }
                     }
                     break;
@@ -2900,7 +2900,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR9.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R9, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR9.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR9.ElementAt(i).Value, Register64.R9);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR9.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR9.ElementAt(i).Value, Register64.R9);
                         }
                     }
                     break;
@@ -2909,7 +2909,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR10.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R10, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR10.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR10.ElementAt(i).Value, Register64.R10);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR10.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR10.ElementAt(i).Value, Register64.R10);
                         }
                     }
                     break;
@@ -2918,7 +2918,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR11.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R11, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR11.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR11.ElementAt(i).Value, Register64.R11);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR11.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR11.ElementAt(i).Value, Register64.R11);
                         }
                     }
                     break;
@@ -2927,7 +2927,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR12.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R12, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR12.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR12.ElementAt(i).Value, Register64.R12);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR12.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR12.ElementAt(i).Value, Register64.R12);
                         }
                     }
                     break;
@@ -2936,7 +2936,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR13.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R13, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR13.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR13.ElementAt(i).Value, Register64.R13);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR13.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR13.ElementAt(i).Value, Register64.R13);
                         }
                     }
                     break;
@@ -2945,7 +2945,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR14.ElementAt(i).Value.Length == 14 && !GetRegisterModified(destReg, Register64.R14, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR14.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR14.ElementAt(i).Value, Register64.R14);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR14.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR14.ElementAt(i).Value, Register64.R14);
                         }
                     }
                     break;
@@ -2954,7 +2954,7 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR15.ElementAt(i).Value.Length == 15 && !GetRegisterModified(destReg, Register64.R15, regModified64))
                         {
-                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR15.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.popR15.ElementAt(i).Value, Register64.R15);
+                            return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR15.ElementAt(i).Key).Reversed(), usableX64Opcodes.popR15.ElementAt(i).Value, Register64.R15);
                         }
                     }
                     break;
@@ -2973,42 +2973,42 @@ namespace ERC.Utilities
                 case Register64.RAX:
                     if (usableX64Opcodes.xorRax.Count > 0 && usableX64Opcodes.xorRax.ElementAt(0).Value.Length <= 19)
                     {
-                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRax.ElementAt(0).Key).Reverse().ToArray();
+                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRax.ElementAt(0).Key).Reversed();
                         return Tuple.Create(gadget1, usableX64Opcodes.xorRax.ElementAt(0).Value, Register64.RAX);
                     }
                     break;
                 case Register64.RBX:
                     if (usableX64Opcodes.xorRbx.Count > 0 && usableX64Opcodes.xorRbx.ElementAt(0).Value.Length <= 19)
                     {
-                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRbx.ElementAt(0).Key).Reverse().ToArray();
+                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRbx.ElementAt(0).Key).Reversed();
                         return Tuple.Create(gadget1, usableX64Opcodes.xorRbx.ElementAt(0).Value, Register64.RBX);
                     }
                     break;
                 case Register64.RCX:
                     if (usableX64Opcodes.xorRcx.Count > 0 && usableX64Opcodes.xorRcx.ElementAt(0).Value.Length <= 19)
                     {
-                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRcx.ElementAt(0).Key).Reverse().ToArray();
+                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRcx.ElementAt(0).Key).Reversed();
                         return Tuple.Create(gadget1, usableX64Opcodes.xorRcx.ElementAt(0).Value, Register64.RCX);
                     }
                     break;
                 case Register64.RDX:
                     if (usableX64Opcodes.xorRdx.Count > 0 && usableX64Opcodes.xorRdx.ElementAt(0).Value.Length <= 19)
                     {
-                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRdx.ElementAt(0).Key).Reverse().ToArray();
+                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRdx.ElementAt(0).Key).Reversed();
                         return Tuple.Create(gadget1, usableX64Opcodes.xorRdx.ElementAt(0).Value, Register64.RDX);
                     }
                     break;
                 case Register64.RSI:
                     if (usableX64Opcodes.xorRsi.Count > 0 && usableX64Opcodes.xorRsi.ElementAt(0).Value.Length <= 19)
                     {
-                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRsi.ElementAt(0).Key).Reverse().ToArray();
+                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRsi.ElementAt(0).Key).Reversed();
                         return Tuple.Create(gadget1, usableX64Opcodes.xorRsi.ElementAt(0).Value, Register64.RSI);
                     }
                     break;
                 case Register64.RDI:
                     if (usableX64Opcodes.xorRdi.Count > 0 && usableX64Opcodes.xorRdi.ElementAt(0).Value.Length <= 19)
                     {
-                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRdi.ElementAt(0).Key).Reverse().ToArray();
+                        byte[] gadget1 = BitConverter.GetBytes((long)usableX64Opcodes.xorRdi.ElementAt(0).Key).Reversed();
                         return Tuple.Create(gadget1, usableX64Opcodes.xorRdi.ElementAt(0).Value, Register64.RDI);
                     }
                     break;
@@ -3036,7 +3036,7 @@ namespace ERC.Utilities
                     var reg = registerIdentifier64(gadgetElements[1]);
                     if (reg == srcReg)
                     {
-                        return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(i).Key).Reverse().ToArray(),
+                        return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.add.ElementAt(i).Key).Reversed(),
                             usableX64Opcodes.add.ElementAt(i).Value, reg);
                     }
                 }
@@ -3062,7 +3062,7 @@ namespace ERC.Utilities
                     var reg = registerIdentifier64(gadgetElements[1]);
                     if (reg == srcReg)
                     {
-                        return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.sub.ElementAt(i).Key).Reverse().ToArray(),
+                        return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.sub.ElementAt(i).Key).Reversed(),
                             usableX64Opcodes.sub.ElementAt(i).Value, reg);
                     }
                 }
@@ -3089,7 +3089,7 @@ namespace ERC.Utilities
                     var reg = registerIdentifier64(gadgetElements[1]);
                     if (reg == srcReg)
                     {
-                        return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.mov.ElementAt(i).Key).Reverse().ToArray(), usableX64Opcodes.mov.ElementAt(i).Value, reg);
+                        return Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.mov.ElementAt(i).Key).Reversed(), usableX64Opcodes.mov.ElementAt(i).Value, reg);
                     }
                 }
             }
