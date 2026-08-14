@@ -84,6 +84,33 @@ jobs:
             ErcXdbg/bin/${{ matrix.platform }}/Release/net472/*.dll
           if-no-files-found: error
 
+  clean-machine-build:
+    # Builds with an empty NuGet package folder, so nothing can be satisfied by a
+    # package that happens to be cached already.
+    #
+    # This is not paranoia. The metalib project was named DllExport, the same NuGet
+    # identity as the DllExport package the plugin depends on, and a project
+    # reference wins that contest - so NuGet considered the dependency satisfied and
+    # never downloaded the real package. Its targets were then absent, the IL
+    # rewriting step never ran, and the plugin came out with no native exports.
+    # Every developer machine had the package cached from an earlier restore and saw
+    # a working build; every clean checkout did not.
+    #
+    # Deliberately not using actions/cache: a warm cache is the thing being ruled out.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Build from an empty package folder
+        shell: pwsh
+        env:
+          CI: 'true'
+        run: ./build.ps1 -Platform x64 -Configuration Release -CleanPackages
+
   no-hand-edited-architecture-switches:
     # Guards the fix that removed the seven "uncomment for 64bit" sites. If one
     # comes back, the release build silently ships the wrong architecture again,

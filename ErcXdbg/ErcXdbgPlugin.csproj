@@ -88,8 +88,23 @@
     package was restored by something that does not emit the path property.
   -->
   <PropertyGroup>
-    <ErcDllExportTargets Condition="'$(PkgDllExport)' != ''">$(PkgDllExport)\tools\net.r_eg.DllExport.targets</ErcDllExportTargets>
-    <ErcDllExportTargets Condition="!Exists('$(ErcDllExportTargets)') And '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)dllexport\1.7.4\tools\net.r_eg.DllExport.targets</ErcDllExportTargets>
+    <!--
+      Path.Combine, not string concatenation.
+
+      NuGetPackageRoot is not guaranteed to end in a separator: it is
+      "...\.nuget\packages\" when NuGet defaults it, and "...\erc-clean-nuget"
+      with no trailing slash when NUGET_PACKAGES names the folder. The import here
+      used to append "dllexport\..." directly, which produced
+      "...\erc-clean-nugetdllexport\..." in the second case - a path that never
+      exists, so the Exists condition silently skipped the import and the plugin
+      was built with no native exports.
+
+      NuGet's own generated import in obj\*.nuget.g.props writes
+      "$(NuGetPackageRoot)\costura.fody\..." with an explicit separator, which is
+      the same problem seen from the other side: it cannot rely on one either.
+    -->
+    <ErcDllExportTargets Condition="'$(PkgDllExport)' != ''">$([System.IO.Path]::Combine('$(PkgDllExport)', 'tools', 'net.r_eg.DllExport.targets'))</ErcDllExportTargets>
+    <ErcDllExportTargets Condition="!Exists('$(ErcDllExportTargets)') And '$(NuGetPackageRoot)' != ''">$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'dllexport', '1.7.4', 'tools', 'net.r_eg.DllExport.targets'))</ErcDllExportTargets>
   </PropertyGroup>
 
   <Import Project="$(ErcDllExportTargets)" Condition="Exists('$(ErcDllExportTargets)')" />

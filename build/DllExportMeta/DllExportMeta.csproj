@@ -12,7 +12,25 @@
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
+
+    <!--
+      The file has to be called DllExport.dll, because that is the name the IL
+      rewriter's MetaLib setting points at.
+
+      PackageId has to be something else. A project's NuGet identity defaults to
+      its assembly name, so with both called "DllExport" this project collided with
+      the DllExport PackageReference in the plugin - and a project reference wins.
+      NuGet therefore considered the dependency already satisfied and never
+      downloaded the real package, so its targets were absent and the plugin was
+      built with no native exports.
+
+      That is invisible on a machine whose package cache already holds DllExport
+      from an earlier restore, which is why this only ever failed on a clean
+      checkout. IsPackable does not help: identity is used during restore whether
+      or not the project is packable.
+    -->
     <AssemblyName>DllExport</AssemblyName>
+    <PackageId>ErcXdbg.DllExportMeta</PackageId>
     <RootNamespace>ErcXdbg</RootNamespace>
 
     <OutputPath>$(MSBuildThisFileDirectory)bin\</OutputPath>

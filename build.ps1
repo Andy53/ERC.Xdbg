@@ -16,6 +16,11 @@
 
 .EXAMPLE
     .\build.ps1 -Platform x64 -Configuration Debug
+
+.EXAMPLE
+    .\build.ps1 -CleanPackages
+    Restores into a throwaway package folder, so the build cannot quietly depend on
+    something already sitting in the machine's NuGet cache.
 #>
 [CmdletBinding()]
 param(
@@ -26,7 +31,21 @@ param(
     [string] $Configuration = 'Release',
 
     # Skips the export-table check. Only useful when diagnosing the build itself.
-    [switch] $SkipVerify
+    [switch] $SkipVerify,
+
+    <#
+      Restore into an empty package folder instead of the machine's own.
+
+      This exists because the build spent a long time working on developer machines
+      and failing everywhere else. The metalib project was named DllExport, the same
+      identity as the DllExport package it sits beside, so NuGet treated the
+      dependency as already satisfied by the project and never downloaded the real
+      package. Anyone whose cache happened to contain it from an earlier restore saw
+      a working build; a clean checkout got a plugin with no native exports.
+
+      Slow - everything downloads again - so it is opt in, and CI runs it.
+    #>
+    [switch] $CleanPackages
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,6 +53,21 @@ Set-StrictMode -Version Latest
 
 $repoRoot = $PSScriptRoot
 $solution = Join-Path $repoRoot 'ErcXdbgPlugin.sln'
+
+$cleanPackageFolder = $null
+if ($CleanPackages) {
+    $cleanPackageFolder = Join-Path ([System.IO.Path]::GetTempPath()) ("erc-packages-" + [System.Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $cleanPackageFolder | Out-Null
+    $env:NUGET_PACKAGES = $cleanPackageFolder
+
+    Write-Host "Restoring into a clean package folder: $cleanPackageFolder" -ForegroundColor Yellow
+
+    # Stale obj folders carry a resolved dependency graph from the previous restore,
+    # which would hide exactly the problem this switch is meant to expose.
+    Get-ChildItem -Path $repoRoot -Recurse -Directory -Filter 'obj' -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notlike '*\.git\*' } |
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 function Find-MSBuild {
     # vswhere ships with every VS installer and is the supported way to locate MSBuild.
@@ -189,6 +223,11 @@ foreach ($p in $platforms) {
         $sdk = Join-Path $repoRoot "Managed.x64dbg\bin\$p\$Configuration\net472\Managed.x64dbg.dll"
         Assert-DebuggerBinding -Path $sdk -Platform $p
     }
+}
+
+if ($cleanPackageFolder) {
+    Remove-Item Env:\NUGET_PACKAGES -ErrorAction SilentlyContinue
+    Remove-Item $cleanPackageFolder -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ""
