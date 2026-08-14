@@ -277,5 +277,55 @@ namespace ERC.Net.Tests
             ErcConfig.CreateDefault(@"C:\somewhere").WorkingDirectory.ShouldBe(@"C:\somewhere\");
             ErcConfig.CreateDefault(@"C:\somewhere\").WorkingDirectory.ShouldBe(@"C:\somewhere\");
         }
+
+        [Fact]
+        public void DefaultPath_is_a_file_in_the_default_directory()
+        {
+            // "ERC --reset" deletes this file. It used to build the path itself, and
+            // built it wrong: a directory joined to a file name with no separator, and
+            // the extension in the wrong case. File.Delete does nothing when the file
+            // is absent, so the command reported success and changed nothing.
+            string path = XmlConfigStore.DefaultPath();
+
+            Path.IsPathRooted(path).ShouldBeTrue(path);
+            Path.GetFileName(path).ShouldNotBeNullOrEmpty();
+            Path.GetDirectoryName(path).ShouldBe(
+                XmlConfigStore.DefaultDirectory().TrimEnd(Path.DirectorySeparatorChar));
+        }
+
+        [Fact]
+        public void DefaultPath_is_the_file_a_store_built_from_it_uses()
+        {
+            // The plugin deletes DefaultPath() while the store loads from its own
+            // Path, so the two have to name the same file. This is the path the
+            // parameterless ErcCore constructor passes.
+            new XmlConfigStore(XmlConfigStore.DefaultPath()).Path
+                .ShouldBe(XmlConfigStore.DefaultPath());
+        }
+
+        [Fact]
+        public void A_store_round_trips_through_its_default_named_file()
+        {
+            // Deleting DefaultPath() has to actually remove a saved configuration.
+            // Exercised in a temporary directory rather than the real one.
+            string directory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(directory);
+
+            try
+            {
+                string path = Path.Combine(directory, Path.GetFileName(XmlConfigStore.DefaultPath()));
+                var store = new XmlConfigStore(path);
+
+                store.Save(ErcConfig.CreateDefault(directory)).ShouldBeTrue();
+                File.Exists(path).ShouldBeTrue(path);
+
+                File.Delete(path);
+                store.Load().ShouldBeNull();
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
     }
 }

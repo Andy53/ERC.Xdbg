@@ -327,7 +327,7 @@ namespace ERC
         /// </summary>
         /// <param name="excludes">Takes a list of module names to be excluded from the search</param>
         /// <returns>Returns an ERC_Result containing a dictionary of pointers and the main module in which they were found</returns>
-        public ErcResult<Dictionary<IntPtr, string>> SearchAllMemoryPPR(List<string>? excludes = null)
+        public ErcResult<Dictionary<IntPtr, string>> SearchAllMemoryPPR(List<string>? excludes = null, byte[]? ptrsToExclude = null)
         {
             ErcResult<Dictionary<IntPtr, string>> ptrs = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
             ptrs.ReturnValue = new Dictionary<IntPtr, string>();
@@ -465,157 +465,21 @@ namespace ERC
                     }
                 }
             }
+
+            // Applied here rather than in a near-identical overload. The two
+            // SearchMemory methods differed only by this line, and their second
+            // parameter meant "what to search for" in one and "which pointers to
+            // reject" in the other - so a two-argument call was ambiguous, and
+            // would have been silently wrong had it compiled.
+            if (ptrsToExclude != null)
+            {
+                ptrs.ReturnValue = Utilities.PtrRemover.RemovePointers(
+                    ProcessMachineType, ptrs.ReturnValue, ptrsToExclude);
+            }
+
             return ptrs;
         }
 
-        /// <summary>
-        /// Searches all memory associated with a given process and associated modules for POP X POP X RET instructions. 
-        /// Passing a list of module paths or names will exclude those modules from the search. 
-        /// </summary>
-        /// <param name="excludes">Takes a list of module names to be excluded from the search</param>
-        /// <param name="ptrsToExclude"> Takes a byte array of values used to disqualify pointers</param>
-        /// <returns>Returns an ERC_Result containing a dictionary of pointers and the main module in which they were found</returns>
-        public ErcResult<Dictionary<IntPtr, string>> SearchAllMemoryPPR(byte[] ptrsToExclude, List<string>? excludes = null)
-        {
-            ErcResult<Dictionary<IntPtr, string>> ptrs = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
-            ptrs.ReturnValue = new Dictionary<IntPtr, string>();
-            if (ProcessMachineType == MachineType.I386)
-            {
-                for (int i = 0; i < MemoryRegions32.Count; i++)
-                {
-                    if ((ulong)MemoryRegions32[i].RegionSize > int.MaxValue)
-                    {
-                        long start_address = (long)MemoryRegions32[i].BaseAddress;
-                        long end_address = (long)MemoryRegions32[i].BaseAddress + (long)(MemoryRegions32[i].RegionSize - 1);
-                        long region = (long)MemoryRegions32[i].RegionSize;
-                        for (long j = start_address; j < end_address; j += (region / 100))
-                        {
-                            byte[] buffer = new byte[region / 100];
-                            int bytesRead = 0;
-                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
-                            List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
-                            if (pprs.Count > 0)
-                            {
-                                for (int k = 0; k < pprs.Count; k++)
-                                {
-                                    if (!ptrs.ReturnValue.ContainsKey((IntPtr)((ulong)pprs[k] + (ulong)MemoryRegions32[i].BaseAddress)))
-                                    {
-                                        ptrs.ReturnValue.Add((IntPtr)((ulong)pprs[k] + (ulong)MemoryRegions32[i].BaseAddress), ProcessPath);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        long bufferSize = (long)MemoryRegions32[i].RegionSize;
-                        int bytesRead = 0;
-                        IntPtr baseAddress = MemoryRegions32[i].BaseAddress;
-                        byte[] buffer = new byte[bufferSize];
-
-                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
-                        List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
-                        if (pprs.Count > 0)
-                        {
-                            for (int k = 0; k < pprs.Count; k++)
-                            {
-                                if (!ptrs.ReturnValue.ContainsKey((IntPtr)((ulong)pprs[k] + (ulong)MemoryRegions32[i].BaseAddress)))
-                                {
-                                    ptrs.ReturnValue.Add((IntPtr)((ulong)pprs[k] + (ulong)MemoryRegions32[i].BaseAddress), ProcessPath);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else if (ProcessMachineType == MachineType.x64)
-            {
-                byte[] buffer = new byte[int.MaxValue / 10];
-                int bytesRead = 0;
-                for (int i = 0; i < MemoryRegions64.Count; i++)
-                {
-                    if (MemoryRegions64[i].RegionSize > int.MaxValue)
-                    {
-                        ulong startAddress = MemoryRegions64[i].BaseAddress;
-                        ulong endAddress = MemoryRegions64[i].BaseAddress + (MemoryRegions64[i].RegionSize - 1);
-                        ulong region = MemoryRegions64[i].RegionSize;
-
-                        for (ulong j = startAddress; j < endAddress; j += int.MaxValue / 10)
-                        {
-                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
-                            List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
-                            if (pprs.Count > 0)
-                            {
-                                for (int k = 0; k < pprs.Count; k++)
-                                {
-                                    if (!ptrs.ReturnValue.ContainsKey((IntPtr)((ulong)pprs[k] + MemoryRegions64[i].BaseAddress)))
-                                    {
-                                        ptrs.ReturnValue.Add((IntPtr)((ulong)pprs[k] + MemoryRegions64[i].BaseAddress), ProcessPath);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        long bufferSize = (long)MemoryRegions64[i].RegionSize;
-                        bytesRead = 0;
-                        IntPtr baseAddress = (IntPtr)MemoryRegions64[i].BaseAddress;
-                        byte[] buffer1 = new byte[bufferSize];
-
-                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
-                        List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer1);
-                        if (pprs.Count > 0)
-                        {
-                            for (int k = 0; k < pprs.Count; k++)
-                            {
-                                if (!ptrs.ReturnValue.ContainsKey((IntPtr)((ulong)pprs[k] + MemoryRegions64[i].BaseAddress)))
-                                {
-                                    ptrs.ReturnValue.Add((IntPtr)((ulong)pprs[k] + MemoryRegions64[i].BaseAddress), ProcessPath);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            List<ModuleInfo> modules = new List<ModuleInfo>();
-            for (int i = 0; i < ModulesInfo.Count; i++)
-            {
-                if (excludes != null)
-                {
-                    if (!excludes.Contains(ModulesInfo[i].ModuleName) && !excludes.Contains(ModulesInfo[i].ModulePath))
-                    {
-                        modules.Add(ModulesInfo[i]);
-                    }
-                }
-                else
-                {
-                    modules.Add(ModulesInfo[i]);
-                }
-            }
-            for (int i = 0; i < modules.Count; i++)
-            {
-
-                IntPtr baseAddress = modules[i].ModuleBase;
-                byte[] buffer = new byte[modules[i].ModuleSize];
-                int bytesread = 0;
-
-                Native.ReadProcessMemory(ProcessHandle, modules[i].ModuleBase, buffer, buffer.Length, out bytesread);
-                List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
-                if (pprs.Count > 0)
-                {
-                    for (int k = 0; k < pprs.Count; k++)
-                    {
-                        if (!ptrs.ReturnValue.ContainsKey((IntPtr)((ulong)pprs[k] + (ulong)modules[i].ModuleBase)))
-                        {
-                            ptrs.ReturnValue.Add((IntPtr)((ulong)pprs[k] + (ulong)modules[i].ModuleBase), modules[i].ModulePath);
-                        }
-                    }
-                }
-            }
-            ptrs.ReturnValue = Utilities.PtrRemover.RemovePointers(ProcessMachineType, ptrs.ReturnValue, ptrsToExclude);
-            return ptrs;
-        }
         #endregion
 
         #region SearchMemory
@@ -628,7 +492,8 @@ namespace ERC
         /// <param name="searchString">String to be searched for (optional)</param>
         /// <param name="excludes">Modules to be excluded from the search (optional)</param>
         /// <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>
-        public ErcResult<Dictionary<IntPtr, string>> SearchMemory(int searchType, byte[]? searchBytes = null, string? searchString = null, List<string>? excludes = null)
+        public ErcResult<Dictionary<IntPtr, string>> SearchMemory(int searchType, byte[]? searchBytes = null,
+            string? searchString = null, List<string>? excludes = null, byte[]? ptrsToExclude = null)
         {
             ErcResult<Dictionary<IntPtr, string>> resultAddresses = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
             resultAddresses.ReturnValue = new Dictionary<IntPtr, string>();
@@ -689,85 +554,21 @@ namespace ERC
                     }
                 }
             }
+
+            // Applied here rather than in a near-identical overload. The two
+            // SearchMemory methods differed only by this line, and their second
+            // parameter meant "what to search for" in one and "which pointers to
+            // reject" in the other - so a two-argument call was ambiguous, and
+            // would have been silently wrong had it compiled.
+            if (ptrsToExclude != null)
+            {
+                resultAddresses.ReturnValue = Utilities.PtrRemover.RemovePointers(
+                    ProcessMachineType, resultAddresses.ReturnValue, ptrsToExclude);
+            }
+
             return resultAddresses;
         }
 
-        /// <summary>
-        /// Searches all memory (the process and associated DLLs) for a specific string or byte array. Strings can be passed as ASCII, Unicode, UTF7 or UTF8.
-        /// Specific modules can be exclude through passing a Listof strings containing module names or paths.
-        /// </summary>
-        /// <param name="searchType">0 = search term is in bytes\n1 = search term is in unicode\n2 = search term is in ASCII\n3 = Search term is in UTF8\n4 = Search term is in UTF7\n5 = Search term is in UTF32</param>
-        /// <param name="ptrsToExclude"> Takes a byte array of values used to disqualify pointers</param>
-        /// <param name="searchBytes">Byte array to be searched for (optional)</param>
-        /// <param name="searchString">String to be searched for (optional)</param>
-        /// <param name="excludes">Modules to be excluded from the search (optional)</param>
-        /// <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>
-        public ErcResult<Dictionary<IntPtr, string>> SearchMemory(int searchType, byte[] ptrsToExclude, byte[]? searchBytes = null, string? searchString = null, List<string>? excludes = null)
-        {
-            ErcResult<Dictionary<IntPtr, string>> resultAddresses = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
-            resultAddresses.ReturnValue = new Dictionary<IntPtr, string>();
-
-            // Which argument is required depends on searchType; SearchTerm decides and
-            // reports, rather than each caller reaching an encoder with a null string.
-            ErcResult<byte[]> term = Utilities.SearchTerm.Resolve(ProcessCore, searchType, searchBytes, searchString);
-            if (term.Error != null)
-            {
-                resultAddresses.Error = term.Error;
-                resultAddresses.LogEvent();
-                return resultAddresses;
-            }
-
-            searchBytes = term.ReturnValue;
-            var processPtrs = SearchProcessMemory(searchBytes);
-            if (processPtrs.Error != null)
-            {
-                resultAddresses.Error = new ERCException("Error passed from Search_Process_Memory: " + processPtrs.Error.ToString());
-                resultAddresses.LogEvent();
-                return resultAddresses;
-            }
-
-            for (int i = 0; i < processPtrs.ReturnValue.Count; i++)
-            {
-                if (!resultAddresses.ReturnValue.ContainsKey(processPtrs.ReturnValue[i]))
-                {
-                    resultAddresses.ReturnValue.Add(processPtrs.ReturnValue[i], ProcessPath);
-                }
-            }
-
-            List<ModuleInfo> modules = new List<ModuleInfo>();
-            for (int i = 0; i < ModulesInfo.Count; i++)
-            {
-                if (excludes != null)
-                {
-                    if (!excludes.Contains(ModulesInfo[i].ModuleName) && !excludes.Contains(ModulesInfo[i].ModulePath))
-                    {
-                        modules.Add(ModulesInfo[i]);
-                    }
-                }
-                else
-                {
-                    modules.Add(ModulesInfo[i]);
-                }
-            }
-            for (int i = 0; i < modules.Count; i++)
-            {
-                var modulePtrs = modules[i].SearchModule(searchBytes);
-                if (modulePtrs.ReturnValue.Count > 0)
-                {
-                    for (int j = 0; j < modulePtrs.ReturnValue.Count; j++)
-                    {
-                        if (!resultAddresses.ReturnValue.ContainsKey(modulePtrs.ReturnValue[j]))
-                        {
-                            resultAddresses.ReturnValue.Add(modulePtrs.ReturnValue[j], modules[i].ModulePath);
-                        }
-                    }
-                }
-            }
-
-            resultAddresses.ReturnValue = Utilities.PtrRemover.RemovePointers(ProcessMachineType, resultAddresses.ReturnValue, ptrsToExclude);
-            
-            return resultAddresses;
-        }
         #endregion
 
         #region SearchModules
@@ -782,7 +583,9 @@ namespace ERC
         /// <param name="includedModules">Modules to be included in the search (optional)</param>
         /// <param name="excludedModules">Modules to be excluded from the search (optional)</param>
         /// <returns>Returns an ERC_Result containing pointers to all instances of the search query.</returns>>
-        public ErcResult<Dictionary<IntPtr, string>> SearchModules(int searchType, byte[]? ptrsToExclude = null, byte[]? searchBytes = null, string? searchString = null, List<string>? includedModules = null, List<string>? excludedModules = null)
+        public ErcResult<Dictionary<IntPtr, string>> SearchModules(int searchType, byte[]? searchBytes = null,
+            string? searchString = null, List<string>? includedModules = null,
+            List<string>? excludedModules = null, byte[]? ptrsToExclude = null)
         {
             ErcResult<Dictionary<IntPtr, string>> resultAddresses = new ErcResult<Dictionary<IntPtr, string>>(ProcessCore);
             resultAddresses.ReturnValue = new Dictionary<IntPtr, string>();
@@ -839,6 +642,18 @@ namespace ERC
             {
                 resultAddresses.ReturnValue = Utilities.PtrRemover.RemovePointers(ProcessMachineType, resultAddresses.ReturnValue, ptrsToExclude);
             }
+
+            // Applied here rather than in a near-identical overload. The two
+            // SearchMemory methods differed only by this line, and their second
+            // parameter meant "what to search for" in one and "which pointers to
+            // reject" in the other - so a two-argument call was ambiguous, and
+            // would have been silently wrong had it compiled.
+            if (ptrsToExclude != null)
+            {
+                resultAddresses.ReturnValue = Utilities.PtrRemover.RemovePointers(
+                    ProcessMachineType, resultAddresses.ReturnValue, ptrsToExclude);
+            }
+
             return resultAddresses;
         }
         #endregion

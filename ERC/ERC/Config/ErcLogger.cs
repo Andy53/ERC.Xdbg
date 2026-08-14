@@ -27,6 +27,13 @@ namespace ERC.Config
     {
         private readonly string? _path;
 
+        /// <summary>
+        /// Creates a logger appending to <paramref name="path"/>.
+        /// </summary>
+        /// <param name="path">
+        /// File to append to. Null or empty disables logging, which is what an
+        /// unconfigured error log path means.
+        /// </param>
         public FileErcLogger(string? path)
         {
             _path = path;
@@ -37,6 +44,7 @@ namespace ERC.Config
         /// </summary>
         public string? Path { get { return _path; } }
 
+        /// <inheritdoc/>
         public void Log(string message)
         {
             if (string.IsNullOrEmpty(_path))
@@ -83,6 +91,7 @@ namespace ERC.Config
             get { return _messages; }
         }
 
+        /// <inheritdoc/>
         public void Log(string message)
         {
             _messages.Add(message);

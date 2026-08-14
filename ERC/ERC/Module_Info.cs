@@ -89,15 +89,26 @@ namespace ERC
         /// </summary>
         public MachineType ModuleMachineType { get; private set; }
 
-        internal IMAGE_DOS_HEADER ImageDosHeader = new IMAGE_DOS_HEADER();
-        internal IMAGE_FILE_HEADER ImageFileHeader = new IMAGE_FILE_HEADER();
-        internal IMAGE_NT_HEADERS32 ImageNTHeaders32 { get; private set; }
-        internal IMAGE_NT_HEADERS64 ImageNTHeaders64 { get; private set; }
-        internal IMAGE_OPTIONAL_HEADER32 ImageOptionalHeader32 { get; private set; }
-        internal IMAGE_OPTIONAL_HEADER64 ImageOptionalHeader64 { get; private set; }
-        internal IMAGE_LOAD_CONFIG_DIRECTORY32 ImageConfigDir32 { get; private set; }
-        internal IMAGE_LOAD_CONFIG_DIRECTORY64 ImageConfigDir64 { get; private set; }
-        internal LOADED_IMAGE loadedImage = new LOADED_IMAGE();
+        /// <summary>
+        /// The module's DllCharacteristics, which carry the mitigation flags.
+        /// </summary>
+        public ushort ModuleDllCharacteristics { get; private set; }
+
+        /// <summary>
+        /// RVA of the module's load config directory, or 0 when it has none.
+        /// </summary>
+        public uint ModuleLoadConfigRva { get; private set; }
+
+        /// <summary>
+        /// Address of the module's table of permitted SEH handlers, or 0 when it
+        /// publishes none. 32-bit modules only.
+        /// </summary>
+        public uint SehHandlerTable { get; private set; }
+
+        /// <summary>
+        /// How many handlers that table holds. 32-bit modules only.
+        /// </summary>
+        public uint SehHandlerCount { get; private set; }
 
         /// <summary>
         /// An errpr was encountered whilst processing the module.
@@ -113,7 +124,7 @@ namespace ERC
         /// <param name="ptr">Handle to the module</param>
         /// <param name="process">Process where the module is loaded</param>
         /// <param name="core">An ErcCore object</param>
-        internal unsafe ModuleInfo(string module, IntPtr ptr, Process process, ErcCore core)
+        internal ModuleInfo(string module, IntPtr ptr, Process process, ErcCore core)
         {
             ModuleCore = core;
             ModuleProcess = process;
@@ -124,9 +135,10 @@ namespace ERC
                 ModulePath = FileVersionInfo.GetVersionInfo(module).FileName;
                 ModuleBase = ptr;
 
-                FileInfo fileInfo = new FileInfo(ModulePath);
-                FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
-                PopulateHeaderStructs(file);
+                // Reads the headers, and sets MachineType, ImageBase, Entry, Size and
+                // DllCharacteristics. It throws when the file is not a PE image ERC
+                // understands, which the catch below records as a failed module.
+                PopulateHeaderStructs(ModulePath);
 
                 string? fileVersion = FileVersionInfo.GetVersionInfo(module).FileVersion;
                 ModuleVersion = string.IsNullOrEmpty(fileVersion)
@@ -134,64 +146,22 @@ namespace ERC
                     : fileVersion!.Split(' ')[0];
 
                 ModuleProduct = FileVersionInfo.GetVersionInfo(module).ProductName ?? string.Empty;
-                
-                if (ModuleMachineType == MachineType.I386)
-                {
-                    ModuleEntry = (IntPtr)ImageOptionalHeader32.AddressOfEntryPoint;
-                    ModuleSize = (int)ImageOptionalHeader32.SizeOfImage;
-                    ModuleImageBase = (IntPtr)ImageOptionalHeader32.ImageBase;
-                    // The bit walk this replaces assigned inside a plain "else", so
-                    // every iteration past the interesting bit reset the flag to
-                    // false and both of these always read as false on a 32-bit
-                    // target. See PeCharacteristics.
-                    ModuleASLR = Utilities.PeCharacteristics.HasAslr(ImageOptionalHeader32.DllCharacteristics);
-                    ModuleNXCompat = Utilities.PeCharacteristics.HasNxCompat(ImageOptionalHeader32.DllCharacteristics);
 
-                    if(ModuleMachineType == MachineType.I386)
-                    {
-                        PopulateConfigStruct();
+                // One derivation for both architectures. This was written out twice,
+                // once per branch: the 64-bit copy was correct and the 32-bit copy
+                // assigned inside a plain "else", so on a 32-bit target - the common
+                // case for this tool - ASLR and NXCompat always read as false.
+                ModuleASLR = Utilities.PeCharacteristics.HasAslr(ModuleDllCharacteristics);
+                ModuleNXCompat = Utilities.PeCharacteristics.HasNxCompat(ModuleDllCharacteristics);
 
-                        if (ImageConfigDir32.SEHandlerCount == 0 && ImageConfigDir32.SEHandlerTable == 0)
-                        {
-                            ModuleSafeSEH = false;
-                        }
-                        else
-                        {
-                            ModuleSafeSEH = true;
-                        }
-                    }
-                    else
-                    {
-                        ModuleSafeSEH = true;
-                    }
-                    
-                }
-                else if (ModuleMachineType == MachineType.x64)
-                {
-                    ModuleEntry = (IntPtr)ImageOptionalHeader64.AddressOfEntryPoint;
-                    ModuleSize = (int)ImageOptionalHeader64.SizeOfImage;
-                    ModuleImageBase = (IntPtr)ImageOptionalHeader64.ImageBase;
-                    // Same derivation as the 32-bit branch, which this copy used to
-                    // duplicate - correctly here, incorrectly there.
-                    ModuleASLR = Utilities.PeCharacteristics.HasAslr(ImageOptionalHeader64.DllCharacteristics);
-                    ModuleNXCompat = Utilities.PeCharacteristics.HasNxCompat(ImageOptionalHeader64.DllCharacteristics);
-                   
-                    PopulateConfigStruct();
-                    
-                    if(ImageConfigDir64.SEHandlerCount == 0 && ImageConfigDir64.SEHandlerTable == 0)
-                    {
-                        ModuleSafeSEH = false;
-                    }
-                    else
-                    {
-                        ModuleSafeSEH = true;
-                    }
-                }
-                else
-                {
-                    ModuleFailed = true;
-                    throw new ERCException("Unsupported machine type: " + ModuleMachineType.ToString());
-                }             
+                ModuleSafeSEH = ModuleMachineType == MachineType.I386
+                    ? Utilities.PeCharacteristics.HasSafeSeh(
+                        ModuleDllCharacteristics, SehHandlerTable, SehHandlerCount)
+                    // x64 has no SafeSEH: exception handling is table driven through
+                    // .pdata, which an SEH overwrite cannot reach. Reported as
+                    // protected rather than as "no SafeSEH", which would read as a
+                    // missing mitigation.
+                    : true;
 
                 if (ModuleProduct == "Microsoft® Windows® Operating System")
                 {
@@ -262,120 +232,173 @@ namespace ERC
             }
         }
 
-        private unsafe void PopulateHeaderStructs(FileStream fin)
+        /// <summary>
+        /// Reads the module file's PE headers.
+        /// </summary>
+        /// <remarks>
+        /// The parsing itself is in <see cref="Utilities.PeHeaders"/>, which is total
+        /// and bounds-checked. This method only opens the file and copies the results
+        /// onto the properties.
+        ///
+        /// What it replaces cast a pointer over a 4096 byte buffer inside an unsafe
+        /// block: it ignored how many bytes Read actually returned, checked neither
+        /// the "MZ" nor the "PE\0\0" signature, and added the file's own e_lfanew
+        /// field to the buffer pointer without a bounds check, so a module whose
+        /// header claimed an offset of 0x7FFFFFFF read whatever was at that address.
+        ///
+        /// It also read the load config out of the live process here and set
+        /// ModuleSafeSEH from it, which the constructor then overwrote
+        /// unconditionally - so that work never affected anything.
+        /// </remarks>
+        private void PopulateHeaderStructs(string modulePath)
         {
-            byte[] Data = new byte[4096];
-            int iRead = fin.Read(Data, 0, 4096);
+            // Only the headers are needed. 4096 covers the DOS stub, the NT headers
+            // and the section table of anything a linker produces.
+            byte[] data = ReadHeaderBytes(modulePath, 4096);
 
-            fin.Flush();
-            fin.Close();
+            Utilities.PeHeaders? headers;
+            string? error;
 
-            fixed (byte* p_Data = Data)
+            if (!Utilities.PeHeaders.TryParse(data, out headers, out error))
             {
-                IMAGE_DOS_HEADER* idh = (IMAGE_DOS_HEADER*)p_Data;
-                IMAGE_NT_HEADERS32* inhs = (IMAGE_NT_HEADERS32*)(idh->nt_head_ptr + p_Data);
-                ModuleMachineType = (MachineType)inhs->FileHeader.Machine;
+                ModuleFailed = true;
+                throw new ERCException("Could not read the PE headers of " + modulePath + ": " + error);
+            }
 
-                if (ModuleMachineType == MachineType.I386)
-                {
-                    IMAGE_NT_HEADERS32* inhs32 = (IMAGE_NT_HEADERS32*)(idh->nt_head_ptr + p_Data);
-                    ImageFileHeader = inhs32->FileHeader;
-                    ModuleMachineType = (MachineType)inhs32->FileHeader.Machine;
-                    ImageOptionalHeader32 = inhs32->OptionalHeader;
-                    ModuleImageBase = (IntPtr)inhs32->OptionalHeader.ImageBase;
+            ModuleMachineType = headers!.MachineType;
+            ModuleImageBase = (IntPtr)headers.ImageBase;
+            ModuleEntry = (IntPtr)headers.AddressOfEntryPoint;
+            ModuleSize = (int)headers.SizeOfImage;
+            ModuleDllCharacteristics = headers.DllCharacteristics;
+            ModuleLoadConfigRva = headers.LoadConfigTableRva;
 
-                    ImageNTHeaders32 = new IMAGE_NT_HEADERS32
-                    {
-                        Signature = inhs32->Signature,
-                        FileHeader = inhs32->FileHeader,
-                        OptionalHeader = inhs32->OptionalHeader
-                    };
-                    
-                    byte[] bytes = new byte[256];
-                    var ret = ModuleCore.Native.ReadProcessMemory(ModuleProcess.Handle,
-                        (IntPtr)((uint)ModuleBase + ImageOptionalHeader32.LoadConfigTable.VirtualAddress), bytes, 256, out int BytesRead);
-                    if (BitConverter.ToUInt32(bytes, 58) > 0 || BitConverter.ToUInt32(bytes, 62) > 0)
-                    {
-                        ModuleSafeSEH = true;
-                    }
-                }
-                else if (ModuleMachineType == MachineType.x64)
-                {
-                    IMAGE_NT_HEADERS64* inhs64 = (IMAGE_NT_HEADERS64*)(idh->nt_head_ptr + p_Data);
-                    ImageFileHeader = inhs64->FileHeader;
-                    ImageOptionalHeader64 = inhs64->OptionalHeader;
-                    ModuleImageBase = (IntPtr)inhs64->OptionalHeader.ImageBase;
+            ReadSafeSehFields(modulePath, headers);
+        }
 
-                    ImageNTHeaders64 = new IMAGE_NT_HEADERS64
-                    {
-                        Signature = inhs64->Signature,
-                        FileHeader = inhs64->FileHeader,
-                        OptionalHeader = inhs64->OptionalHeader
-                    };
+        /// <summary>
+        /// Reads SEHandlerTable and SEHandlerCount out of the module's load config.
+        /// </summary>
+        /// <remarks>
+        /// Read from the file rather than through imagehlp's MapAndLoad and
+        /// GetImageConfigInformation, which is what this replaces. Those mapped the
+        /// whole image and loaded it a second time - two OS resources per module, per
+        /// command, neither of which was ever released - and the values they produced
+        /// were assigned to a local and discarded, so the SafeSEH test that reads them
+        /// compared zero against zero and every module reported SafeSEH as false.
+        ///
+        /// The directory lives in a section rather than in the headers, so its address
+        /// has to be translated from an RVA to a file offset first.
+        /// </remarks>
+        private void ReadSafeSehFields(string modulePath, Utilities.PeHeaders headers)
+        {
+            if (headers.MachineType != MachineType.I386 || headers.LoadConfigTableRva == 0)
+            {
+                return;
+            }
 
-                    byte[] bytes = new byte[256];
-                    var ret = ModuleCore.Native.ReadProcessMemory(ModuleProcess.Handle,
-                        (IntPtr)((long)ModuleBase + (long)ImageOptionalHeader64.LoadConfigTable.VirtualAddress), bytes, 256, out int BytesRead);
-                    if (BitConverter.ToUInt64(bytes, 88) > 0 || BitConverter.ToUInt64(bytes, 96) > 0)
-                    {
-                        ModuleSafeSEH = true;
-                    }
-                }
-                else
-                {
-                    ModuleFailed = true;
-                }
+            int offset;
+            if (!headers.TryRvaToFileOffset(headers.LoadConfigTableRva, out offset))
+            {
+                return;
+            }
+
+            // 72 bytes reaches the end of SEHandlerCount. Reading the whole directory,
+            // let alone the whole file, is unnecessary: ProcessInfo builds one of
+            // these per loaded module on every command.
+            byte[]? loadConfig = ReadAt(modulePath, offset, 72);
+
+            uint handlerTable;
+            uint handlerCount;
+
+            if (Utilities.PeHeaders.TryReadSafeSehFields(loadConfig, out handlerTable, out handlerCount))
+            {
+                SehHandlerTable = handlerTable;
+                SehHandlerCount = handlerCount;
             }
         }
 
-        private void PopulateConfigStruct()
+        /// <summary>
+        /// Reads <paramref name="count"/> bytes from <paramref name="offset"/>, or null.
+        /// </summary>
+        private static byte[]? ReadAt(string path, int offset, int count)
         {
-            // A module path always has a directory; GetDirectoryName only returns
-            // null for a root path.
-            string path = Path.GetDirectoryName(ModulePath) ?? string.Empty;
-            string name = Path.GetFileName(ModulePath);
-            
-            bool dll = true;
-
-            
-            if(Path.GetExtension(ModulePath) != ".dll" && Path.GetExtension(ModulePath) != ".DLL")
-            {
-                dll = false;
-            }
-
-            // Both of these acquire OS resources, and neither was ever released.
-            // A ProcessInfo builds a ModuleInfo per loaded module, and the plugin
-            // builds a ProcessInfo on every command, so a target with fifty modules
-            // leaked fifty mapped images per command for the life of the session.
-            var MaLRet = ModuleCore.Native.MapAndLoad(name, path, out loadedImage, dll, true);
-            var modPtr = ModuleCore.Native.ImageLoad(name, path);
-
             try
             {
-                if (ModuleMachineType == MachineType.I386)
+                using (var file = new FileStream(path, FileMode.Open, FileAccess.Read,
+                                                 FileShare.ReadWrite | FileShare.Delete))
                 {
-                    IMAGE_LOAD_CONFIG_DIRECTORY32 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY32();
-                    var check = ModuleCore.Native.GetImageConfigInformation32(ref loadedImage, ref ImageConfigDir);
-                }
-                else if (ModuleMachineType == MachineType.x64)
-                {
-                    IMAGE_LOAD_CONFIG_DIRECTORY64 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY64();
-                    var check = ModuleCore.Native.GetImageConfigInformation64(ref loadedImage, ref ImageConfigDir);
+                    if (offset < 0 || offset + count > file.Length)
+                    {
+                        return null;
+                    }
+
+                    file.Seek(offset, SeekOrigin.Begin);
+
+                    var buffer = new byte[count];
+                    int read = 0;
+
+                    while (read < count)
+                    {
+                        int got = file.Read(buffer, read, count - read);
+                        if (got == 0)
+                        {
+                            break;
+                        }
+
+                        read += got;
+                    }
+
+                    return read == count ? buffer : null;
                 }
             }
-            finally
+            catch (IOException)
             {
-                if (modPtr != IntPtr.Zero)
-                {
-                    ModuleCore.Native.ImageUnload(modPtr);
-                }
-
-                if (MaLRet != 0)
-                {
-                    ModuleCore.Native.UnMapAndLoad(ref loadedImage);
-                }
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
             }
         }
+
+        /// <summary>
+        /// Reads up to <paramref name="count"/> bytes from the start of a file.
+        /// </summary>
+        /// <remarks>
+        /// Loops because Stream.Read is permitted to return fewer bytes than asked
+        /// for, and returns exactly what it got rather than a fixed-size buffer with a
+        /// zeroed tail. The original ignored the count entirely, so a file shorter
+        /// than the buffer was parsed with zeros standing in for its headers.
+        /// </remarks>
+        private static byte[] ReadHeaderBytes(string path, int count)
+        {
+            using (var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            {
+                var buffer = new byte[count];
+                int read = 0;
+
+                while (read < count)
+                {
+                    int got = file.Read(buffer, read, count - read);
+                    if (got == 0)
+                    {
+                        break;
+                    }
+
+                    read += got;
+                }
+
+                if (read == count)
+                {
+                    return buffer;
+                }
+
+                var exact = new byte[read];
+                Array.Copy(buffer, exact, read);
+                return exact;
+            }
+        }
+
         #endregion
 
         #region SearchModule

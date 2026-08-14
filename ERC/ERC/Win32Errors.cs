@@ -4,6 +4,9 @@ using System.Runtime.InteropServices;
 
 namespace ERC.Utilities
 {
+    /// <summary>
+    /// Turns a Win32 error code into the message the OS gives for it.
+    /// </summary>
     public static class Win32Errors
     {
         #region definitions

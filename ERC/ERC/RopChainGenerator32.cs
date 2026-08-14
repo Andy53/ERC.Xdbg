@@ -49,8 +49,8 @@ namespace ERC.Utilities
         public List<Tuple<byte[], string>> WriteProcessMemoryChain = new List<Tuple<byte[], string>>();
 
         RopMethod Methods;
-        Dictionary<string, IntPtr> ApiAddresses = new Dictionary<string, IntPtr>();
-        List<IntPtr> RopNops = new List<IntPtr>();
+        internal Dictionary<string, IntPtr> ApiAddresses = new Dictionary<string, IntPtr>();
+        internal List<IntPtr> RopNops = new List<IntPtr>();
         List<byte[]> opcodes32 = new List<byte[]>();
         internal X86Lists x86Opcodes;
         internal X86Lists usableX86Opcodes;
@@ -204,51 +204,16 @@ namespace ERC.Utilities
 
             if(ptrsToExclude != null)
             {
-                usableX86Opcodes.pushEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEax, ptrsToExclude);
-                usableX86Opcodes.pushEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEbx, ptrsToExclude);
-                usableX86Opcodes.pushEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEcx, ptrsToExclude);
-                usableX86Opcodes.pushEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEdx, ptrsToExclude);
-                usableX86Opcodes.pushEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEsp, ptrsToExclude);
-                usableX86Opcodes.pushEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEbp, ptrsToExclude);
-                usableX86Opcodes.pushEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEsi, ptrsToExclude);
-                usableX86Opcodes.pushEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEdi, ptrsToExclude);
-                usableX86Opcodes.jmpEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.jmpEsp, ptrsToExclude);
-                usableX86Opcodes.callEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.callEsp, ptrsToExclude);
-                usableX86Opcodes.xorEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEax, ptrsToExclude);
-                usableX86Opcodes.xorEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEbx, ptrsToExclude);
-                usableX86Opcodes.xorEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEcx, ptrsToExclude);
-                usableX86Opcodes.xorEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEdx, ptrsToExclude);
-                usableX86Opcodes.xorEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEsi, ptrsToExclude);
-                usableX86Opcodes.xorEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEdi, ptrsToExclude);
-                usableX86Opcodes.popEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEax, ptrsToExclude);
-                usableX86Opcodes.popEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEbx, ptrsToExclude);
-                usableX86Opcodes.popEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEcx, ptrsToExclude);
-                usableX86Opcodes.popEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEdx, ptrsToExclude);
-                usableX86Opcodes.popEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEsp, ptrsToExclude);
-                usableX86Opcodes.popEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEbp, ptrsToExclude);
-                usableX86Opcodes.popEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEsi, ptrsToExclude);
-                usableX86Opcodes.popEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEdi, ptrsToExclude);
-                usableX86Opcodes.pushad = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushad, ptrsToExclude);
-                usableX86Opcodes.incEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEax, ptrsToExclude);
-                usableX86Opcodes.incEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEbx, ptrsToExclude);
-                usableX86Opcodes.incEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEcx, ptrsToExclude);
-                usableX86Opcodes.incEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEdx, ptrsToExclude);
-                usableX86Opcodes.incEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEbp, ptrsToExclude);
-                usableX86Opcodes.incEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEsp, ptrsToExclude);
-                usableX86Opcodes.incEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEsi, ptrsToExclude);
-                usableX86Opcodes.incEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEdi, ptrsToExclude);
-                usableX86Opcodes.decEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEax, ptrsToExclude);
-                usableX86Opcodes.decEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEbx, ptrsToExclude);
-                usableX86Opcodes.decEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEcx, ptrsToExclude);
-                usableX86Opcodes.decEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEdx, ptrsToExclude);
-                usableX86Opcodes.decEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEbp, ptrsToExclude);
-                usableX86Opcodes.decEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEsp, ptrsToExclude);
-                usableX86Opcodes.decEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEsi, ptrsToExclude);
-                usableX86Opcodes.decEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEdi, ptrsToExclude);
-                usableX86Opcodes.add = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.add, ptrsToExclude);
-                usableX86Opcodes.sub = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.sub, ptrsToExclude);
-                usableX86Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.mov, ptrsToExclude);
-                usableX86Opcodes.and = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.and, ptrsToExclude);
+            // Every list in the catalogue, rather than a hand-written line per
+            // list. Two of the 32-bit lists - jmpRax and callRax - were missing
+            // from both hand-written copies of this block, so an address holding
+            // a byte the user excluded could still be chosen, and jmpRax is
+            // written straight into the HeapCreate chain.
+            foreach (var list in GadgetCatalog.X86Lists)
+            {
+                list.Set(usableX86Opcodes, PtrRemover.RemovePointers(
+                    RcgInfo.ProcessMachineType, list.Get(usableX86Opcodes), ptrsToExclude));
+            }
             }
 
             DisplayOutput.RopChainGadgets32(this, true);
@@ -258,139 +223,28 @@ namespace ERC.Utilities
 
         #region GenerateRopChain32
         /// <summary>
-        /// Creates a RopChain for a specific process.
+        /// Creates a ROP chain for a specific process.
         /// </summary>
-        /// <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
-        /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
-        /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
-        /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain32(byte[] ptrsToExclude, byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
-        {
-            Methods = methods;
-            ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
-            x86Opcodes = new X86Lists();
-
-            var ret1 = GetApiAddresses(RcgInfo);
-            if (ret1.Error != null && ApiAddresses.Count <= 0)
-            {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret1.Error;
-                return failed;
-            }
-
-            if(excludes != null)
-            {
-                var ret2 = GetRopNops(excludes);
-                if (ret1.Error != null && RopNops.Count <= 0)
-                {
-                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                    failed.ReturnValue = "An error has occured, check log file for more details.";
-                    failed.Error = ret1.Error;
-                    return failed;
-                }
-            }
-            else
-            {
-                var ret2 = GetRopNops();
-                if (ret1.Error != null && RopNops.Count <= 0)
-                {
-                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                    failed.ReturnValue = "An error has occured, check log file for more details.";
-                    failed.Error = ret1.Error;
-                    return failed;
-                }
-            }
-
-            var ret3 = PopulateOpcodes(RcgInfo);
-            optimiseLists(RcgInfo);
-
-            usableX86Opcodes.pushEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEax, ptrsToExclude);
-            usableX86Opcodes.pushEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEbx, ptrsToExclude);
-            usableX86Opcodes.pushEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEcx, ptrsToExclude);
-            usableX86Opcodes.pushEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEdx, ptrsToExclude);
-            usableX86Opcodes.pushEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEsp, ptrsToExclude);
-            usableX86Opcodes.pushEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEbp, ptrsToExclude);
-            usableX86Opcodes.pushEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEsi, ptrsToExclude);
-            usableX86Opcodes.pushEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushEdi, ptrsToExclude);
-            usableX86Opcodes.jmpEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.jmpEsp, ptrsToExclude);
-            usableX86Opcodes.callEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.callEsp, ptrsToExclude);
-            usableX86Opcodes.xorEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEax, ptrsToExclude);
-            usableX86Opcodes.xorEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEbx, ptrsToExclude);
-            usableX86Opcodes.xorEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEcx, ptrsToExclude);
-            usableX86Opcodes.xorEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEdx, ptrsToExclude);
-            usableX86Opcodes.xorEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEsi, ptrsToExclude);
-            usableX86Opcodes.xorEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.xorEdi, ptrsToExclude);
-            usableX86Opcodes.popEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEax, ptrsToExclude);
-            usableX86Opcodes.popEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEbx, ptrsToExclude);
-            usableX86Opcodes.popEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEcx, ptrsToExclude);
-            usableX86Opcodes.popEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEdx, ptrsToExclude);
-            usableX86Opcodes.popEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEsp, ptrsToExclude);
-            usableX86Opcodes.popEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEbp, ptrsToExclude);
-            usableX86Opcodes.popEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEsi, ptrsToExclude);
-            usableX86Opcodes.popEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.popEdi, ptrsToExclude);
-            usableX86Opcodes.pushad = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.pushad, ptrsToExclude);
-            usableX86Opcodes.incEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEax, ptrsToExclude);
-            usableX86Opcodes.incEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEbx, ptrsToExclude);
-            usableX86Opcodes.incEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEcx, ptrsToExclude);
-            usableX86Opcodes.incEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEdx, ptrsToExclude);
-            usableX86Opcodes.incEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEbp, ptrsToExclude);
-            usableX86Opcodes.incEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEsp, ptrsToExclude);
-            usableX86Opcodes.incEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEsi, ptrsToExclude);
-            usableX86Opcodes.incEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.incEdi, ptrsToExclude);
-            usableX86Opcodes.decEax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEax, ptrsToExclude);
-            usableX86Opcodes.decEbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEbx, ptrsToExclude);
-            usableX86Opcodes.decEcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEcx, ptrsToExclude);
-            usableX86Opcodes.decEdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEdx, ptrsToExclude);
-            usableX86Opcodes.decEbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEbp, ptrsToExclude);
-            usableX86Opcodes.decEsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEsp, ptrsToExclude);
-            usableX86Opcodes.decEsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEsi, ptrsToExclude);
-            usableX86Opcodes.decEdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.decEdi, ptrsToExclude);
-            usableX86Opcodes.add = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.add, ptrsToExclude);
-            usableX86Opcodes.sub = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.sub, ptrsToExclude);
-            usableX86Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.mov, ptrsToExclude);
-            usableX86Opcodes.and = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX86Opcodes.and, ptrsToExclude);
-
-            if (Methods.HasFlag(RopMethod.VirtualAlloc))
-            {
-                var vpaChain = GenerateVirtualAllocChain32(RcgInfo, startAddress);
-                if (vpaChain.Error == null)
-                {
-                    VirtualAllocChain = vpaChain.ReturnValue;
-                }
-            }
-
-            if (Methods.HasFlag(RopMethod.HeapCreate))
-            {
-                var hcChain = GenerateHeapCreateChain32(RcgInfo);
-                if (hcChain.Error == null)
-                {
-                    HeapCreateChain = hcChain.ReturnValue;
-                }
-            }
-
-            if (Methods.HasFlag(RopMethod.VirtualProtect))
-            {
-                var vpChain = GenerateVirtualProtectChain32(RcgInfo);
-                if (vpChain.Error == null)
-                {
-                    VirtualProtectChain = vpChain.ReturnValue;
-                }
-            }
-
-            var output = DisplayOutput.RopChainGadgets32(this);
-            RopChain.ReturnValue = String.Join("\n", output);
-            return RopChain;
-        }
-
-        /// <summary>
-        /// Creates a RopChain for a specific process.
-        /// </summary>
-        /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable.</param>
+        /// <param name="startAddress">An address to be used as the start location for which memory will be made executable.</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets.</param>
         /// <param name="methods">Enum value representing which methods to build rop chains with.</param>
-        /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain32(byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
+        /// <param name="ptrsToExclude">Bytes which disqualify a gadget: any gadget whose address contains one is left out.</param>
+        /// <returns>Returns an ErcResult string containing the chain.</returns>
+        /// <remarks>
+        /// One method where there were two overloads. They were identical apart from
+        /// the block that applies ptrsToExclude, and their first positional parameter
+        /// meant "bytes to exclude" in one and "start address" in the other.
+        ///
+        /// That was not merely confusing. The plugin called this as
+        /// GenerateRopChain32(session.Bytes, excludes), which bound to the overload
+        /// taking startAddress first - so the user's bad-character list was passed as
+        /// the address to make executable, and the bad characters were never excluded
+        /// from the chain at all. A one-argument call did not compile at all: it was
+        /// ambiguous between the two.
+        /// </remarks>
+        public ErcResult<string> GenerateRopChain32(byte[]? startAddress = null,
+            List<string>? excludes = null, RopMethod methods = RopMethod.All,
+            byte[]? ptrsToExclude = null)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -431,6 +285,17 @@ namespace ERC.Utilities
             var ret3 = PopulateOpcodes(RcgInfo);
             optimiseLists(RcgInfo);
 
+            // Every list in the catalogue, rather than a hand-written line per
+            // list. Two of the 32-bit lists - jmpRax and callRax - were missing
+            // from both hand-written copies of this block, so an address holding
+            // a byte the user excluded could still be chosen, and jmpRax is
+            // written straight into the HeapCreate chain.
+            foreach (var list in GadgetCatalog.X86Lists)
+            {
+                list.Set(usableX86Opcodes, PtrRemover.RemovePointers(
+                    RcgInfo.ProcessMachineType, list.Get(usableX86Opcodes), ptrsToExclude));
+            }
+
             if (Methods.HasFlag(RopMethod.VirtualAlloc))
             {
                 var vpaChain = GenerateVirtualAllocChain32(RcgInfo, startAddress);
@@ -462,6 +327,7 @@ namespace ERC.Utilities
             RopChain.ReturnValue = String.Join("\n", output);
             return RopChain;
         }
+
         #endregion
 
         #region GetApiAddresses
@@ -1057,56 +923,19 @@ namespace ERC.Utilities
         private void optimiseLists(ProcessInfo info)
         {
             usableX86Opcodes = new X86Lists();
-            usableX86Opcodes.pushEax = RopGadgetFilter.SelectUsable(x86Opcodes.pushEax, "push eax", true);
-            usableX86Opcodes.pushEbx = RopGadgetFilter.SelectUsable(x86Opcodes.pushEbx, "push ebx", true);
-            usableX86Opcodes.pushEcx = RopGadgetFilter.SelectUsable(x86Opcodes.pushEcx, "push ecx", true);
-            usableX86Opcodes.pushEdx = RopGadgetFilter.SelectUsable(x86Opcodes.pushEdx, "push edx", true);
-            usableX86Opcodes.pushEsp = RopGadgetFilter.SelectUsable(x86Opcodes.pushEsp, "push esp", true);
-            usableX86Opcodes.pushEbp = RopGadgetFilter.SelectUsable(x86Opcodes.pushEbp, "push ebp", true);
-            usableX86Opcodes.pushEsi = RopGadgetFilter.SelectUsable(x86Opcodes.pushEsi, "push esi", true);
-            usableX86Opcodes.pushEdi = RopGadgetFilter.SelectUsable(x86Opcodes.pushEdi, "push edi", true);
-            usableX86Opcodes.jmpEsp = RopGadgetFilter.SelectUsable(x86Opcodes.jmpEsp, "jmp esp", false);
-            usableX86Opcodes.callEsp = RopGadgetFilter.SelectUsable(x86Opcodes.callEsp, "call esp", false);
-            usableX86Opcodes.xorEax = RopGadgetFilter.SelectUsable(x86Opcodes.xorEax, "xor eax", false);
-            usableX86Opcodes.xorEbx = RopGadgetFilter.SelectUsable(x86Opcodes.xorEbx, "xor ebx", false);
-            usableX86Opcodes.xorEcx = RopGadgetFilter.SelectUsable(x86Opcodes.xorEcx, "xor ecx", false);
-            usableX86Opcodes.xorEdx = RopGadgetFilter.SelectUsable(x86Opcodes.xorEdx, "xor edx", false);
-            usableX86Opcodes.xorEsi = RopGadgetFilter.SelectUsable(x86Opcodes.xorEsi, "xor esi", false);
-            usableX86Opcodes.xorEdi = RopGadgetFilter.SelectUsable(x86Opcodes.xorEdi, "xor edi", false);
-            usableX86Opcodes.popEax = RopGadgetFilter.SelectUsable(x86Opcodes.popEax, "pop eax", true);
-            usableX86Opcodes.popEbx = RopGadgetFilter.SelectUsable(x86Opcodes.popEbx, "pop ebx", true);
-            usableX86Opcodes.popEcx = RopGadgetFilter.SelectUsable(x86Opcodes.popEcx, "pop ecx", true);
-            usableX86Opcodes.popEdx = RopGadgetFilter.SelectUsable(x86Opcodes.popEdx, "pop edx", true);
-            usableX86Opcodes.popEsp = RopGadgetFilter.SelectUsable(x86Opcodes.popEsp, "pop esp", true);
-            usableX86Opcodes.popEbp = RopGadgetFilter.SelectUsable(x86Opcodes.popEbp, "pop ebp", true);
-            usableX86Opcodes.popEsi = RopGadgetFilter.SelectUsable(x86Opcodes.popEsi, "pop esi", true);
-            usableX86Opcodes.popEdi = RopGadgetFilter.SelectUsable(x86Opcodes.popEdi, "pop edi", true);
-            usableX86Opcodes.pushad = RopGadgetFilter.SelectUsable(x86Opcodes.pushad, "pusha", true);   // "pusha" matches both renderings; see DisassemblyContractTests
-            usableX86Opcodes.incEax = RopGadgetFilter.SelectUsable(x86Opcodes.incEax, "inc eax", false);
-            usableX86Opcodes.incEbx = RopGadgetFilter.SelectUsable(x86Opcodes.incEbx, "inc ebx", false);
-            usableX86Opcodes.incEcx = RopGadgetFilter.SelectUsable(x86Opcodes.incEcx, "inc ecx", false);
-            usableX86Opcodes.incEdx = RopGadgetFilter.SelectUsable(x86Opcodes.incEdx, "inc edx", false);
-            usableX86Opcodes.incEbp = RopGadgetFilter.SelectUsable(x86Opcodes.incEbp, "inc ebp", false);
-            usableX86Opcodes.incEsp = RopGadgetFilter.SelectUsable(x86Opcodes.incEsp, "inc esp", false);
-            usableX86Opcodes.incEsi = RopGadgetFilter.SelectUsable(x86Opcodes.incEsi, "inc esi", false);
-            usableX86Opcodes.incEdi = RopGadgetFilter.SelectUsable(x86Opcodes.incEdi, "inc edi", false);
-            usableX86Opcodes.decEax = RopGadgetFilter.SelectUsable(x86Opcodes.decEax, "dec eax", false);
-            usableX86Opcodes.decEbx = RopGadgetFilter.SelectUsable(x86Opcodes.decEbx, "dec ebx", false);
-            usableX86Opcodes.decEcx = RopGadgetFilter.SelectUsable(x86Opcodes.decEcx, "dec ecx", false);
-            usableX86Opcodes.decEdx = RopGadgetFilter.SelectUsable(x86Opcodes.decEdx, "dec edx", false);
-            usableX86Opcodes.decEbp = RopGadgetFilter.SelectUsable(x86Opcodes.decEbp, "dec ebp", false);
-            usableX86Opcodes.decEsp = RopGadgetFilter.SelectUsable(x86Opcodes.decEsp, "dec esp", false);
-            usableX86Opcodes.decEsi = RopGadgetFilter.SelectUsable(x86Opcodes.decEsi, "dec esi", false);
-            usableX86Opcodes.decEdi = RopGadgetFilter.SelectUsable(x86Opcodes.decEdi, "dec edi", false);
-            usableX86Opcodes.add = RopGadgetFilter.SelectUsable(x86Opcodes.add, "add", true);
-            usableX86Opcodes.sub = RopGadgetFilter.SelectUsable(x86Opcodes.sub, "sub", true);
-            usableX86Opcodes.mov = RopGadgetFilter.SelectUsable(x86Opcodes.mov, "mov", true);
-            usableX86Opcodes.and = RopGadgetFilter.SelectUsable(x86Opcodes.and, "and", false);
+            // The mnemonic and the numeric-operand rule for each list live in
+            // GadgetCatalog, so this is the same loop for both architectures
+            // rather than one line per list written out 45 times.
+            foreach (var list in GadgetCatalog.X86Lists)
+            {
+                list.Set(usableX86Opcodes, RopGadgetFilter.SelectUsable(
+                    list.Get(x86Opcodes), list.Mnemonic, list.ExcludeNumericOperands));
+            }
         }
         #endregion
 
         #region GenerateVirtualAllocChain32
-        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain32(ProcessInfo info, byte[]? startAddress = null)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain32(ProcessInfo info, byte[]? startAddress = null)
         {
             ////////////////////////////////////////////////////////////////
             // VirtualAlloc Template:                                     //
@@ -1140,120 +969,19 @@ namespace ERC.Utilities
             {
                 byte[] nulls = new byte[] { 0x00, 0x00, 0x00, 0x00 };
                 
-                #region Populate EDI
+                // EDI holds a ROP NOP.
                 if (!regState32.HasFlag(Register32.EDI))
                 {
-                    regLists32.ediList = null;
-                    regLists32.ediList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX86Opcodes.popEdi.Count; i++)
-                    {
-                        if (!regState32.HasFlag(Register32.EDI))
-                        {
-                            if (usableX86Opcodes.popEdi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEdi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEdi.ElementAt(i).Key)),
-                                    usableX86Opcodes.popEdi.ElementAt(i).Value));
-                                regState32 |= Register32.EDI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX86Opcodes.popEdi.Count;
-                        }
-                    }
-                    foreach (Register32 i in Enum.GetValues(typeof(Register32)))
-                    {
-                        if (!regState32.HasFlag(Register32.EDI))
-                        {
-                            var popInstruction = GetPopInstruction(Register32.EDI, i, regModified32);
-                            if (popInstruction != null)
-                            {
-                                var movInstruction = GetMovInstruction(Register32.EDI, i);
-                                if (movInstruction != null)
-                                {
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
-                                    SetRegisterModifier(Register32.EDI, i, regModified32);
-                                    regState32 &= ~i;
-                                    regState32 |= Register32.EDI;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if (!regState32.HasFlag(Register32.EDI))
-                    {
-                        regLists32.ediList = null;
-                        regLists32.ediList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                        regLists32.ediList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. EDI must be allocated manually"));
-                        regState32 |= Register32.EDI;
-                    }
+                    PopulateRegister(Register32.EDI, usableX86Opcodes.popEdi, RopNopEntry(),
+                        regLists32.ediList, ref regState32, regModified32);
                 }
-                #endregion
                 
-                #region Populate ESI
+                // ESI holds VirtualAlloc.
                 if (!regState32.HasFlag(Register32.ESI))
                 {
-                    regLists32.esiList = null;
-                    regLists32.esiList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX86Opcodes.popEsi.Count; i++)
-                    {
-                        if (!regState32.HasFlag(Register32.ESI))
-                        {
-                            if (usableX86Opcodes.popEsi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEsi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEsi.ElementAt(i).Key)),
-                                    usableX86Opcodes.popEsi.ElementAt(i).Value));
-                                regState32 |= Register32.ESI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX86Opcodes.popEsi.Count;
-                        }
-                    }
-                    if (!regState32.HasFlag(Register32.ESI))
-                    {
-                        foreach (Register32 i in Enum.GetValues(typeof(Register32)))
-                        {
-                            if (!regState32.HasFlag(Register32.ESI))
-                            {
-                                var popInstruction = GetPopInstruction(Register32.ESI, i, regModified32);
-                                if (popInstruction != null)
-                                {
-                                    var movInstruction = GetMovInstruction(Register32.ESI, i);
-                                    if (movInstruction != null)
-                                    {
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                        SetRegisterModifier(Register32.ESI, i, regModified32);
-                                        regState32 &= ~i;
-                                        regState32 |= Register32.ESI;
-                                    }
-                                }
-                            }
-                        }
-                        if (!regState32.HasFlag(Register32.ESI))
-                        {
-                            regLists32.esiList = null;
-                            regLists32.esiList = new List<Tuple<byte[], string>>();
-                            byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                            regLists32.esiList.Add(Tuple.Create(nullBytes,
-                                "Unable to find appropriate instruction. ESI must be allocated manually"));
-                            regState32 |= Register32.ESI;
-                        }
-                    }
+                    PopulateRegister(Register32.ESI, usableX86Opcodes.popEsi, ApiPointer("VirtualAlloc"),
+                        regLists32.esiList, ref regState32, regModified32);
                 }
-                #endregion
 
                 #region Populate EBP
                 if (!regState32.HasFlag(Register32.EBP))
@@ -1346,7 +1074,14 @@ namespace ERC.Utilities
                     var xorEbx = GetXorInstruction(Register32.EBX);
                     if (xorEbx != null)
                     {
-                        regLists32.ebxList.Add(Tuple.Create(xorEbx.Item1, xorEbx.Item2));
+                        // Narrowed to a 32-bit stack slot, as every other site does.
+                        // GetXorInstruction returns eight bytes like its siblings, and
+                        // three of the five places that consume it forgot to narrow the
+                        // result. A chain is written onto the stack a slot at a time, so
+                        // an eight-byte entry on x86 pushes four bytes too many and every
+                        // entry after it lands one slot out.
+                        regLists32.ebxList.Add(Tuple.Create(
+                            ErcCore.X64toX32PointerModifier(xorEbx.Item1), xorEbx.Item2));
                         if (usableX86Opcodes.incEbx.Count > 0)
                         {
                             if (usableX86Opcodes.incEbx.ElementAt(0).Value.Length <= 14)
@@ -1441,7 +1176,8 @@ namespace ERC.Utilities
                                     {
                                         byte[] add1 = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
                                         byte[] add2 = new byte[] { 0x01, 0x11, 0x01, 0x01 };
-                                        regLists32.edxList.Add(Tuple.Create(xorEDX.Item1, xorEDX.Item2));
+                                        regLists32.edxList.Add(Tuple.Create(
+                                            ErcCore.X64toX32PointerModifier(xorEDX.Item1), xorEDX.Item2));
                                         
                                         regLists32.edxList.Add(Tuple.Create(add1, "To be placed into " + addInstruction.Item3.ToString()));
                                         regLists32.edxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
@@ -1669,7 +1405,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GenerateHeapCreateChain32
-        private ErcResult<List<Tuple<byte[], string>>> GenerateHeapCreateChain32(ProcessInfo info)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateHeapCreateChain32(ProcessInfo info)
         {
             ////////////////////////////////////////////////////////////////
             // HeapCreate Template:                                       //
@@ -1699,120 +1435,19 @@ namespace ERC.Utilities
 
             while (!CompleteRegisters32(regState32))
             {
-                #region Populate EDI
+                // EDI holds a ROP NOP.
                 if (!regState32.HasFlag(Register32.EDI))
                 {
-                    regLists32.ediList = null;
-                    regLists32.ediList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX86Opcodes.popEdi.Count; i++)
-                    {
-                        if (!regState32.HasFlag(Register32.EDI))
-                        {
-                            if (usableX86Opcodes.popEdi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEdi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEdi.ElementAt(i).Key)),
-                                    usableX86Opcodes.popEdi.ElementAt(i).Value));
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
-                                regState32 |= Register32.EDI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX86Opcodes.popEdi.Count;
-                        }
-                    }
-                    foreach (Register32 i in Enum.GetValues(typeof(Register32)))
-                    {
-                        if (!regState32.HasFlag(Register32.EDI))
-                        {
-                            var popInstruction = GetPopInstruction(Register32.EDI, i, regModified32);
-                            if (popInstruction != null)
-                            {
-                                var movInstruction = GetMovInstruction(Register32.EDI, i);
-                                if (movInstruction != null)
-                                {
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                    SetRegisterModifier(Register32.EDI, i, regModified32);
-                                    regState32 &= ~i;
-                                    regState32 |= Register32.EDI;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if (!regState32.HasFlag(Register32.EDI))
-                    {
-                        regLists32.ediList = null;
-                        regLists32.ediList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                        regLists32.ediList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. EDI must be allocated manually"));
-                        regState32 |= Register32.EDI;
-                    }
+                    PopulateRegister(Register32.EDI, usableX86Opcodes.popEdi, RopNopEntry(),
+                        regLists32.ediList, ref regState32, regModified32);
                 }
-                #endregion
 
-                #region Populate ESI
+                // ESI holds HeapCreate.
                 if (!regState32.HasFlag(Register32.ESI))
                 {
-                    regLists32.esiList = null;
-                    regLists32.esiList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX86Opcodes.popEsi.Count; i++)
-                    {
-                        if (!regState32.HasFlag(Register32.ESI))
-                        {
-                            if (usableX86Opcodes.popEsi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEsi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEsi.ElementAt(i).Key)),
-                                    usableX86Opcodes.popEsi.ElementAt(i).Value));
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["HeapCreate"])), "Pointer to HeapCreate."));
-                                regState32 |= Register32.ESI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX86Opcodes.popEsi.Count;
-                        }
-                    }
-                    if (!regState32.HasFlag(Register32.ESI))
-                    {
-                        foreach (Register32 i in Enum.GetValues(typeof(Register32)))
-                        {
-                            if (!regState32.HasFlag(Register32.ESI))
-                            {
-                                var popInstruction = GetPopInstruction(Register32.ESI, i, regModified32);
-                                if (popInstruction != null)
-                                {
-                                    var movInstruction = GetMovInstruction(Register32.ESI, i);
-                                    if (movInstruction != null)
-                                    {
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["HeapCreate"])), "Pointer to HeapCreate."));
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                        SetRegisterModifier(Register32.ESI, i, regModified32);
-                                        regState32 &= ~i;
-                                        regState32 |= Register32.ESI;
-                                    }
-                                }
-                            }
-                        }
-                        if (!regState32.HasFlag(Register32.ESI))
-                        {
-                            regLists32.esiList = null;
-                            regLists32.esiList = new List<Tuple<byte[], string>>();
-                            byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                            regLists32.esiList.Add(Tuple.Create(nullBytes,
-                                "Unable to find appropriate instruction. ESI must be allocated manually"));
-                            regState32 |= Register32.ESI;
-                        }
-                    }
+                    PopulateRegister(Register32.ESI, usableX86Opcodes.popEsi, ApiPointer("HeapCreate"),
+                        regLists32.esiList, ref regState32, regModified32);
                 }
-                #endregion
 
                 #region Populate EBP
                 if (!regState32.HasFlag(Register32.EBP))
@@ -2134,7 +1769,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GenerateVirtualProtectChain32
-        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualProtectChain32(ProcessInfo info)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateVirtualProtectChain32(ProcessInfo info)
         {
             ////////////////////////////////////////////////////////////////
             // VirtualProtect Template:                                   //
@@ -2166,120 +1801,19 @@ namespace ERC.Utilities
 
             while (!CompleteRegisters32(regState32))
             {
-                #region Populate EDI
+                // EDI holds a ROP NOP.
                 if (!regState32.HasFlag(Register32.EDI))
                 {
-                    regLists32.ediList = null;
-                    regLists32.ediList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX86Opcodes.popEdi.Count; i++)
-                    {
-                        if (!regState32.HasFlag(Register32.EDI))
-                        {
-                            if (usableX86Opcodes.popEdi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEdi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEdi.ElementAt(i).Key)),
-                                    usableX86Opcodes.popEdi.ElementAt(i).Value));
-                                regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
-                                regState32 |= Register32.EDI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX86Opcodes.popEdi.Count;
-                        }
-                    }
-                    foreach (Register32 i in Enum.GetValues(typeof(Register32)))
-                    {
-                        if (!regState32.HasFlag(Register32.EDI))
-                        {
-                            var popInstruction = GetPopInstruction(Register32.EDI, i, regModified32);
-                            if (popInstruction != null)
-                            {
-                                var movInstruction = GetMovInstruction(Register32.EDI, i);
-                                if (movInstruction != null)
-                                {
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP"));
-                                    regLists32.ediList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                    SetRegisterModifier(Register32.EDI, i, regModified32);
-                                    regState32 &= ~i;
-                                    regState32 |= Register32.EDI;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    if (!regState32.HasFlag(Register32.EDI))
-                    {
-                        regLists32.ediList = null;
-                        regLists32.ediList = new List<Tuple<byte[], string>>();
-                        byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                        regLists32.ediList.Add(Tuple.Create(nullBytes,
-                            "Unable to find appropriate instruction. EDI must be allocated manually"));
-                        regState32 |= Register32.EDI;
-                    }
+                    PopulateRegister(Register32.EDI, usableX86Opcodes.popEdi, RopNopEntry(),
+                        regLists32.ediList, ref regState32, regModified32);
                 }
-                #endregion
 
-                #region Populate ESI
+                // ESI holds VirtualProtect.
                 if (!regState32.HasFlag(Register32.ESI))
                 {
-                    regLists32.esiList = null;
-                    regLists32.esiList = new List<Tuple<byte[], string>>();
-                    for (int i = 0; i < usableX86Opcodes.popEsi.Count; i++)
-                    {
-                        if (!regState32.HasFlag(Register32.ESI))
-                        {
-                            if (usableX86Opcodes.popEsi.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEsi.ElementAt(i).Value.Contains("invalid"))
-                            {
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.popEsi.ElementAt(i).Key)),
-                                    usableX86Opcodes.popEsi.ElementAt(i).Value));
-                                regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
-                                regState32 |= Register32.ESI;
-                            }
-                        }
-                        else
-                        {
-                            i = usableX86Opcodes.popEsi.Count;
-                        }
-                    }
-                    if (!regState32.HasFlag(Register32.ESI))
-                    {
-                        foreach (Register32 i in Enum.GetValues(typeof(Register32)))
-                        {
-                            if (!regState32.HasFlag(Register32.ESI))
-                            {
-                                var popInstruction = GetPopInstruction(Register32.ESI, i, regModified32);
-                                if (popInstruction != null)
-                                {
-                                    var movInstruction = GetMovInstruction(Register32.ESI, i);
-                                    if (movInstruction != null)
-                                    {
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"])), "Pointer to VirtualAlloc."));
-                                        regLists32.esiList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                        SetRegisterModifier(Register32.ESI, i, regModified32);
-                                        regState32 &= ~i;
-                                        regState32 |= Register32.ESI;
-                                    }
-                                }
-                            }
-                        }
-                        if (!regState32.HasFlag(Register32.ESI))
-                        {
-                            regLists32.esiList = null;
-                            regLists32.esiList = new List<Tuple<byte[], string>>();
-                            byte[] nullBytes = new byte[] { 0x00, 0x00, 0x00, 0x00 };
-                            regLists32.esiList.Add(Tuple.Create(nullBytes,
-                                "Unable to find appropriate instruction. ESI must be allocated manually"));
-                            regState32 |= Register32.ESI;
-                        }
-                    }
+                    PopulateRegister(Register32.ESI, usableX86Opcodes.popEsi, ApiPointer("VirtualProtect"),
+                        regLists32.esiList, ref regState32, regModified32);
                 }
-                #endregion
 
                 #region Populate EBP
                 if (!regState32.HasFlag(Register32.EBP))
@@ -2367,7 +1901,14 @@ namespace ERC.Utilities
                     var xorEbx = GetXorInstruction(Register32.EBX);
                     if (xorEbx != null)
                     {
-                        regLists32.ebxList.Add(Tuple.Create(xorEbx.Item1, xorEbx.Item2));
+                        // Narrowed to a 32-bit stack slot, as every other site does.
+                        // GetXorInstruction returns eight bytes like its siblings, and
+                        // three of the five places that consume it forgot to narrow the
+                        // result. A chain is written onto the stack a slot at a time, so
+                        // an eight-byte entry on x86 pushes four bytes too many and every
+                        // entry after it lands one slot out.
+                        regLists32.ebxList.Add(Tuple.Create(
+                            ErcCore.X64toX32PointerModifier(xorEbx.Item1), xorEbx.Item2));
                         if (usableX86Opcodes.incEbx.Count > 0)
                         {
                             if (usableX86Opcodes.incEbx.ElementAt(0).Value.Length <= 14)
@@ -2551,24 +2092,48 @@ namespace ERC.Utilities
                             }
                             else if (usableX86Opcodes.pushEsp.Count > 0 && usableX86Opcodes.popEcx.Count > 0)
                             {
+                                // VirtualProtect wants ECX holding a copy of ESP, and
+                                // "push esp" followed by "pop ecx" is how this gets
+                                // there when no mov gadget was found.
+                                //
+                                // Three things were wrong with this block, and it could
+                                // only ever throw. It is reached precisely when
+                                // movInstruction is null, and both loops then
+                                // dereferenced movInstruction - so a target with no
+                                // "mov ecx, esp" crashed the whole command with a
+                                // NullReferenceException. Had it survived that, both
+                                // loops added the mov gadget rather than the push and
+                                // the pop they had just found, and the second loop set
+                                // the "pushEsp" flag instead of "popEcx", so the branch
+                                // below that marks ECX satisfied was unreachable.
                                 bool pushEsp = false;
                                 bool popEcx = false;
-                                for(int i = 0; i < usableX86Opcodes.pushEsp.Count; i++)
+
+                                for (int i = 0; i < usableX86Opcodes.pushEsp.Count; i++)
                                 {
-                                    if (usableX86Opcodes.pushEsp.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.pushEsp.ElementAt(i).Value.Contains("invalid"))
+                                    KeyValuePair<IntPtr, string> gadget = usableX86Opcodes.pushEsp.ElementAt(i);
+
+                                    if (gadget.Value.Length <= 14 && !gadget.Value.Contains("invalid"))
                                     {
-                                        regLists32.ecxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
+                                        regLists32.ecxList.Add(Tuple.Create(
+                                            ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)gadget.Key)),
+                                            gadget.Value));
                                         pushEsp = true;
-                                        i = usableX86Opcodes.pushEsp.Count + 1;
+                                        break;
                                     }
                                 }
+
                                 for (int i = 0; i < usableX86Opcodes.popEcx.Count; i++)
                                 {
-                                    if (usableX86Opcodes.popEcx.ElementAt(i).Value.Length <= 14 && !usableX86Opcodes.popEcx.ElementAt(i).Value.Contains("invalid"))
+                                    KeyValuePair<IntPtr, string> gadget = usableX86Opcodes.popEcx.ElementAt(i);
+
+                                    if (gadget.Value.Length <= 14 && !gadget.Value.Contains("invalid"))
                                     {
-                                        regLists32.ecxList.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
-                                        pushEsp = true;
-                                        i = usableX86Opcodes.popEcx.Count + 1;
+                                        regLists32.ecxList.Add(Tuple.Create(
+                                            ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)gadget.Key)),
+                                            gadget.Value));
+                                        popEcx = true;
+                                        break;
                                     }
                                 }
                                 if (pushEsp == true && popEcx == true)
@@ -2665,7 +2230,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GenerateWriteProcessMemoryChain32
-        private ErcResult<List<Tuple<byte[], string>>> GenerateWriteProcessMemoryChain32(ProcessInfo info, byte[] startAddress)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateWriteProcessMemoryChain32(ProcessInfo info, byte[] startAddress)
         {
             return null;
         }
@@ -2749,15 +2314,158 @@ namespace ERC.Utilities
             ret.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.pushad.ElementAt(0).Key)), 
                 usableX86Opcodes.pushad.ElementAt(0).Value));
 
-            if(addJmpEsp == true)
+            if (addJmpEsp == true)
             {
-                ret.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.jmpEsp.ElementAt(0).Key)),
-                    usableX86Opcodes.jmpEsp.ElementAt(0).Value));
+                // Guarded, as the pushad above it already was. ElementAt(0) on an
+                // empty list throws ArgumentOutOfRangeException, and the list being
+                // empty is the ordinary case rather than a strange one: a target with
+                // no "jmp esp" outside a module the user excluded, or none whose
+                // address survives the bad-character filter, produces exactly this.
+                // The whole --rop command then failed with an argument error that
+                // named nothing the user could act on.
+                if (usableX86Opcodes.jmpEsp.Count > 0)
+                {
+                    ret.Add(Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)usableX86Opcodes.jmpEsp.ElementAt(0).Key)),
+                        usableX86Opcodes.jmpEsp.ElementAt(0).Value));
+                }
+                else
+                {
+                    ret.Add(Tuple.Create(new byte[] { 0x00, 0x00, 0x00, 0x00 },
+                        "Unable to find a \"jmp esp\" gadget. This must be supplied manually."));
+                }
             }
 
             return ret;
         }
         #endregion 
+
+        /// <summary>
+        /// A stack entry holding a ROP nop, or a marked gap.
+        /// </summary>
+        /// <remarks>
+        /// RopNops[0] was indexed directly at every site that needed one. The caller
+        /// only fails when GetRopNops both errored and found nothing, so a run that
+        /// quietly found no ROP nop reached here and threw IndexOutOfRangeException.
+        /// </remarks>
+        private Tuple<byte[], string> RopNopEntry()
+        {
+            return RopNops.Count > 0
+                ? Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)RopNops[0])), "ROP NOP")
+                : Tuple.Create(new byte[4], "Unable to find a ROP NOP. This must be supplied manually.");
+        }
+
+        /// <summary>
+        /// Places a value in a register, by whatever route the available gadgets allow.
+        /// </summary>
+        /// <param name="target">The register to populate.</param>
+        /// <param name="popList">Gadgets that pop directly into <paramref name="target"/>.</param>
+        /// <param name="value">The value to leave in the register, and its label.</param>
+        /// <param name="destination">The chain fragment for this register.</param>
+        /// <param name="regState32">Which registers are already satisfied.</param>
+        /// <param name="regModified32">Which registers each gadget disturbs.</param>
+        /// <remarks>
+        /// Three routes, tried in order: pop the value straight into the register;
+        /// pop it into another register and move it across; or give up and leave a
+        /// marked gap for the user to fill.
+        ///
+        /// This was written out once per register per chain. Collapsing the copies
+        /// exposed that they did not agree: the HeapCreate and VirtualProtect chains
+        /// emitted the gadget and then the value, while VirtualAlloc emitted them the
+        /// other way round.
+        ///
+        /// Gadget first is the correct order. A chain is executed by returning into
+        /// each address in turn, so "pop esi" runs first and consumes the slot that
+        /// follows it. With the value placed first, "pop esi" instead consumed
+        /// whatever came after the gadget, and EDI and ESI in every VirtualAlloc chain
+        /// were loaded with the wrong values.
+        /// </remarks>
+        private void PopulateRegister(
+            Register32 target,
+            Dictionary<IntPtr, string> popList,
+            Tuple<byte[], string> value,
+            List<Tuple<byte[], string>> destination,
+            ref Register32 regState32,
+            RegisterModifiers32 regModified32)
+        {
+            destination.Clear();
+
+            // A gadget longer than this has too much going on to be relied upon, and
+            // one the disassembler could not read cannot be reasoned about at all.
+            foreach (KeyValuePair<IntPtr, string> gadget in popList)
+            {
+                if (gadget.Value.Length <= 14 && !gadget.Value.Contains("invalid"))
+                {
+                    // Gadget then value: the pop consumes the slot after itself.
+                    destination.Add(Tuple.Create(
+                        ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)gadget.Key)),
+                        gadget.Value));
+                    destination.Add(value);
+                    regState32 |= target;
+                    break;
+                }
+            }
+
+            if (!regState32.HasFlag(target))
+            {
+                foreach (Register32 source in Enum.GetValues(typeof(Register32)))
+                {
+                    Tuple<byte[], string, Register32>? popInstruction =
+                        GetPopInstruction(target, source, regModified32);
+
+                    if (popInstruction == null)
+                    {
+                        continue;
+                    }
+
+                    Tuple<byte[], string, Register32>? movInstruction = GetMovInstruction(target, source);
+
+                    if (movInstruction == null)
+                    {
+                        continue;
+                    }
+
+                    // Pop the value into the source register, then move it across.
+                    destination.Add(Tuple.Create(
+                        ErcCore.X64toX32PointerModifier(popInstruction.Item1), popInstruction.Item2));
+                    destination.Add(value);
+                    destination.Add(Tuple.Create(
+                        ErcCore.X64toX32PointerModifier(movInstruction.Item1), movInstruction.Item2));
+
+                    SetRegisterModifier(target, source, regModified32);
+                    regState32 &= ~source;
+                    regState32 |= target;
+                    break;
+                }
+            }
+
+            if (!regState32.HasFlag(target))
+            {
+                destination.Clear();
+                destination.Add(Tuple.Create(new byte[4],
+                    "Unable to find appropriate instruction. " + target + " must be allocated manually"));
+                regState32 |= target;
+            }
+        }
+
+        /// <summary>
+        /// A stack entry holding the address of an API, or a marked gap.
+        /// </summary>
+        /// <remarks>
+        /// The indexer this replaces throws KeyNotFoundException when that particular
+        /// API could not be resolved. The caller only checks that the dictionary is
+        /// non-empty, so resolving three of the four was enough to reach this and
+        /// fail.
+        /// </remarks>
+        private Tuple<byte[], string> ApiPointer(string name)
+        {
+            IntPtr address;
+
+            return ApiAddresses.TryGetValue(name, out address)
+                ? Tuple.Create(ErcCore.X64toX32PointerModifier(BitConverter.GetBytes((long)address)),
+                    "Pointer to " + name + ".")
+                : Tuple.Create(new byte[4],
+                    "Unable to resolve " + name + ". This address must be supplied manually.");
+        }
 
         #region CalculateAddInstructions32 (Needs Work)
         private byte[] CalculateAddInstructions32(int size)
@@ -3417,10 +3125,15 @@ namespace ERC.Utilities
         [Flags]
         public enum RopMethod : ushort
         {
+            /// <summary>Allocate a new executable region with VirtualAlloc and return into it.</summary>
             [Description(" VirtualAlloc")]          VirtualAlloc        = 1, 
+            /// <summary>Create an executable heap with HeapCreate and return into it.</summary>
             [Description(" HeapCreate")]            HeapCreate          = 2, 
+            /// <summary>Mark the existing region executable with VirtualProtect.</summary>
             [Description(" VirtualProtect")]        VirtualProtect      = 4, 
+            /// <summary>Write the payload over existing executable memory with WriteProcessMemory.</summary>
             [Description(" WriteProcessMemory")]    WriteProcessMemory  = 8, 
+            /// <summary>Attempt every method and return whichever chains could be built.</summary>
             [Description(" All")]                   All                 = 15  
         }
     }

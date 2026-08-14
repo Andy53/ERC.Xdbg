@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -59,6 +59,7 @@ namespace ERC.Output
             return matches[0];
         }
 
+        /// <inheritdoc/>
         public string NextFilePath(string directory, string prefix, string extension)
         {
             string key = prefix + extension;
@@ -70,12 +71,14 @@ namespace ERC.Output
             return Path.Combine(directory ?? string.Empty, prefix + next.ToString() + extension);
         }
 
+        /// <inheritdoc/>
         public bool WriteText(string path, string content)
         {
             _files[path] = content ?? string.Empty;
             return true;
         }
 
+        /// <inheritdoc/>
         public bool WriteLines(string path, IEnumerable<string> lines)
         {
             var builder = new StringBuilder();

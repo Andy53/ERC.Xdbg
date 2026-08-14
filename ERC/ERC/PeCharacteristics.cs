@@ -60,5 +60,40 @@ namespace ERC.Utilities
         {
             return (dllCharacteristics & NoSeh) != 0;
         }
+
+        /// <summary>
+        /// Whether a 32-bit module was built with SafeSEH.
+        /// </summary>
+        /// <param name="dllCharacteristics">The PE optional header's DllCharacteristics.</param>
+        /// <param name="sehHandlerTable">SEHandlerTable from the load config directory.</param>
+        /// <param name="sehHandlerCount">SEHandlerCount from the load config directory.</param>
+        /// <returns>
+        /// True when an SEH overwrite in this module would be caught, either because
+        /// the module registers a table of permitted handlers or because it declares
+        /// that it uses no structured exception handling at all.
+        /// </returns>
+        /// <remarks>
+        /// A module built with /SAFESEH publishes the addresses of its legal exception
+        /// handlers in the load config directory, and the loader refuses to dispatch to
+        /// any handler not in that list. A module marked IMAGE_DLLCHARACTERISTICS_NO_SEH
+        /// registers no handlers at all, which is equally not-exploitable by an SEH
+        /// overwrite, so both count as protected.
+        ///
+        /// The NO_SEH half of this was not previously considered, and the table half
+        /// never ran: the values were read into a local variable that was discarded, so
+        /// the fields this compares were left at their defaults and every module on
+        /// every architecture reported SafeSEH as false. That is what the "-SafeSEH"
+        /// filter tested, so it excluded nothing, and the SafeSEH column in every
+        /// search result read false regardless of the module.
+        /// </remarks>
+        public static bool HasSafeSeh(ushort dllCharacteristics, uint sehHandlerTable, uint sehHandlerCount)
+        {
+            if (HasNoSeh(dllCharacteristics))
+            {
+                return true;
+            }
+
+            return sehHandlerTable != 0 && sehHandlerCount != 0;
+        }
     }
 }

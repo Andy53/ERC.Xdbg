@@ -44,10 +44,18 @@
     <PackageReference Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <!--
+      The updater tests build zip archives to feed the installer. ZipArchive is a
+      separate framework assembly on .NET Framework and part of the shared framework
+      on net8.0, so this is net472 only.
+    -->
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\ERC\ERC\ERC.Net.csproj" />
-
-
   </ItemGroup>
 
 </Project>

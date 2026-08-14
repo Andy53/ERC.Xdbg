@@ -1,0 +1,15 @@
+10011111 | pop eax, ret
+90909090 | NOPS
+20011111 | pop ebx, ret
+00040000 | flOptions
+30011111 | pop ecx, ret
+00010000 | dwMaximumSize
+40011111 | pop edx, ret
+00001000 | dwInitialSize
+60011111 | pop ebp, ret
+90001111 | jmp esp, ret
+70011111 | pop esi, ret
+32331111 | Pointer to HeapCreate.
+80011111 | pop edi, ret
+99991111 | ROP NOP
+90011111 | pusha, ret

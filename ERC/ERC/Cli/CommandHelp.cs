@@ -1,0 +1,172 @@
+﻿using System;
+
+namespace ERC.Cli
+{
+    /// <summary>
+    /// The text "ERC --help" prints.
+    /// </summary>
+    /// <remarks>
+    /// Held here rather than in the plugin so that it can be checked against the
+    /// options the parser and dispatcher actually accept. Help that documents an
+    /// option nothing handles - or omits one that does - is a defect a test can
+    /// catch, but only if the text is reachable from a test.
+    ///
+    /// Stored as lines and joined with a newline rather than written as one verbatim
+    /// string, so that the output does not change with the line endings this file
+    /// happens to be checked out with.
+    /// </remarks>
+    public static class CommandHelp
+    {
+        private static readonly string[] BannerLines =
+        {
+            "    __________   ______",
+            "   / ____ / __\\ / ____/",
+            "  / __ / / /_/ / /",
+            " / /___ / _, _/ /___",
+            "/_____ /_/ |_|\\____/",
+            "-------------------------"
+        };
+
+        private static readonly string[] TextLines =
+        {
+            "Globals:",
+            "   Global arguments can be appended to any command and will persist for the length of the session until X64dbg is next",
+            "   restarted.",
+            "   -Aslr           |",
+            "       Excludes ASLR enabled modules from all searches. Can be disabled by passing \"false\". -Aslr false",
+            "   -SafeSEH        |",
+            "       Excludes SafeSEH enabled modules from all searches. Can be disabled by passing \"false\". -SafeSEH false",
+            "   -Rebase         |",
+            "       Excludes Rebase enabled modules from all searches. Can be disabled by passing \"false\". -Rebase false",
+            "   -NXCompat       |",
+            "       Excludes NXCompat enabled modules from all searches. Can be disabled by passing \"false\". -NXCompat false",
+            "   -OSDLL          |",
+            "       Excludes OSDLL enabled modules from all searches. Can be disabled by passing \"false\". -OSDLL false",
+            "   -Bytes          |",
+            "       Excludes bytes from pointers returned in searches and from being added to bytearrays. Disabled by passing",
+            "       without any bytes.",
+            "   -Protection     |",
+            "       Defines the protection level of pointers to be included in search results. Default is read,write. A value",
+            "       must be provided with this switch, options are read, write, exec and all. Options must be comma separated",
+            "       without spaces. -Protection exec allows only executable pointers to be returned.",
+            "   -Extended       |",
+            "       Uses the extended character set when generating patterns and when searching for one with --FindNRP. Can be",
+            "       disabled by passing \"false\". -Extended false",
+            "   -Unicode        |",
+            "   -Ascii          |",
+            "   -UTF7           |",
+            "   -UTF8           |",
+            "   -UTF32          |",
+            "       Sets the character encoding used to convert text supplied to --SearchMemory and --SearchModules into the",
+            "       bytes searched for. The default is ASCII. Only one applies; the last one on the line wins.",
+            "Usage:",
+            "   --Help          |",
+            "       Displays this message. Further help can be found at: https://github.com/Andy53/ERC.Xdbg/tree/master/ErcXdbg",
+            "   --Update        |",
+            "       Can be used to update the plugin to the latest version. Can be passed a ip:port combination to specify the",
+            "       proxy server to use.",
+            "   --Config        |",
+            "       Takes any of the following arguments, Get requests take no additional parameters, Set requests take a directory",
+            "       which will be set as the new value.",
+            "           GetWorkingDirectory (ERC --config GetWorkingDirectory)",
+            "           GetStandardPattern  (ERC --config GetStandardPatter)",
+            "           GetExtendedPattern  (ERC --config GetExtendedPattern)",
+            "           GetVersion          (ERC --config GetVersion)",
+            "           GetAuthor           (ERC --config GetAuthor)",
+            "           GetErrorFilePath    (ERC --config GetErrorFilePath)",
+            "           SetWorkingDirectory (ERC --config SetWorkingDirectory directory)",
+            "           SetStandardPattern  (ERC --config SetStandardPattern file)",
+            "           SetExtendedPattern  (ERC --config SetExtendedPattern file)",
+            "           SetAuthor           (ERC --config SetAuthor author)",
+            "           SetErrorFilePath    (ERC --config SetErrorFilePath file)",
+            "       Passed without parameters will print all Get requests.",
+            "   --Pattern       |",
+            "       Generates a non repeating pattern. A pattern of pure ASCII characters can be generated up to 20277 and up to",
+            "       66923 if special characters are used. The offset of a particular string can be found inside the pattern by",
+            "       providing a search string (must be at least 3 chars long).",
+            "           Pattern create: ERC --pattern <create | c> <length>",
+            "           Pattern offset: ERC --pattern <offset | o> <search string>",
+            "   --Bytearray     |",
+            "       Generates a bytearray which is saved to the working directory and displayed in the application log tab. A set",
+            "       of hex characters can be provided to the -byte global which will be excluded from the bytearray.",
+            "   --Compare       |",
+            "       Generates a table with a byte by byte comparison of an area of memory and the bytes from a file. Takes a memory",
+            "       from which to start the search and a filepath for the binary file",
+            "   --Convert       |",
+            "       Converts input from one form to another such as ASCII to hex, Unicode to hex, ASCII to bytes.",
+            "       Valid conversion types:",
+            "           Ascii to Hex = AtoH",
+            "           Unicdoe to Hex = UtoH",
+            "           UTF-7 to Hex = 7toH",
+            "           UTF-8 to Hex = 8toH",
+            "           UTF-32 to Hex = 32toH",
+            "   --Assemble      |",
+            "       Takes a collection of assembley instructions and outputs the associated opcodes. Takes a boolean of 0 for x32 or",
+            "        1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture",
+            "       of the process will be used.",
+            "   --Disassemble   |",
+            "       Takes a collection of opcodes and outputs the associated assembley instructions. Takes a boolean of 0 for x32 or",
+            "        1 for x64 can be used to force the architecture of the opcodes returned, if neither is passed the architecture",
+            "       of the process will be used.",
+            "   --SearchMemory   |",
+            "       Takes a search string of either bytes or a string to search for. Takes an (optional) integer to specify search",
+            "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32).",
+            "       Example: ERC --SearchMemory FF E4. Search for bytes FF E4 including all dll's",
+            "       Example: ERC --SearchMemory HelloWorld 1. Search for the string \"HelloWorld in Unicode\"",
+            "   --SearchModules   |",
+            "       Takes a search string of either bytes or a string to search for in a processes loaded modules. Takes an",
+            "       (optional) integer to specify search",
+            "       type (0 = bytes, 1 = Unicode, 2 = ASCII, 3 = UTF8, 4 = UTF7, 5 = UTF32).",
+            "       Example: ERC --SearchModules FF E4. Search for bytes FF E4 including all dll's",
+            "       Example: ERC --SearchModules FF E4 module1.dll module2.dll. Search for bytes FF E4 only in module1.dll and",
+            "       module2.dll",
+            "   --Dump |",
+            "       Dump contents of memory to a file. Takes an address to start at and a hex number of bytes to be read.",
+            "   --ListProcesses |",
+            "       Displays a list of processes running on the local machine.",
+            "   --ProcessInfo   |",
+            "       Displays info about the attached process, loaded modules and threads. Can be passed a boolen to indicate if the",
+            "       output should be written to disk.",
+            "   --ModuleInfo    |",
+            "       Displays info about the modules loaded by the attached process. Can be passed a boolen to indicate if the output",
+            "       should be written to disk.",
+            "   --ThreadInfo    |",
+            "       Displays info about threads associated with the attached process. Can be passed a boolen to indicate if the",
+            "       output should be written to disk.",
+            "   --SEH           |",
+            "       Displays a list of addresses for pop pop ret instructions.",
+            "       in the search.",
+            "       Example: ERC --SEH Search for POP, POP, RET instructions in memory.",
+            "   --EggHunters    |",
+            "       Prints a list of egghunters which can be used for various machine types. Can be passed 4 character string to be",
+            "       used as the egghunter search tag. Default tag is ERCD.",
+            "   --FindNrp       |",
+            "       Generates a table detailing whether a repeating pattern has been found in the memory space of the process and",
+            "       if any registers pointed into the pattern. Takes an integer for the text to look for (1 = Unicode, 2 = ASCII,",
+            "       3 = UTF8, 4 = UTF7, 5 = UTF32, default = ASCII). Additionally if the value \"True\" is provided the extended",
+            "       pattern will be used which includes special characters.",
+            "   --HeapInfo      |",
+            "       Displays information about the heap. Takes commands search, stats, ids, and dump. Takes an integer to",
+            "       represent the ID of the heap to utilize. Takes a hex value to specify the address of the heap entry to utilize.",
+            "       If both heap ID and start address are specified heap ID takes precedence, if start address and a byte pattern to.",
+            "       search for are specified start address must be provided first. Takes a boolean value of true/false/1/0",
+            "       to specify if output should be written to disk.",
+            "       Example: ERC --HeapInfo stats. Display statistics about all heaps associated with the process.",
+            "       Example: ERC --HeapInfo 0x00453563 search FFE4. Search for FFE4 in the Heap entry starting at 0x00453563",
+            "       Example: ERC --HeapInfo 0x00453563 dump. Dump all memory from heap entry starting at 0x00453563",
+            "   --Rop           |",
+            "       Attempts to build a ROP chain for the current process. Current implementation utilizes VirtualAlloc, HeapCreate",
+            "       and VirtualProtect.",
+            "   --RopGadgets    |",
+            "       Generates lists of ROP gadgets from within the current process. Lists are saved to the working directory.",
+            "   --Reset         |",
+            "       Clears all global variables and user defined configurations."
+        };
+
+        /// <summary>The banner printed above the help, and above any error.</summary>
+        public static string Banner { get { return string.Join("\n", BannerLines); } }
+
+        /// <summary>The body of the help text.</summary>
+        public static string Text { get { return string.Join("\n", TextLines); } }
+    }
+}

@@ -40,11 +40,11 @@ namespace ERC
             if (searchType == 0)
             {
                 byte[] searchBytes = StringToByteArray(searchString.Replace(" ", ""));
-                result = info.SearchMemory(searchType, searchBytes, null, excludedModules).ReturnValue;
+                result = info.SearchMemory(searchType, searchBytes: searchBytes, excludes: excludedModules).ReturnValue;
             }
             else
             {
-                result = info.SearchMemory(searchType, null, searchString, excludedModules).ReturnValue;
+                result = info.SearchMemory(searchType, searchString: searchString, excludes: excludedModules).ReturnValue;
             }
 
             if (unwantedBytes != null)
@@ -154,11 +154,13 @@ namespace ERC
             if (searchType == 0)
             {
                 byte[] searchBytes = StringToByteArray(searchString.Replace(" ", ""));
-                result = info.SearchModules(searchType, unwantedBytes, searchBytes, null, modules, excludedModules).ReturnValue;
+                result = info.SearchModules(searchType, searchBytes: searchBytes, includedModules: modules,
+                    excludedModules: excludedModules, ptrsToExclude: unwantedBytes).ReturnValue;
             }
             else
             {
-                result = info.SearchModules(searchType, unwantedBytes, null, searchString, modules, excludedModules).ReturnValue;
+                result = info.SearchModules(searchType, searchString: searchString, includedModules: modules,
+                    excludedModules: excludedModules, ptrsToExclude: unwantedBytes).ReturnValue;
             }
 
             if (unwantedBytes != null)
@@ -261,7 +263,7 @@ namespace ERC
         {
             List<string> ret = new List<string>();
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
-            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludedModules);
+            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes: excludedModules);
 
             if (unwantedBytes != null)
             {
@@ -404,7 +406,7 @@ namespace ERC
         public static string[] GetSEHJumps(ProcessInfo info, byte[] ptrsToExclude, List<string>? excludes = null)
         {
             List<string> ret = new List<string>();
-            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(ptrsToExclude, excludes);
+            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes: excludes, ptrsToExclude: ptrsToExclude);
 
             string sehFilename = GetFilePath(info.WorkingDirectory, "SEH_jumps_", ".txt");
             ret.Add("---------------------------------------------------------------------------------------");
@@ -518,7 +520,7 @@ namespace ERC
         {
             List<string> ret = new List<string>();
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
-            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludedModules);
+            ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes: excludedModules);
 
             if (unwantedBytes != null)
             {

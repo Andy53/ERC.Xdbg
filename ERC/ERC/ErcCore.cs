@@ -4,6 +4,13 @@ using System.Reflection;
 using ERC.Config;
 using ERC.Native;
 using ERC.Output;
+using System.Runtime.CompilerServices;
+
+// The ROP chain builders are internal and depend on a gadget table that is only
+// populated by scanning a live process. Exposing them to the test assembly lets a
+// test supply a fixed table instead, which is what makes the generated chains
+// reproducible enough to compare against a recorded one.
+[assembly: InternalsVisibleTo("ERC.Net.Tests")]
 
 namespace ERC
 {

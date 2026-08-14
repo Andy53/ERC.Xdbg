@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using ERC;
@@ -263,6 +264,81 @@ namespace ERC.Net.Tests
                 ntdll.ShouldNotBeNull();
                 ntdll.ModuleASLR.ShouldBeTrue("ntdll is always built with ASLR");
                 ntdll.ModuleNXCompat.ShouldBeTrue("ntdll is always built DEP compatible");
+            }
+        }
+
+        [Fact]
+        public void Modules_built_with_SafeSEH_report_it()
+        {
+            SkipIfNoFixture();
+
+            // SafeSEH is a 32-bit mitigation. On x64 exception handling is table
+            // driven and there is nothing equivalent to assert.
+            if (IntPtr.Size != 4)
+            {
+                return;
+            }
+
+            using (var target = TargetProcess.Start())
+            using (var info = new ProcessInfo(Core(), target.Process))
+            {
+                // The load config directory was read into a local variable and thrown
+                // away, so the fields the SafeSEH test compares stayed at their
+                // defaults and every module reported false. That is the value the
+                // "-SafeSEH" filter tests, so it excluded nothing, and the SafeSEH
+                // column of every search result was wrong.
+                //
+                // Restricted to modules that do NOT set IMAGE_DLLCHARACTERISTICS_NO_SEH:
+                // those report SafeSEH through a second, independent path, so including
+                // them would let this pass with the load config still unread.
+                List<ModuleInfo> withHandlers = info.ModulesInfo
+                    .Where(m => !m.ModuleFailed)
+                    .Where(m => !PeCharacteristics.HasNoSeh(m.ModuleDllCharacteristics))
+                    .ToList();
+
+                withHandlers.ShouldNotBeEmpty(
+                    "the target should load at least one 32-bit module that registers SEH handlers");
+
+                withHandlers.ShouldContain(m => m.ModuleSafeSEH,
+                    "every module that registers SEH handlers reported SafeSEH as false, " +
+                    "which means the load config directory was not read");
+            }
+        }
+
+        [Fact]
+        public void Every_loaded_module_reports_headers_that_agree_with_its_file()
+        {
+            SkipIfNoFixture();
+
+            using (var target = TargetProcess.Start())
+            using (var info = new ProcessInfo(Core(), target.Process))
+            {
+                // ModuleInfo derives its flags from headers it parses itself. Reading
+                // the same files independently is a check that the parsing agrees with
+                // a second implementation rather than merely being self-consistent.
+                foreach (ModuleInfo module in info.ModulesInfo.Where(m => !m.ModuleFailed))
+                {
+                    if (!File.Exists(module.ModulePath))
+                    {
+                        continue;
+                    }
+
+                    byte[] image = File.ReadAllBytes(module.ModulePath);
+
+                    ERC.Utilities.PeHeaders? headers;
+                    string? error;
+
+                    if (!ERC.Utilities.PeHeaders.TryParse(image, out headers, out error))
+                    {
+                        continue;
+                    }
+
+                    module.ModuleASLR.ShouldBe(headers!.HasAslr, module.ModulePath);
+                    module.ModuleNXCompat.ShouldBe(headers.HasNxCompat, module.ModulePath);
+                    module.ModuleMachineType.ShouldBe(headers.MachineType, module.ModulePath);
+                    module.ModuleSize.ShouldBe((int)headers.SizeOfImage, module.ModulePath);
+                    ((ulong)module.ModuleImageBase).ShouldBe(headers.ImageBase, module.ModulePath);
+                }
             }
         }
 

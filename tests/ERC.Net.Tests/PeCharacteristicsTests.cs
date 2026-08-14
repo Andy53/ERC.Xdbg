@@ -127,5 +127,50 @@ namespace ERC.Net.Tests
             PeCharacteristics.HasNoSeh(IMAGE_DLLCHARACTERISTICS_NO_SEH).ShouldBeTrue();
             PeCharacteristics.HasNoSeh(IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE).ShouldBeFalse();
         }
+
+        // ------------------------------------------------------------------ SafeSEH
+
+        [Fact]
+        public void SafeSeh_is_reported_when_the_module_publishes_a_handler_table()
+        {
+            // A module built with /SAFESEH lists its legal exception handlers in the
+            // load config directory, and the loader refuses to dispatch anywhere else.
+            PeCharacteristics.HasSafeSeh(0, sehHandlerTable: 0x10041000, sehHandlerCount: 12)
+                .ShouldBeTrue();
+        }
+
+        [Fact]
+        public void SafeSeh_is_not_reported_when_there_is_no_handler_table()
+        {
+            PeCharacteristics.HasSafeSeh(0, sehHandlerTable: 0, sehHandlerCount: 0)
+                .ShouldBeFalse();
+        }
+
+        [Fact]
+        public void A_handler_table_with_no_entries_does_not_count()
+        {
+            // Both halves have to be present. A table address with a zero count
+            // describes nothing.
+            PeCharacteristics.HasSafeSeh(0, sehHandlerTable: 0x10041000, sehHandlerCount: 0)
+                .ShouldBeFalse();
+            PeCharacteristics.HasSafeSeh(0, sehHandlerTable: 0, sehHandlerCount: 12)
+                .ShouldBeFalse();
+        }
+
+        [Fact]
+        public void A_module_declaring_no_seh_at_all_counts_as_protected()
+        {
+            // It registers no handlers, so there is nothing for an SEH overwrite to
+            // redirect. This half was not previously considered at all.
+            PeCharacteristics.HasSafeSeh(IMAGE_DLLCHARACTERISTICS_NO_SEH, 0, 0)
+                .ShouldBeTrue();
+        }
+
+        [Fact]
+        public void The_safeseh_derivation_does_not_depend_on_the_other_mitigation_bits()
+        {
+            PeCharacteristics.HasSafeSeh(IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE, 0, 0).ShouldBeFalse();
+            PeCharacteristics.HasSafeSeh(IMAGE_DLLCHARACTERISTICS_NX_COMPAT, 0, 0).ShouldBeFalse();
+        }
     }
 }

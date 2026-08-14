@@ -11,11 +11,17 @@
     <RootNamespace>ERC</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!--
-      The XML file feeds the DocFX site, but a few dozen public members predate
-      the doc comments and drown out real warnings. Filling these in is tracked as
-      part of the documentation pass; suppressed here to keep build output useful.
+      CS1591 (missing XML comment) is ON. The only exemption is Native/, where each
+      file carries a file-scoped "#pragma warning disable CS1591" explaining that its
+      declarations mirror Win32 one for one and are documented by Microsoft. Scoping
+      it that way means a new undocumented member anywhere else is reported.
+
+      CS1573 (a documented method with an undocumented parameter) stays suppressed:
+      several long-standing methods have a summary but not a full parameter list, and
+      the warning fires per parameter rather than per member, so it drowns out CS1591
+      without adding much.
     -->
-    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+    <NoWarn>$(NoWarn);CS1573</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
@@ -33,6 +39,18 @@
     -->
     <NoWarn>$(NoWarn);SYSLIB0001;SYSLIB0012;SYSLIB0051</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <!--
+      HttpClient lives in a separate framework assembly on .NET Framework, which the
+      SDK does not reference by default. It is part of the shared framework on
+      net8.0, so this is net472 only.
+    -->
+    <Reference Include="System.Net.Http" />
+    <!-- Likewise ZipArchive, used to install an update. -->
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
 
   <ItemGroup>
     <!--

@@ -18,6 +18,21 @@ namespace ERC
         { }
 
         /// <summary>
+        /// Constructor for the ERCException class, preserving the cause.
+        /// </summary>
+        /// <param name="message">The message associated with the Exception</param>
+        /// <param name="innerException">The exception that caused this one.</param>
+        /// <remarks>
+        /// Added because the update path wraps network failures. Without it the
+        /// original exception was flattened to its message, which loses the status
+        /// code and the stack, and those are what tell a proxy failure apart from a
+        /// missing release.
+        /// </remarks>
+        public ERCException(string message, Exception innerException)
+            : base(message, innerException)
+        { }
+
+        /// <summary>
         /// Creates a serializable exception.
         /// </summary>
         /// <param name="info">Stores all the data needed to serialize or deserialize an object.</param>

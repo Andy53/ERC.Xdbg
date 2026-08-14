@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -56,6 +56,7 @@ namespace ERC.Output
                                 prefix + (highest + 1).ToString() + extension);
         }
 
+        /// <inheritdoc/>
         public bool WriteText(string path, string content)
         {
             try
@@ -73,6 +74,7 @@ namespace ERC.Output
             }
         }
 
+        /// <inheritdoc/>
         public bool WriteLines(string path, IEnumerable<string> lines)
         {
             try

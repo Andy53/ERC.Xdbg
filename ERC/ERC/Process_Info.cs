@@ -452,6 +452,11 @@ namespace ERC
             return mainModule;
         }
 
+        /// <summary>
+        /// Whether a process is running as 64-bit.
+        /// </summary>
+        /// <param name="process">The process to test. Null returns false.</param>
+        /// <returns>True when the process is 64-bit.</returns>
         public static bool Is64Bit(Process? process)
         {
             return Is64Bit(process, Win32NativeApi.Instance);

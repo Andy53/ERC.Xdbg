@@ -1,4 +1,15 @@
-﻿using System;
+﻿// <auto-documented>
+// The declarations in this file mirror Win32 and its structures one for one. Their
+// names, parameters and semantics are the ones Microsoft documents, and restating
+// that here in XML comments would add nothing a reader could not get from MSDN
+// while burying the parts of this library that do need explaining.
+//
+// CS1591 is disabled for this file only. Everywhere else in ERC.Net the warning is
+// on, so a genuinely undocumented public member is reported.
+// </auto-documented>
+#pragma warning disable CS1591
+
+using System;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 

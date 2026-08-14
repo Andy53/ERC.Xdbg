@@ -41,11 +41,13 @@ namespace ERC.Config
         /// </summary>
         public int SaveCount { get; private set; }
 
+        /// <inheritdoc/>
         public ErcConfig? Load()
         {
             return _config == null ? null : _config.Clone();
         }
 
+        /// <inheritdoc/>
         public bool Save(ErcConfig config)
         {
             if (config == null)

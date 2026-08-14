@@ -47,8 +47,8 @@ namespace ERC.Utilities
         internal X64Lists x64Opcodes;
         internal X64Lists usableX64Opcodes;
         internal ProcessInfo RcgInfo;
-        private Dictionary<string, IntPtr> ApiAddresses = new Dictionary<string, IntPtr>();
-        private List<IntPtr> RopNops = new List<IntPtr>();
+        internal Dictionary<string, IntPtr> ApiAddresses = new Dictionary<string, IntPtr>();
+        internal List<IntPtr> RopNops = new List<IntPtr>();
         private List<byte[]> opcodes64 = new List<byte[]>();
         #endregion
 
@@ -107,8 +107,6 @@ namespace ERC.Utilities
             byte[] xorRdx = new byte[] { 0x48, 0x31, 0xD2 };
             byte[] xorRsi = new byte[] { 0x48, 0x31, 0xF6 };
             byte[] xorRdi = new byte[] { 0x48, 0x31, 0xFF };
-            byte[] xorRsp = new byte[] { 0x48, 0x31, 0xE4 };
-            byte[] xorRbp = new byte[] { 0x48, 0x31, 0xED };
             byte[] xorR8 = new byte[] { 0x48, 0x31, 0xC8 };
             byte[] xorR9 = new byte[] { 0x48, 0x31, 0xC9 };
             byte[] xorR10 = new byte[] { 0x48, 0x31, 0xD2 };
@@ -204,8 +202,6 @@ namespace ERC.Utilities
             opcodes64.Add(xorRdx);
             opcodes64.Add(xorRsi);
             opcodes64.Add(xorRdi);
-            opcodes64.Add(xorRsp);
-            opcodes64.Add(xorRbp);
             opcodes64.Add(xorR8);
             opcodes64.Add(xorR9);
             opcodes64.Add(xorR10);
@@ -302,91 +298,16 @@ namespace ERC.Utilities
             }
 
             OptimiseLists(RcgInfo);
-            usableX64Opcodes.pushRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRax, ptrsToExclude);
-            usableX64Opcodes.pushRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRcx, ptrsToExclude);
-            usableX64Opcodes.pushRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRdx, ptrsToExclude);
-            usableX64Opcodes.pushRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRbx, ptrsToExclude);
-            usableX64Opcodes.pushRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRsp, ptrsToExclude);
-            usableX64Opcodes.pushRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRbp, ptrsToExclude);
-            usableX64Opcodes.pushRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRsi, ptrsToExclude);
-            usableX64Opcodes.pushRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRdi, ptrsToExclude);
-            usableX64Opcodes.pushR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR8, ptrsToExclude);
-            usableX64Opcodes.pushR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR9, ptrsToExclude);
-            usableX64Opcodes.pushR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR10, ptrsToExclude);
-            usableX64Opcodes.pushR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR11, ptrsToExclude);
-            usableX64Opcodes.pushR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR12, ptrsToExclude);
-            usableX64Opcodes.pushR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR13, ptrsToExclude);
-            usableX64Opcodes.pushR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR14, ptrsToExclude);
-            usableX64Opcodes.pushR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR15, ptrsToExclude);
-            usableX64Opcodes.popRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRax, ptrsToExclude);
-            usableX64Opcodes.popRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRbx, ptrsToExclude);
-            usableX64Opcodes.popRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRcx, ptrsToExclude);
-            usableX64Opcodes.popRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRdx, ptrsToExclude);
-            usableX64Opcodes.popRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRsp, ptrsToExclude);
-            usableX64Opcodes.popRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRbp, ptrsToExclude);
-            usableX64Opcodes.popRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRsi, ptrsToExclude);
-            usableX64Opcodes.popRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRdi, ptrsToExclude);
-            usableX64Opcodes.popR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR8, ptrsToExclude);
-            usableX64Opcodes.popR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR9, ptrsToExclude);
-            usableX64Opcodes.popR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR10, ptrsToExclude);
-            usableX64Opcodes.popR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR11, ptrsToExclude);
-            usableX64Opcodes.popR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR12, ptrsToExclude);
-            usableX64Opcodes.popR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR13, ptrsToExclude);
-            usableX64Opcodes.popR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR14, ptrsToExclude);
-            usableX64Opcodes.popR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR15, ptrsToExclude);
-            usableX64Opcodes.xorRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRax, ptrsToExclude);
-            usableX64Opcodes.xorRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRbx, ptrsToExclude);
-            usableX64Opcodes.xorRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRcx, ptrsToExclude);
-            usableX64Opcodes.xorRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRdx, ptrsToExclude);
-            usableX64Opcodes.xorRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRsi, ptrsToExclude);
-            usableX64Opcodes.xorRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRdi, ptrsToExclude);
-            usableX64Opcodes.xorRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRsp, ptrsToExclude);
-            usableX64Opcodes.xorRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRbp, ptrsToExclude);
-            usableX64Opcodes.xorR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR8, ptrsToExclude);
-            usableX64Opcodes.xorR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR9, ptrsToExclude);
-            usableX64Opcodes.xorR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR10, ptrsToExclude);
-            usableX64Opcodes.xorR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR11, ptrsToExclude);
-            usableX64Opcodes.xorR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR12, ptrsToExclude);
-            usableX64Opcodes.xorR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR13, ptrsToExclude);
-            usableX64Opcodes.xorR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR14, ptrsToExclude);
-            usableX64Opcodes.xorR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR15, ptrsToExclude);
-            usableX64Opcodes.jmpRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.jmpRsp, ptrsToExclude);
-            usableX64Opcodes.callRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.callRsp, ptrsToExclude);
-            usableX64Opcodes.incRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRax, ptrsToExclude);
-            usableX64Opcodes.incRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRbx, ptrsToExclude);
-            usableX64Opcodes.incRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRcx, ptrsToExclude);
-            usableX64Opcodes.incRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRdx, ptrsToExclude);
-            usableX64Opcodes.incRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRbp, ptrsToExclude);
-            usableX64Opcodes.incRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRsp, ptrsToExclude);
-            usableX64Opcodes.incRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRsi, ptrsToExclude);
-            usableX64Opcodes.incRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRdi, ptrsToExclude);
-            usableX64Opcodes.incR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR8, ptrsToExclude);
-            usableX64Opcodes.incR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR9, ptrsToExclude);
-            usableX64Opcodes.incR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR10, ptrsToExclude);
-            usableX64Opcodes.incR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR11, ptrsToExclude);
-            usableX64Opcodes.incR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR12, ptrsToExclude);
-            usableX64Opcodes.incR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR13, ptrsToExclude);
-            usableX64Opcodes.incR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR14, ptrsToExclude);
-            usableX64Opcodes.incR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR15, ptrsToExclude);
-            usableX64Opcodes.decRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRax, ptrsToExclude);
-            usableX64Opcodes.decRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRbx, ptrsToExclude);
-            usableX64Opcodes.decRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRcx, ptrsToExclude);
-            usableX64Opcodes.decRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRdx, ptrsToExclude);
-            usableX64Opcodes.decRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRbp, ptrsToExclude);
-            usableX64Opcodes.decRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRsp, ptrsToExclude);
-            usableX64Opcodes.decRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRsi, ptrsToExclude);
-            usableX64Opcodes.decRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRdi, ptrsToExclude);
-            usableX64Opcodes.decR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR8, ptrsToExclude);
-            usableX64Opcodes.decR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR9, ptrsToExclude);
-            usableX64Opcodes.decR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR10, ptrsToExclude);
-            usableX64Opcodes.decR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR11, ptrsToExclude);
-            usableX64Opcodes.decR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR12, ptrsToExclude);
-            usableX64Opcodes.decR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR13, ptrsToExclude);
-            usableX64Opcodes.decR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR14, ptrsToExclude);
-            usableX64Opcodes.decR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR15, ptrsToExclude);
-            usableX64Opcodes.add = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.add, ptrsToExclude);
-            usableX64Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.mov, ptrsToExclude);
-            usableX64Opcodes.sub = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.sub, ptrsToExclude);
+            // Every list in the catalogue, rather than a hand-written line per
+            // list. Two of the 64-bit lists - jmpRax and callRax - were missing
+            // from both hand-written copies of this block, so an address holding
+            // a byte the user excluded could still be chosen, and jmpRax is
+            // written straight into the HeapCreate chain.
+            foreach (var list in GadgetCatalog.X64Lists)
+            {
+                list.Set(usableX64Opcodes, PtrRemover.RemovePointers(
+                    RcgInfo.ProcessMachineType, list.Get(usableX64Opcodes), ptrsToExclude));
+            }
 
             DisplayOutput.RopChainGadgets64(this, true);
             return RopChain;
@@ -395,13 +316,28 @@ namespace ERC.Utilities
 
         #region GenerateRopChain64
         /// <summary>
-        /// Creates a RopChain for a specific process.
+        /// Creates a ROP chain for a specific process.
         /// </summary>
-        /// <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
-        /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
-        /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
-        /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain64(byte[] ptrsToExclude, byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
+        /// <param name="startAddress">An address to be used as the start location for which memory will be made executable.</param>
+        /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets.</param>
+        /// <param name="methods">Enum value representing which methods to build rop chains with.</param>
+        /// <param name="ptrsToExclude">Bytes which disqualify a gadget: any gadget whose address contains one is left out.</param>
+        /// <returns>Returns an ErcResult string containing the chain.</returns>
+        /// <remarks>
+        /// One method where there were two overloads. They were identical apart from
+        /// the block that applies ptrsToExclude, and their first positional parameter
+        /// meant "bytes to exclude" in one and "start address" in the other.
+        ///
+        /// That was not merely confusing. The plugin called this as
+        /// GenerateRopChain64(session.Bytes, excludes), which bound to the overload
+        /// taking startAddress first - so the user's bad-character list was passed as
+        /// the address to make executable, and the bad characters were never excluded
+        /// from the chain at all. A one-argument call did not compile at all: it was
+        /// ambiguous between the two.
+        /// </remarks>
+        public ErcResult<string> GenerateRopChain64(byte[]? startAddress = null,
+            List<string>? excludes = null, RopMethod methods = RopMethod.All,
+            byte[]? ptrsToExclude = null)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -447,91 +383,16 @@ namespace ERC.Utilities
             }
 
             OptimiseLists(RcgInfo);
-            usableX64Opcodes.pushRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRax, ptrsToExclude);
-            usableX64Opcodes.pushRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRcx, ptrsToExclude);
-            usableX64Opcodes.pushRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRdx, ptrsToExclude);
-            usableX64Opcodes.pushRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRbx, ptrsToExclude);
-            usableX64Opcodes.pushRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRsp, ptrsToExclude);
-            usableX64Opcodes.pushRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRbp, ptrsToExclude);
-            usableX64Opcodes.pushRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRsi, ptrsToExclude);
-            usableX64Opcodes.pushRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushRdi, ptrsToExclude);
-            usableX64Opcodes.pushR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR8, ptrsToExclude);
-            usableX64Opcodes.pushR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR9, ptrsToExclude);
-            usableX64Opcodes.pushR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR10, ptrsToExclude);
-            usableX64Opcodes.pushR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR11, ptrsToExclude);
-            usableX64Opcodes.pushR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR12, ptrsToExclude);
-            usableX64Opcodes.pushR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR13, ptrsToExclude);
-            usableX64Opcodes.pushR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR14, ptrsToExclude);
-            usableX64Opcodes.pushR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.pushR15, ptrsToExclude);
-            usableX64Opcodes.popRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRax, ptrsToExclude);
-            usableX64Opcodes.popRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRbx, ptrsToExclude);
-            usableX64Opcodes.popRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRcx, ptrsToExclude);
-            usableX64Opcodes.popRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRdx, ptrsToExclude);
-            usableX64Opcodes.popRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRsp, ptrsToExclude);
-            usableX64Opcodes.popRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRbp, ptrsToExclude);
-            usableX64Opcodes.popRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRsi, ptrsToExclude);
-            usableX64Opcodes.popRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popRdi, ptrsToExclude);
-            usableX64Opcodes.popR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR8, ptrsToExclude);
-            usableX64Opcodes.popR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR9, ptrsToExclude);
-            usableX64Opcodes.popR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR10, ptrsToExclude);
-            usableX64Opcodes.popR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR11, ptrsToExclude);
-            usableX64Opcodes.popR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR12, ptrsToExclude);
-            usableX64Opcodes.popR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR13, ptrsToExclude);
-            usableX64Opcodes.popR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR14, ptrsToExclude);
-            usableX64Opcodes.popR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.popR15, ptrsToExclude);
-            usableX64Opcodes.xorRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRax, ptrsToExclude);
-            usableX64Opcodes.xorRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRbx, ptrsToExclude);
-            usableX64Opcodes.xorRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRcx, ptrsToExclude);
-            usableX64Opcodes.xorRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRdx, ptrsToExclude);
-            usableX64Opcodes.xorRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRsi, ptrsToExclude);
-            usableX64Opcodes.xorRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRdi, ptrsToExclude);
-            usableX64Opcodes.xorRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRsp, ptrsToExclude);
-            usableX64Opcodes.xorRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorRbp, ptrsToExclude);
-            usableX64Opcodes.xorR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR8, ptrsToExclude);
-            usableX64Opcodes.xorR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR9, ptrsToExclude);
-            usableX64Opcodes.xorR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR10, ptrsToExclude);
-            usableX64Opcodes.xorR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR11, ptrsToExclude);
-            usableX64Opcodes.xorR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR12, ptrsToExclude);
-            usableX64Opcodes.xorR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR13, ptrsToExclude);
-            usableX64Opcodes.xorR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR14, ptrsToExclude);
-            usableX64Opcodes.xorR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.xorR15, ptrsToExclude);
-            usableX64Opcodes.jmpRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.jmpRsp, ptrsToExclude);
-            usableX64Opcodes.callRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.callRsp, ptrsToExclude);
-            usableX64Opcodes.incRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRax, ptrsToExclude);
-            usableX64Opcodes.incRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRbx, ptrsToExclude);
-            usableX64Opcodes.incRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRcx, ptrsToExclude);
-            usableX64Opcodes.incRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRdx, ptrsToExclude);
-            usableX64Opcodes.incRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRbp, ptrsToExclude);
-            usableX64Opcodes.incRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRsp, ptrsToExclude);
-            usableX64Opcodes.incRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRsi, ptrsToExclude);
-            usableX64Opcodes.incRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incRdi, ptrsToExclude);
-            usableX64Opcodes.incR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR8, ptrsToExclude);
-            usableX64Opcodes.incR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR9, ptrsToExclude);
-            usableX64Opcodes.incR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR10, ptrsToExclude);
-            usableX64Opcodes.incR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR11, ptrsToExclude);
-            usableX64Opcodes.incR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR12, ptrsToExclude);
-            usableX64Opcodes.incR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR13, ptrsToExclude);
-            usableX64Opcodes.incR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR14, ptrsToExclude);
-            usableX64Opcodes.incR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.incR15, ptrsToExclude);
-            usableX64Opcodes.decRax = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRax, ptrsToExclude);
-            usableX64Opcodes.decRbx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRbx, ptrsToExclude);
-            usableX64Opcodes.decRcx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRcx, ptrsToExclude);
-            usableX64Opcodes.decRdx = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRdx, ptrsToExclude);
-            usableX64Opcodes.decRbp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRbp, ptrsToExclude);
-            usableX64Opcodes.decRsp = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRsp, ptrsToExclude);
-            usableX64Opcodes.decRsi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRsi, ptrsToExclude);
-            usableX64Opcodes.decRdi = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decRdi, ptrsToExclude);
-            usableX64Opcodes.decR8 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR8, ptrsToExclude);
-            usableX64Opcodes.decR9 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR9, ptrsToExclude);
-            usableX64Opcodes.decR10 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR10, ptrsToExclude);
-            usableX64Opcodes.decR11 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR11, ptrsToExclude);
-            usableX64Opcodes.decR12 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR12, ptrsToExclude);
-            usableX64Opcodes.decR13 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR13, ptrsToExclude);
-            usableX64Opcodes.decR14 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR14, ptrsToExclude);
-            usableX64Opcodes.decR15 = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.decR15, ptrsToExclude);
-            usableX64Opcodes.add = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.add, ptrsToExclude);
-            usableX64Opcodes.mov = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.mov, ptrsToExclude);
-            usableX64Opcodes.sub = PtrRemover.RemovePointers(RcgInfo.ProcessMachineType, usableX64Opcodes.sub, ptrsToExclude);
+            // Every list in the catalogue, rather than a hand-written line per
+            // list. Two of the 64-bit lists - jmpRax and callRax - were missing
+            // from both hand-written copies of this block, so an address holding
+            // a byte the user excluded could still be chosen, and jmpRax is
+            // written straight into the HeapCreate chain.
+            foreach (var list in GadgetCatalog.X64Lists)
+            {
+                list.Set(usableX64Opcodes, PtrRemover.RemovePointers(
+                    RcgInfo.ProcessMachineType, list.Get(usableX64Opcodes), ptrsToExclude));
+            }
 
             if (Methods.HasFlag(RopMethod.VirtualAlloc))
             {
@@ -565,96 +426,6 @@ namespace ERC.Utilities
             return RopChain;
         }
 
-        /// <summary>
-        /// Creates a RopChain for a specific process.
-        /// </summary>
-        /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
-        /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
-        /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain64(byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
-        {
-            Methods = methods;
-            ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
-            x64Opcodes = new X64Lists();
-
-            Console.WriteLine("Getting API Addresses...");
-            var ret1 = GetApiAddresses(RcgInfo);
-            if (ret1.Error != null && ApiAddresses.Count <= 0)
-            {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret1.Error;
-            }
-
-            Console.WriteLine("Getting RopNops...");
-            if(excludes != null)
-            {
-                var ret2 = GetRopNops(RcgInfo, excludes);
-                if (ret2.Error != null && RopNops.Count <= 0)
-                {
-                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                    failed.ReturnValue = "An error has occured, check log file for more details.";
-                    failed.Error = ret2.Error;
-                    return failed;
-                }
-            }
-            else
-            {
-                var ret2 = GetRopNops(RcgInfo);
-                if (ret2.Error != null && RopNops.Count <= 0)
-                {
-                    ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                    failed.ReturnValue = "An error has occured, check log file for more details.";
-                    failed.Error = ret2.Error;
-                    return failed;
-                }
-            }
-
-            Console.WriteLine("Populating Opcodes...");
-            var ret3 = PopulateOpcodes(RcgInfo);
-            if (ret3.Error != null)
-            {
-                ErcResult<string> failed = new ErcResult<string>(RcgInfo.ProcessCore);
-                failed.ReturnValue = "An error has occured, check log file for more details.";
-                failed.Error = ret3.Error;
-            }
-
-            Console.WriteLine("Optimizing Lists...");
-            OptimiseLists(RcgInfo);
-
-            Console.WriteLine("Generating VirtualAlloc Chain...");
-            if (Methods.HasFlag(RopMethod.VirtualAlloc))
-            {
-                var vpaChain = GenerateVirtualAllocChain64(RcgInfo);
-                if (vpaChain.Error == null)
-                {
-                    VirtualAllocChain = vpaChain.ReturnValue;
-                }
-            }
-
-            Console.WriteLine("Generating HeapCreate Chain...");
-            if (Methods.HasFlag(RopMethod.HeapCreate))
-            {
-                var hcChain = GenerateHeapCreateChain64(RcgInfo);
-                if (hcChain.Error == null)
-                {
-                    HeapCreateChain = hcChain.ReturnValue;
-                }
-            }
-
-            if (Methods.HasFlag(RopMethod.VirtualProtect))
-            {
-                var vpChain = GenerateVirtualProtectChain64(RcgInfo);
-                if (vpChain.Error == null)
-                {
-                    VirtualProtectChain = vpChain.ReturnValue;
-                }
-            }
-
-            var output = DisplayOutput.RopChainGadgets64(this);
-            RopChain.ReturnValue = String.Join("\n", output);
-            return RopChain;
-        }
         #endregion
 
         #region GetApiAddresses
@@ -826,17 +597,11 @@ namespace ERC.Utilities
             bool xorRdxDone = false;
             bool xorRsiDone = false;
             bool xorRdiDone = false;
-            // No xorRspDone / xorRbpDone here, unlike every other register.
-            //
-            // "xor rsp" and "xor rbp" have opcode patterns defined and are added to
-            // the list this method scans for, but nothing ever writes to
-            // x64Opcodes.xorRsp or x64Opcodes.xorRbp and no filter populates their
-            // usable lists, so both stay empty for the life of the process. The two
-            // tracking flags that used to sit here were never read.
-            //
-            // Left as-is rather than wired up: zeroing the stack pointer is not
-            // something a chain wants to do, so the gap looks deliberate. Worth
-            // deciding explicitly during the ROP rework.
+            // There is deliberately no xorRsp or xorRbp. Both had opcode patterns
+            // defined and were scanned for, but nothing ever wrote to their lists and
+            // no filter populated them, so they stayed empty for the life of the
+            // process. Zeroing the stack or frame pointer is not something a chain
+            // wants to do, so they are gone rather than wired up.
             bool xorR8Done = false;
             bool xorR9Done = false;
             bool xorR10Done = false;
@@ -1689,96 +1454,19 @@ namespace ERC.Utilities
         private void OptimiseLists(ProcessInfo info)
         {
             usableX64Opcodes = new X64Lists();
-            usableX64Opcodes.pushRax = RopGadgetFilter.SelectUsable(x64Opcodes.pushRax, "push rax", true);
-            usableX64Opcodes.pushRbx = RopGadgetFilter.SelectUsable(x64Opcodes.pushRbx, "push rbx", true);
-            usableX64Opcodes.pushRcx = RopGadgetFilter.SelectUsable(x64Opcodes.pushRcx, "push rcx", true);
-            usableX64Opcodes.pushRdx = RopGadgetFilter.SelectUsable(x64Opcodes.pushRdx, "push rdx", true);
-            usableX64Opcodes.pushRsp = RopGadgetFilter.SelectUsable(x64Opcodes.pushRsp, "push rsp", true);
-            usableX64Opcodes.pushRbp = RopGadgetFilter.SelectUsable(x64Opcodes.pushRbp, "push rbp", true);
-            usableX64Opcodes.pushRsi = RopGadgetFilter.SelectUsable(x64Opcodes.pushRsi, "push rsi", true);
-            usableX64Opcodes.pushRdi = RopGadgetFilter.SelectUsable(x64Opcodes.pushRdi, "push rdi", true);
-            usableX64Opcodes.pushR8 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR8, "push r8", false);
-            usableX64Opcodes.pushR9 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR9, "push r9", false);
-            usableX64Opcodes.pushR10 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR10, "push r10", false);
-            usableX64Opcodes.pushR11 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR11, "push r11", false);
-            usableX64Opcodes.pushR12 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR12, "push r12", false);
-            usableX64Opcodes.pushR13 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR13, "push r13", false);
-            usableX64Opcodes.pushR14 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR14, "push r14", false);
-            usableX64Opcodes.pushR15 = RopGadgetFilter.SelectUsable(x64Opcodes.pushR15, "push r15", false);
-            usableX64Opcodes.jmpRsp = RopGadgetFilter.SelectUsable(x64Opcodes.jmpRsp, "jmp rsp", false);
-            usableX64Opcodes.callRsp = RopGadgetFilter.SelectUsable(x64Opcodes.callRsp, "call rsp", false);
-            usableX64Opcodes.xorRax = RopGadgetFilter.SelectUsable(x64Opcodes.xorRax, "xor rax", false);
-            usableX64Opcodes.xorRbx = RopGadgetFilter.SelectUsable(x64Opcodes.xorRbx, "xor rbx", false);
-            usableX64Opcodes.xorRcx = RopGadgetFilter.SelectUsable(x64Opcodes.xorRcx, "xor rcx", false);
-            usableX64Opcodes.xorRdx = RopGadgetFilter.SelectUsable(x64Opcodes.xorRdx, "xor rdx", false);
-            usableX64Opcodes.xorRsi = RopGadgetFilter.SelectUsable(x64Opcodes.xorRsi, "xor rsi", false);
-            usableX64Opcodes.xorRdi = RopGadgetFilter.SelectUsable(x64Opcodes.xorRdi, "xor rdi", false);
-            usableX64Opcodes.xorR8 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR8, "xor r8", false);
-            usableX64Opcodes.xorR9 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR9, "xor r9", false);
-            usableX64Opcodes.xorR10 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR10, "xor r10", false);
-            usableX64Opcodes.xorR11 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR11, "xor r11", false);
-            usableX64Opcodes.xorR12 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR12, "xor r12", false);
-            usableX64Opcodes.xorR13 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR13, "xor r13", false);
-            usableX64Opcodes.xorR14 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR14, "xor r14", false);
-            usableX64Opcodes.xorR15 = RopGadgetFilter.SelectUsable(x64Opcodes.xorR15, "xor r15", false);
-            usableX64Opcodes.popRax = RopGadgetFilter.SelectUsable(x64Opcodes.popRax, "pop rax", true);
-            usableX64Opcodes.popRbx = RopGadgetFilter.SelectUsable(x64Opcodes.popRbx, "pop rbx", true);
-            usableX64Opcodes.popRcx = RopGadgetFilter.SelectUsable(x64Opcodes.popRcx, "pop rcx", true);
-            usableX64Opcodes.popRdx = RopGadgetFilter.SelectUsable(x64Opcodes.popRdx, "pop rdx", true);
-            usableX64Opcodes.popRsp = RopGadgetFilter.SelectUsable(x64Opcodes.popRsp, "pop rsp", true);
-            usableX64Opcodes.popRbp = RopGadgetFilter.SelectUsable(x64Opcodes.popRbp, "pop rbp", true);
-            usableX64Opcodes.popRsi = RopGadgetFilter.SelectUsable(x64Opcodes.popRsi, "pop rsi", true);
-            usableX64Opcodes.popRdi = RopGadgetFilter.SelectUsable(x64Opcodes.popRdi, "pop rdi", true);
-            usableX64Opcodes.popR8 = RopGadgetFilter.SelectUsable(x64Opcodes.popR8, "pop r8", false);
-            usableX64Opcodes.popR9 = RopGadgetFilter.SelectUsable(x64Opcodes.popR9, "pop r9", false);
-            usableX64Opcodes.popR10 = RopGadgetFilter.SelectUsable(x64Opcodes.popR10, "pop r10", false);
-            usableX64Opcodes.popR11 = RopGadgetFilter.SelectUsable(x64Opcodes.popR11, "pop r11", false);
-            usableX64Opcodes.popR12 = RopGadgetFilter.SelectUsable(x64Opcodes.popR12, "pop r12", false);
-            usableX64Opcodes.popR13 = RopGadgetFilter.SelectUsable(x64Opcodes.popR13, "pop r13", false);
-            usableX64Opcodes.popR14 = RopGadgetFilter.SelectUsable(x64Opcodes.popR14, "pop r14", false);
-            usableX64Opcodes.popR15 = RopGadgetFilter.SelectUsable(x64Opcodes.popR15, "pop r15", false);
-            usableX64Opcodes.incRax = RopGadgetFilter.SelectUsable(x64Opcodes.incRax, "inc rax", false);
-            usableX64Opcodes.incRbx = RopGadgetFilter.SelectUsable(x64Opcodes.incRbx, "inc rbx", false);
-            usableX64Opcodes.incRcx = RopGadgetFilter.SelectUsable(x64Opcodes.incRcx, "inc rcx", false);
-            usableX64Opcodes.incRdx = RopGadgetFilter.SelectUsable(x64Opcodes.incRdx, "inc rdx", false);
-            usableX64Opcodes.incRbp = RopGadgetFilter.SelectUsable(x64Opcodes.incRbp, "inc rbp", false);
-            usableX64Opcodes.incRsp = RopGadgetFilter.SelectUsable(x64Opcodes.incRsp, "inc rsp", false);
-            usableX64Opcodes.incRsi = RopGadgetFilter.SelectUsable(x64Opcodes.incRsi, "inc rsi", false);
-            usableX64Opcodes.incRdi = RopGadgetFilter.SelectUsable(x64Opcodes.incRdi, "inc rdi", false);
-            usableX64Opcodes.incR8 = RopGadgetFilter.SelectUsable(x64Opcodes.incR8, "inc r8", false);
-            usableX64Opcodes.incR9 = RopGadgetFilter.SelectUsable(x64Opcodes.incR9, "inc r9", false);
-            usableX64Opcodes.incR10 = RopGadgetFilter.SelectUsable(x64Opcodes.incR10, "inc r10", false);
-            usableX64Opcodes.incR11 = RopGadgetFilter.SelectUsable(x64Opcodes.incR11, "inc r11", false);
-            usableX64Opcodes.incR12 = RopGadgetFilter.SelectUsable(x64Opcodes.incR12, "inc r12", false);
-            usableX64Opcodes.incR13 = RopGadgetFilter.SelectUsable(x64Opcodes.incR13, "inc r13", false);
-            usableX64Opcodes.incR14 = RopGadgetFilter.SelectUsable(x64Opcodes.incR14, "inc r14", false);
-            usableX64Opcodes.incR15 = RopGadgetFilter.SelectUsable(x64Opcodes.incR15, "inc r15", false);
-            usableX64Opcodes.decRax = RopGadgetFilter.SelectUsable(x64Opcodes.decRax, "dec rax", false);
-            usableX64Opcodes.decRbx = RopGadgetFilter.SelectUsable(x64Opcodes.decRbx, "dec rbx", false);
-            usableX64Opcodes.decRcx = RopGadgetFilter.SelectUsable(x64Opcodes.decRcx, "dec rcx", false);
-            usableX64Opcodes.decRdx = RopGadgetFilter.SelectUsable(x64Opcodes.decRdx, "dec rdx", false);
-            usableX64Opcodes.decRbp = RopGadgetFilter.SelectUsable(x64Opcodes.decRbp, "dec rbp", false);
-            usableX64Opcodes.decRsp = RopGadgetFilter.SelectUsable(x64Opcodes.decRsp, "dec rsp", false);
-            usableX64Opcodes.decRsi = RopGadgetFilter.SelectUsable(x64Opcodes.decRsi, "dec rsi", false);
-            usableX64Opcodes.decRdi = RopGadgetFilter.SelectUsable(x64Opcodes.decRdi, "dec rdi", false);
-            usableX64Opcodes.decR8 = RopGadgetFilter.SelectUsable(x64Opcodes.decR8, "dec r8", false);
-            usableX64Opcodes.decR9 = RopGadgetFilter.SelectUsable(x64Opcodes.decR9, "dec r9", false);
-            usableX64Opcodes.decR10 = RopGadgetFilter.SelectUsable(x64Opcodes.decR10, "dec r10", false);
-            usableX64Opcodes.decR11 = RopGadgetFilter.SelectUsable(x64Opcodes.decR11, "dec r11", false);
-            usableX64Opcodes.decR12 = RopGadgetFilter.SelectUsable(x64Opcodes.decR12, "dec r12", false);
-            usableX64Opcodes.decR13 = RopGadgetFilter.SelectUsable(x64Opcodes.decR13, "dec r13", false);
-            usableX64Opcodes.decR14 = RopGadgetFilter.SelectUsable(x64Opcodes.decR14, "dec r14", false);
-            usableX64Opcodes.decR15 = RopGadgetFilter.SelectUsable(x64Opcodes.decR15, "dec r15", false);
-            usableX64Opcodes.add = RopGadgetFilter.SelectUsable(x64Opcodes.add, "add", false);
-            usableX64Opcodes.mov = RopGadgetFilter.SelectUsable(x64Opcodes.mov, "mov", false);
-            usableX64Opcodes.sub = RopGadgetFilter.SelectUsable(x64Opcodes.sub, "sub", false);
-            usableX64Opcodes.jmpRax = RopGadgetFilter.SelectUsable(x64Opcodes.jmpRax, "jmp rax", false);
-            usableX64Opcodes.callRax = RopGadgetFilter.SelectUsable(x64Opcodes.callRax, "call rax", false);
+            // The mnemonic and the numeric-operand rule for each list live in
+            // GadgetCatalog, so this is the same loop for both architectures
+            // rather than one line per list written out 85 times.
+            foreach (var list in GadgetCatalog.X64Lists)
+            {
+                list.Set(usableX64Opcodes, RopGadgetFilter.SelectUsable(
+                    list.Get(x64Opcodes), list.Mnemonic, list.ExcludeNumericOperands));
+            }
         }
         #endregion
 
         #region GenerateVirtualAllocChain64
-        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain64(ProcessInfo info)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain64(ProcessInfo info)
         {
             ////////////////////////////////////////////////////////////////
             // VirtualAlloc Template:                                     //
@@ -2187,7 +1875,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GenerateHeapCreateChain
-        private ErcResult<List<Tuple<byte[], string>>> GenerateHeapCreateChain64(ProcessInfo info)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateHeapCreateChain64(ProcessInfo info)
         {
             ////////////////////////////////////////////////////////////////
             // HeapCreate Template:                                       //
@@ -2498,7 +2186,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GenerateVirtualProtectChain
-        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualProtectChain64(ProcessInfo info)
+        internal ErcResult<List<Tuple<byte[], string>>> GenerateVirtualProtectChain64(ProcessInfo info)
         {
             ////////////////////////////////////////////////////////////////
             // VirtualProtect Template:                                   //
@@ -2869,21 +2557,29 @@ namespace ERC.Utilities
                 ret.Add(regLists64.r9List[i]);
             }
 
+            // Both halves of this used to be written out unguarded: an indexer on
+            // ApiAddresses, which throws KeyNotFoundException when the API could not
+            // be resolved, and ElementAt(0) on a gadget list, which throws
+            // ArgumentOutOfRangeException when it is empty.
+            //
+            // Neither is an unusual state. A target with no "jmp rsp" outside the
+            // modules the user excluded, or none whose address survives the
+            // bad-character filter, produces an empty list, and the whole --rop
+            // command then failed with an argument error naming nothing the user
+            // could act on. A chain with a clearly marked gap is more use.
             switch (method)
             {
                 case RopMethod.VirtualAlloc:
-                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["VirtualAlloc"]), "Pointer to VirtualAlloc."));
-                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRsp.ElementAt(0).Key),
-                        usableX64Opcodes.jmpRsp.ElementAt(0).Value));
+                    ret.Add(ApiPointer("VirtualAlloc"));
+                    ret.Add(FirstGadget(usableX64Opcodes.jmpRsp, "jmp rsp"));
                     break;
                 case RopMethod.HeapCreate:
-                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["HeapCreate"]), "Pointer to HeapCreate."));
-                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRax.ElementAt(0).Key), usableX64Opcodes.jmpRax.ElementAt(0).Value));
+                    ret.Add(ApiPointer("HeapCreate"));
+                    ret.Add(FirstGadget(usableX64Opcodes.jmpRax, "jmp rax"));
                     break;
                 case RopMethod.VirtualProtect:
-                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)ApiAddresses["VirtualProtect"]), "Pointer to VirtualProtect."));
-                    ret.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.jmpRsp.ElementAt(0).Key),
-                        usableX64Opcodes.jmpRsp.ElementAt(0).Value));
+                    ret.Add(ApiPointer("VirtualProtect"));
+                    ret.Add(FirstGadget(usableX64Opcodes.jmpRsp, "jmp rsp"));
                     break;
                 default:
                     break;
@@ -2892,6 +2588,34 @@ namespace ERC.Utilities
             return ret;
         }
         #endregion
+
+        /// <summary>
+        /// A stack entry holding the address of an API, or a marked gap.
+        /// </summary>
+        private Tuple<byte[], string> ApiPointer(string name)
+        {
+            IntPtr address;
+
+            return ApiAddresses.TryGetValue(name, out address)
+                ? Tuple.Create(BitConverter.GetBytes((long)address), "Pointer to " + name + ".")
+                : Tuple.Create(new byte[8],
+                    "Unable to resolve " + name + ". This address must be supplied manually.");
+        }
+
+        /// <summary>
+        /// A stack entry holding the first gadget of a list, or a marked gap.
+        /// </summary>
+        private static Tuple<byte[], string> FirstGadget(Dictionary<IntPtr, string> gadgets, string description)
+        {
+            if (gadgets == null || gadgets.Count == 0)
+            {
+                return Tuple.Create(new byte[8],
+                    "Unable to find a \"" + description + "\" gadget. This must be supplied manually.");
+            }
+
+            KeyValuePair<IntPtr, string> first = gadgets.ElementAt(0);
+            return Tuple.Create(BitConverter.GetBytes((long)first.Key), first.Value);
+        }
 
         #region CalculateAddInstructions64
         private byte[] CalculateAddInstructions64(int size)
@@ -3708,14 +3432,6 @@ namespace ERC.Utilities
             /// </summary>
             public Dictionary<IntPtr, string> xorRdi = new Dictionary<IntPtr, string>();
             /// <summary>
-            /// xorRsp list.
-            /// </summary>
-            public Dictionary<IntPtr, string> xorRsp = new Dictionary<IntPtr, string>();
-            /// <summary>
-            /// xorRbp list.
-            /// </summary>
-            public Dictionary<IntPtr, string> xorRbp = new Dictionary<IntPtr, string>();
-            /// <summary>
             /// xorR8 list.
             /// </summary>
             public Dictionary<IntPtr, string> xorR8 = new Dictionary<IntPtr, string>();
@@ -3932,10 +3648,15 @@ namespace ERC.Utilities
         [Flags]
         public enum RopMethod : ushort
         {
+            /// <summary>Allocate a new executable region with VirtualAlloc and return into it.</summary>
             [Description(" VirtualAlloc")] VirtualAlloc = 1,
+            /// <summary>Create an executable heap with HeapCreate and return into it.</summary>
             [Description(" HeapCreate")] HeapCreate = 2,
+            /// <summary>Mark the existing region executable with VirtualProtect.</summary>
             [Description(" VirtualProtect")] VirtualProtect = 4,
+            /// <summary>Write the payload over existing executable memory with WriteProcessMemory.</summary>
             [Description(" WriteProcessMemory")] WriteProcessMemory = 8,
+            /// <summary>Attempt every method and return whichever chains could be built.</summary>
             [Description(" All")] All = 15
         }
     }

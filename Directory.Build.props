@@ -23,13 +23,24 @@
     <Nullable>enable</Nullable>
 
     <!--
-      Nullable warnings are errors. The codebase is at zero, and the value of the
-      annotations is that they stay true; a warning nobody acts on is worse than
-      not having enabled it. The two ROP generators opt out with a file-level
-      pragma until they are rewritten.
+      Every warning is an error. The build is at zero warnings across all four legs
+      (x86 and x64, net472 and net8.0-windows) and the point of getting there is that
+      it stays there - a warning nobody acts on is worse than not having enabled it.
+
+      Where a warning is genuinely not worth acting on, it is suppressed explicitly
+      and with a reason: see the NoWarn entries in ERC.Net.csproj for the deliberate
+      obsoletions, and the file-scoped pragmas in Native/ for the P/Invoke
+      declarations that Microsoft already documents.
     -->
-    <WarningsAsErrors>$(WarningsAsErrors);Nullable</WarningsAsErrors>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!--
+      Off. The only unsafe code was ModuleInfo's PE header parsing, which cast a
+      pointer over a fixed buffer and followed an offset taken from the file with no
+      bounds check. That is now ERC.Utilities.PeHeaders, where every read is checked
+      by the runtime. Leaving the switch off means the next such block does not
+      compile silently.
+    -->
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 
     <!-- Reproducibility: no timestamps or machine paths baked into output. -->
     <Deterministic>true</Deterministic>

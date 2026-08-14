@@ -27,9 +27,11 @@ namespace ERC.Utilities
     [DataContract]
     public class GithubRelease
     {
+        /// <summary>The release tag, for example "64".</summary>
         [DataMember(Name = "tag_name")]
         public string? TagName { get; set; }
 
+        /// <summary>The files published with the release.</summary>
         [DataMember(Name = "assets")]
         public List<GithubReleaseAsset>? Assets { get; set; }
 
@@ -103,9 +105,11 @@ namespace ERC.Utilities
     [DataContract]
     public class GithubReleaseAsset
     {
+        /// <summary>The asset's file name.</summary>
         [DataMember(Name = "name")]
         public string? Name { get; set; }
 
+        /// <summary>Where the asset can be downloaded from.</summary>
         [DataMember(Name = "browser_download_url")]
         public string? BrowserDownloadUrl { get; set; }
     }

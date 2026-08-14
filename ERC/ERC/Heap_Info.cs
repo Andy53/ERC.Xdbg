@@ -6,6 +6,9 @@ using ERC.Structures;
 using ERC.Native;
 namespace ERC
 {
+    /// <summary>
+    /// The heaps belonging to a process, and their entries.
+    /// </summary>
     public class HeapInfo
     {
         #region Variables
@@ -16,6 +19,10 @@ namespace ERC
         #endregion
 
         #region Constructor
+        /// <summary>
+        /// Walks the heaps of a process and records what it finds.
+        /// </summary>
+        /// <param name="info">The process to walk.</param>
         public HeapInfo(ProcessInfo info)
         {
             HeapProcess = info;

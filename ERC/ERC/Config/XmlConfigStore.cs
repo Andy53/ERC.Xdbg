@@ -18,6 +18,11 @@ namespace ERC.Config
 
         private readonly string _path;
 
+        /// <summary>
+        /// Creates a store backed by the file at <paramref name="path"/>.
+        /// </summary>
+        /// <param name="path">The config file. It need not exist yet.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="path"/> was null or empty.</exception>
         public XmlConfigStore(string path)
         {
             if (string.IsNullOrEmpty(path))
@@ -76,6 +81,7 @@ namespace ERC.Config
             return System.IO.Path.Combine(DefaultDirectory(), DefaultFileName);
         }
 
+        /// <inheritdoc/>
         public ErcConfig? Load()
         {
             if (!File.Exists(_path))
@@ -112,6 +118,7 @@ namespace ERC.Config
             }
         }
 
+        /// <inheritdoc/>
         public bool Save(ErcConfig config)
         {
             if (config == null)
