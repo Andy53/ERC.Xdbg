@@ -79,6 +79,8 @@ namespace ERC.Utilities
         /// </exception>
         public string DownloadUrlFor(string extension)
         {
+            var matches = new List<GithubReleaseAsset>();
+
             if (Assets != null)
             {
                 foreach (GithubReleaseAsset asset in Assets)
@@ -89,13 +91,41 @@ namespace ERC.Utilities
                     if (name != null && url != null && url.Length > 0 &&
                         name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
                     {
-                        return url;
+                        matches.Add(asset);
                     }
                 }
             }
 
-            throw new ERCException(
-                "The latest release contains no " + extension + " asset to download.");
+            if (matches.Count == 0)
+            {
+                throw new ERCException(
+                    "The latest release contains no " + extension + " asset to download.");
+            }
+
+            // More than one candidate is refused rather than resolved by taking the
+            // first. The order assets come back in is GitHub's, not ours, so picking
+            // one would mean installing whichever it happened to list first.
+            //
+            // This is a real state to be in: a release updated in place keeps its old
+            // assets unless they are explicitly removed, and the asset naming has
+            // changed across releases of this plugin. Downloading the wrong one would
+            // install an older build over a newer one, and it would verify correctly
+            // against its own published hash while doing so.
+            if (matches.Count > 1)
+            {
+                var names = new List<string>();
+                foreach (GithubReleaseAsset asset in matches)
+                {
+                    names.Add(asset.Name!);
+                }
+
+                throw new ERCException(
+                    "The latest release contains more than one " + extension + " asset (" +
+                    string.Join(", ", names.ToArray()) + "), so it is not clear which should be " +
+                    "installed. Nothing has been downloaded.");
+            }
+
+            return matches[0].BrowserDownloadUrl!;
         }
     }
 

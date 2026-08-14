@@ -129,8 +129,18 @@ jobs:
           # tag the plugin fetches has no release at all, which is worse than an
           # out-of-date one. --clobber replaces the assets so nothing stale survives.
           if gh release view "$tag" >/dev/null 2>&1; then
+            # Every existing asset goes first. --clobber only replaces an asset of
+            # the same name, and the names have changed across releases - the 2.0.3
+            # assets were "ERC.Xdbg_64-2.0.3.zip". A leftover .zip is not merely
+            # untidy: the updater downloads the first .zip it finds on the release,
+            # so a stale one can be installed in place of the new build.
+            for asset in $(gh release view "$tag" --json assets --jq '.assets[].name'); do
+              echo "removing stale asset: $asset"
+              gh release delete-asset "$tag" "$asset" --yes
+            done
+
             gh release edit "$tag" --title "$title" --notes "$notes" --verify-tag
-            gh release upload "$tag" "$zip" "$zip.sha256" --clobber
+            gh release upload "$tag" "$zip" "$zip.sha256"
           else
             gh release create "$tag" \
               "$zip" "$zip.sha256" \

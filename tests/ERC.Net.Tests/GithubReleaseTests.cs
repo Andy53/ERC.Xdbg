@@ -124,5 +124,36 @@ namespace ERC.Net.Tests
 
             GithubRelease.Parse(upper).DownloadUrlFor(".zip").ShouldBe("https://example.com/PLUGIN.ZIP");
         }
+
+        [Fact]
+        public void A_release_with_two_matching_assets_is_refused()
+        {
+            // The 2.0.3 releases published "ERC.Xdbg_64-2.0.3.zip"; the current ones
+            // publish "Erc.Xdbg-x64.zip". Updating a release in place keeps its old
+            // assets unless they are removed, and taking the first of two would mean
+            // installing whichever GitHub happened to list first - which could be the
+            // older build, and would verify correctly against its own hash.
+            string json = "{\"tag_name\":\"64\",\"assets\":[" +
+                "{\"name\":\"ERC.Xdbg_64-2.0.3.zip\",\"browser_download_url\":\"https://example.com/old.zip\"}," +
+                "{\"name\":\"Erc.Xdbg-x64.zip\",\"browser_download_url\":\"https://example.com/new.zip\"}]}";
+
+            var error = Should.Throw<ERCException>(() => GithubRelease.Parse(json).DownloadUrlFor(".zip"));
+
+            error.Message.ShouldContain("more than one");
+            error.Message.ShouldContain("ERC.Xdbg_64-2.0.3.zip");
+            error.Message.ShouldContain("Erc.Xdbg-x64.zip");
+        }
+
+        [Fact]
+        public void The_hash_file_beside_an_asset_is_not_mistaken_for_the_asset()
+        {
+            // A release carries the archive and its .sha256. Matching on the extension
+            // rather than on a substring is what keeps these apart.
+            string json = "{\"tag_name\":\"64\",\"assets\":[" +
+                "{\"name\":\"Erc.Xdbg-x64.zip\",\"browser_download_url\":\"https://example.com/a.zip\"}," +
+                "{\"name\":\"Erc.Xdbg-x64.zip.sha256\",\"browser_download_url\":\"https://example.com/a.zip.sha256\"}]}";
+
+            GithubRelease.Parse(json).DownloadUrlFor(".zip").ShouldBe("https://example.com/a.zip");
+        }
     }
 }
