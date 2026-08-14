@@ -750,8 +750,20 @@ namespace ErcXdbg
                 string updatePath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
                 var wClient = new WebClient();
-                ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+                // Certificate validation is deliberately left alone.
+                //
+                // This used to add a callback returning true for every certificate,
+                // which disabled TLS validation for the entire x64dbg process - and
+                // because it used "+=" on a global static, permanently, for every
+                // other component too. On a code path that downloads a DLL and
+                // installs it where the debugger will load it, that turned any
+                // attacker positioned on the network into code execution.
+                //
+                // If a proxy needs to be trusted, install its CA certificate rather
+                // than turning validation off.
+                ServicePointManager.SecurityProtocol =
+                    SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
 
                 string releases = "";
                 string[] releasesArray = null;
@@ -1959,8 +1971,12 @@ namespace ErcXdbg
         private static void rop(ERC.ProcessInfo info, bool gadgetsOnly = false)
         {
             PLog.WriteLine("Starting to build ROP Chains.");
-            ERC.Utilities.RopChainGenerator32 RCG = new ERC.Utilities.RopChainGenerator32(info);
-            //ERC.Utilities.RopChainGenerator64 RCG = new ERC.Utilities.RopChainGenerator64(info);
+
+            // The generator is chosen from the architecture of the process actually
+            // under debug, rather than from a hand-edited build. Picking the wrong
+            // one produces a plausible-looking chain that cannot work on the target.
+            bool target64Bit = info.ProcessMachineType == ERC.MachineType.x64;
+
             List<string> excludes = new List<string>();
             foreach(ERC.ModuleInfo mi in info.ModulesInfo)
             {
@@ -1971,52 +1987,64 @@ namespace ErcXdbg
                 }
             }
 
+            bool filtered = Globals.bytes.Length > 0 || excludes.Count > 0;
+
             try
             {
-                if(gadgetsOnly == true)
+                PLog.WriteLine("Generating ROP chain files...");
+
+                if (target64Bit)
                 {
-                    PLog.WriteLine("Generating ROP chain files...");
-                    if (Globals.bytes.Length > 0 || excludes.Count > 0)
+                    var generator = new ERC.Utilities.RopChainGenerator64(info);
+                    if (gadgetsOnly)
                     {
-                        RCG.GenerateRopGadgets32(Globals.bytes, excludes);           //Uncomment if 32 bit
-                        //RCG.GenerateRopGadgets64(Globals.bytes, excludes);           //Uncomment if 64 bit
+                        if (filtered)
+                        {
+                            generator.GenerateRopGadgets64(Globals.bytes, excludes);
+                        }
+                        else
+                        {
+                            generator.GenerateRopGadgets64();
+                        }
                     }
                     else
                     {
-                        RCG.GenerateRopGadgets32();           //Uncomment if 32 bit
-                        //RCG.GenerateRopGadgets64();           //Uncomment if 64 bit
+                        var ropHolder = filtered
+                            ? generator.GenerateRopChain64(Globals.bytes, excludes)
+                            : generator.GenerateRopChain64();
+                        PLog.WriteLine(ropHolder.ReturnValue);
                     }
-                    PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
                 }
                 else
                 {
-                    PLog.WriteLine("Generating ROP chain files...");
-                    if(Globals.bytes.Length > 0 || excludes.Count > 0)
+                    var generator = new ERC.Utilities.RopChainGenerator32(info);
+                    if (gadgetsOnly)
                     {
-                        var ropHolder = RCG.GenerateRopChain32(Globals.bytes, excludes); //Uncomment if 32 bit
-                        //var ropHolder = RCG.GenerateRopChain64(Globals.bytes, excludes);             //Uncomment if 64 bit
-                        PLog.WriteLine(ropHolder.ReturnValue);
-
+                        if (filtered)
+                        {
+                            generator.GenerateRopGadgets32(Globals.bytes, excludes);
+                        }
+                        else
+                        {
+                            generator.GenerateRopGadgets32();
+                        }
                     }
                     else
                     {
-                        var ropHolder = RCG.GenerateRopChain32();             //Uncomment if 32 bit
-                        //var ropHolder = RCG.GenerateRopChain64();              //Uncomment if 64 bit
+                        var ropHolder = filtered
+                            ? generator.GenerateRopChain32(Globals.bytes, excludes)
+                            : generator.GenerateRopChain32();
                         PLog.WriteLine(ropHolder.ReturnValue);
                     }
-                    PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
                 }
+
+                PLog.WriteLine("ROP chain generation completed. Files can be found in {0}", info.WorkingDirectory);
             }
             catch(Exception e)
             {
                 PrintHelp(e.Message);
             }
-            finally
-            {
-                RCG = null;
-                GC.Collect();
-            }
-            
+
             return;
         }
 

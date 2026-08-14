@@ -58,6 +58,14 @@ namespace ERC.Utilities
                 return result;
             }
 
+            // Built with a StringBuilder rather than by repeatedly reassigning a
+            // string. The old version did "result.ReturnValue += c" inside a triple
+            // nested loop, reallocating and copying the whole pattern on every
+            // character: quadratic in the length. Generating the 66,923 character
+            // extended pattern - which happens on the ErcCore constructor path, so
+            // at plugin start - copied several gigabytes to produce 66 KB.
+            var pattern = new StringBuilder(length);
+
             for (int i = 0; i < uppercase.Length; i++)
             {
                 for (int j = 0; j < lowercase.Length; j++)
@@ -68,48 +76,35 @@ namespace ERC.Utilities
                         char pos2 = lowercase[j];
                         char pos3 = digits[k];
 
-                        if (result.ReturnValue.Length > length)
+                        if (pattern.Length < length - 2)
+                        {
+                            pattern.Append(pos1).Append(pos2).Append(pos3);
+                        }
+                        else if (pattern.Length < length - 1)
+                        {
+                            pattern.Append(pos1).Append(pos2);
+                        }
+                        else if (pattern.Length < length)
+                        {
+                            pattern.Append(pos1);
+                        }
+
+                        if (pattern.Length == length)
+                        {
+                            result.ReturnValue = pattern.ToString();
+                            return result;
+                        }
+
+                        if (pattern.Length > length)
                         {
                             result.Error = new ERCException("Procedural Error: Pattern string has exceeded the length supplied");
                             result.ReturnValue = "";
                             return result;
                         }
-
-                        if (result.ReturnValue.Length == length)
-                        {
-                            return result;
-                        }
-
-                        if (result.ReturnValue.Length < length - 2)
-                        {
-                            result.ReturnValue += pos1;
-                            result.ReturnValue += pos2;
-                            result.ReturnValue += pos3;
-                            if (result.ReturnValue.Length == length)
-                            {
-                                return result;
-                            }
-                        }
-                        else if (result.ReturnValue.Length < length - 1)
-                        {
-                            result.ReturnValue += pos1;
-                            result.ReturnValue += pos2;
-                            if (result.ReturnValue.Length == length)
-                            {
-                                return result;
-                            }
-                        }
-                        else if (result.ReturnValue.Length < length)
-                        {
-                            result.ReturnValue += pos1;
-                            if (result.ReturnValue.Length == length)
-                            {
-                                return result;
-                            }
-                        }
                     }
                 }
             }
+
             result.Error = new ERCException("An unknown error has occured. Function exited incorrectly. Function: ERC.Pattern_Tools.Pattern_Create");
             result.LogEvent();
             return result;
@@ -126,6 +121,20 @@ namespace ERC.Utilities
         /// <returns>Returns an ErcResult int containing the offset of the supplied pattern within the generated pattern</returns>
         public static ErcResult<string> PatternOffset(string pattern, ErcCore core, bool extended = false)
         {
+            ErcResult<string> result = new ErcResult<string>(core);
+
+            // Validated before the pattern file is read. This check used to sit
+            // after an 87 KB file load, and set only Error while leaving ReturnValue
+            // null - but the plugin prints ReturnValue, so "ERC --pattern o Aa"
+            // reported nothing at all rather than explaining the problem.
+            if (string.IsNullOrEmpty(pattern) || pattern.Length < 3)
+            {
+                result.Error = new ERCException("User Input Error: Pattern length must be 3 characters or longer.");
+                result.ReturnValue = "Search string must be 3 characters or longer.";
+                result.LogEvent();
+                return result;
+            }
+
             //create string with reversed version of pattern to be searched for.
             char[] reversedChars = pattern.ToCharArray();
             Array.Reverse(reversedChars);
@@ -142,14 +151,6 @@ namespace ERC.Utilities
             else
             {
                 patternFull = File.ReadAllText(core.PatternStandardPath);
-            }
-            ErcResult<string> result = new ErcResult<string>(core);
-
-            if (pattern.Length < 3)
-            {
-                result.Error = new ERCException("User Input Error: Pattern length must be 3 characters or longer.");
-                result.LogEvent();
-                return result;
             }
 
             if (patternFull.Contains(pattern))

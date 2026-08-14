@@ -18,61 +18,23 @@ namespace ERC.Utilities
         /// <returns>Returns a ErcResult of List IntPtr</returns>
         public static List<IntPtr> RemovePointers(MachineType mt, List<IntPtr> srcList, byte[] bytes)
         {
-            if (bytes == null || bytes.Length == 0)
+            if (bytes == null || bytes.Length == 0 || srcList == null)
             {
                 return srcList;
             }
 
-            List<string> outText = new List<string>();
-            bool nullByte = false;
-            foreach (byte b in bytes)
+            int width = PointerWidth(mt);
+            var kept = new List<IntPtr>(srcList.Count);
+
+            foreach (IntPtr pointer in srcList)
             {
-                if (b == 0x00)
+                if (!ContainsExcludedByte(pointer, width, bytes))
                 {
-                    nullByte = true;
-                }
-            }
- 
-            for (int i = 0; i < srcList.Count; i++)
-            {
-                bool removed = false;
-                var ptr = BitConverter.GetBytes((int)srcList[i]);
-                for(int j = 0; j < ptr.Length; j++)
-                {
-                    for(int k = 0; k < bytes.Length; k++)
-                    {
-                        if (bytes[k] == ptr[j] && removed == false)
-                        {
-                            srcList.RemoveAt(i);
-                            removed = true;
-                            i--;
-                            continue;
-                        }
-                        if(mt == MachineType.I386 && removed == false && nullByte == true)
-                        {
-                            if(srcList[i].ToString("X8").Length < 7)
-                            {
-                                srcList.RemoveAt(i);
-                                removed = true;
-                                i--;
-                                continue;
-                            }
-                        }
-                        else if(mt == MachineType.x64 && removed == false && nullByte == true)
-                        {
-                            if (srcList[i].ToString("X").Length < 15)
-                            {
-                                srcList.RemoveAt(i);
-                                removed = true;
-                                i--;
-                                continue;
-                            }
-                        }
-                    }
+                    kept.Add(pointer);
                 }
             }
 
-            return srcList;
+            return kept;
         }
 
         /// <summary>
@@ -84,59 +46,69 @@ namespace ERC.Utilities
         /// <returns>Returns a ErcResult of Dictionary IntPtr, String</returns>
         public static Dictionary<IntPtr, string> RemovePointers(MachineType mt, Dictionary<IntPtr, string> srcList, byte[] bytes)
         {
-            if(bytes == null || bytes.Length == 0)
+            if (bytes == null || bytes.Length == 0 || srcList == null)
             {
                 return srcList;
             }
 
-            bool nullByte = false;
-            foreach(byte b in bytes)
+            int width = PointerWidth(mt);
+            var kept = new Dictionary<IntPtr, string>(srcList.Count);
+
+            foreach (KeyValuePair<IntPtr, string> entry in srcList)
             {
-                if(b == 0x00)
+                if (!ContainsExcludedByte(entry.Key, width, bytes))
                 {
-                    nullByte = true;
+                    kept.Add(entry.Key, entry.Value);
                 }
             }
 
-            for (int i = 0; i < srcList.Count; i++)
+            return kept;
+        }
+
+        /// <summary>
+        /// The number of bytes a pointer occupies in the target process.
+        /// </summary>
+        private static int PointerWidth(MachineType mt)
+        {
+            return mt == MachineType.x64 ? 8 : 4;
+        }
+
+        /// <summary>
+        /// True when any byte of the pointer, as it would appear in the target's
+        /// memory, is one of the excluded bytes.
+        /// </summary>
+        /// <remarks>
+        /// Only the bytes the pointer actually occupies are examined, which is what
+        /// the two previous implementations each got wrong in a different direction:
+        ///
+        /// The list overload narrowed with "(int)srcList[i]". IntPtr's conversion to
+        /// int is checked, so on a 64-bit target every address above 0x7FFFFFFF threw
+        /// an OverflowException instead of being filtered - the "-Bytes" option was
+        /// unusable there.
+        ///
+        /// The dictionary overload widened every pointer to 8 bytes, so on a 32-bit
+        /// target the four bytes of padding read as nulls. Excluding 0x00, the most
+        /// common bad character there is, silently discarded every pointer and left
+        /// the user believing no gadgets existed.
+        /// </remarks>
+        private static bool ContainsExcludedByte(IntPtr pointer, int width, byte[] excluded)
+        {
+            long value = pointer.ToInt64();
+
+            for (int i = 0; i < width; i++)
             {
-                bool removed = false;
-                var ptr = BitConverter.GetBytes((long)srcList.ElementAt(i).Key);
-                for (int j = 0; j < ptr.Length; j++)
+                byte current = (byte)(value >> (i * 8));
+
+                for (int j = 0; j < excluded.Length; j++)
                 {
-                    for (int k = 0; k < bytes.Length; k++)
+                    if (excluded[j] == current)
                     {
-                        if (bytes[k] == ptr[j] && removed == false)
-                        {
-                            srcList.Remove(srcList.ElementAt(i).Key);
-                            removed = true;
-                            i--;
-                            continue;
-                        }
-                        if (mt == MachineType.I386 && removed == false && nullByte == true)
-                        {
-                            if (srcList.ElementAt(i).Key.ToString("X").Length < 7)
-                            {
-                                srcList.Remove(srcList.ElementAt(i).Key);
-                                removed = true;
-                                i--;
-                                continue;
-                            }
-                        }
-                        else if (mt == MachineType.x64 && removed == false && nullByte == true)
-                        {
-                            if (srcList.ElementAt(i).Key.ToString("X").Length < 15)
-                            {
-                                srcList.Remove(srcList.ElementAt(i).Key);
-                                removed = true;
-                                i--;
-                                continue;
-                            }
-                        }
+                        return true;
                     }
                 }
             }
-            return srcList;
+
+            return false;
         }
 
         #region Remove Pointers Protection

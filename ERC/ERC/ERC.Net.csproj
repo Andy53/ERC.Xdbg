@@ -1,118 +1,40 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
-    <Platforms>AnyCPU;x64;x86</Platforms>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>..\..\ERC.net\ERC\ERC.Net.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>x86</PlatformTarget>
-    <DocumentationFile>..\..\ERC.net\ERC\ERC.Net.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>x64</PlatformTarget>
-    <DocumentationFile>..\..\ERC.net\ERC\ERC.Net.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>x86</PlatformTarget>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>ERC.Net</AssemblyName>
+    <RootNamespace>ERC</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--
+      The XML file feeds the DocFX site, but a few dozen public members predate
+      the doc comments and drown out real warnings. Filling these in is tracked as
+      part of the documentation pass; suppressed here to keep build output useful.
+    -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="5.7.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.0" />
-    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <!--
+      Reloaded.Assembler brings its own FASM native binaries, so the assembler and
+      disassembler need no hand-placed DLLs. The previous HintPath references
+      pointed at a "ConsoleApp1" folder on the original author's machine and never
+      resolved on any other checkout.
+    -->
     <PackageReference Include="Reloaded.Assembler" Version="1.0.14" />
     <PackageReference Include="Reloaded.Memory" Version="8.0.1" />
     <PackageReference Include="SharpDisasm" Version="1.1.11" />
-    <PackageReference Include="System.Console" Version="4.3.1" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <PackageReference Include="System.Net.Primitives" Version="4.3.1" />
-    <PackageReference Include="System.Runtime" Version="4.3.1" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.3.1" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
-    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-    <PackageReference Include="System.Xml.ReaderWriter" Version="4.3.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Fasm.NET">
-      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Fasm.NET.dll</HintPath>
-    </Reference>
-    <Reference Include="Reloaded.Assembler">
-      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Reloaded.Assembler.dll</HintPath>
-    </Reference>
-    <Reference Include="Reloaded.Memory">
-      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Reloaded.Memory.dll</HintPath>
-    </Reference>
-    <Reference Include="Reloaded.Memory.Buffers">
-      <HintPath>..\..\ConsoleApp1\ConsoleApp1\bin\Debug\Reloaded.Memory.Buffers.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="Payloads.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="Thread_Info.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="ERCException.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="RopChainGenerator32.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="RopChainGenerator64.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="PtrRemover.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="Convert.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="Heap_Info.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <NativeLibs Remove="Win32Errors.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="C:\Users\Andy\.nuget\packages\reloaded.assembler\1.0.5\build\FASM-LICENSE.TXT" />
+    <!--
+      Reloaded's dependencies resolve to older versions of these three than the
+      ones it actually binds against. Pinning them here unifies the graph for
+      everything downstream; without it the build reports unresolvable conflicts
+      and the merged plugin can fail to load at run time.
+    -->
+    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
   </ItemGroup>
 
 </Project>

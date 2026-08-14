@@ -1,0 +1,54 @@
+<Project>
+
+  <!--
+    Shared build configuration for every project in the repository.
+
+    Architecture note: x64dbg loads plugins as native DLLs, so the plugin and its
+    dependencies must stay on .NET Framework and must be built for a concrete
+    architecture. "AnyCPU" is deliberately not offered - a plugin built AnyCPU
+    cannot carry the native export table x64dbg requires.
+  -->
+
+  <PropertyGroup>
+    <Platforms>x86;x64</Platforms>
+    <Platform Condition="'$(Platform)' == '' Or '$(Platform)' == 'AnyCPU'">x86</Platform>
+    <PlatformTarget>$(Platform)</PlatformTarget>
+
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Reproducibility: no timestamps or machine paths baked into output. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Restore must never silently reach for a package that was not asked for. -->
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+
+    <Company>ERC</Company>
+    <Authors>Andy Bowden</Authors>
+    <Copyright>Copyright (c) Andy Bowden</Copyright>
+    <Product>Erc.Xdbg</Product>
+    <Version>2.0.3</Version>
+
+    <!--
+      x64dbg reads the plugin's architecture from the file extension, and the
+      whole toolchain keys off this one property rather than hand-edited source.
+    -->
+    <ErcArchSuffix Condition="'$(Platform)' == 'x64'">64</ErcArchSuffix>
+    <ErcArchSuffix Condition="'$(Platform)' == 'x86'">32</ErcArchSuffix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      X64 is the single switch that selects 64-bit interop across the solution.
+      It replaces six hand-edited "uncomment for 64bit" sites.
+    -->
+    <DefineConstants Condition="'$(Platform)' == 'x64'">$(DefineConstants);X64</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Costura embeds dependencies; its IncludeAssets advice does not apply here. -->
+    <NoWarn>$(NoWarn);FodyPackageReference</NoWarn>
+  </PropertyGroup>
+
+</Project>

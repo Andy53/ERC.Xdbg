@@ -220,7 +220,7 @@ namespace ERC
         /// <param name="extended">display an extended set of </param>
         /// <param name="heapID">The ID of the heap to display stats for. (optional)</param>
         /// <param name="hexStartAddress">The start address of the specific heap block to display stats for in hexadecimal. (optional)</param>
-        /// <returns>returns a List<string> object</returns>
+        /// <returns>returns a List&lt;string&gt; object</returns>
         public ErcResult<List<string>> HeapStatistics(bool extended = false, ulong heapID = 0, string hexStartAddress = "")
         {
             ErcResult<List<string>> result = new ErcResult<List<string>>(HeapProcess);
@@ -439,7 +439,7 @@ namespace ERC
         /// <summary>
         /// Lists all HeapIDs associated with a process.
         /// </summary>
-        /// <returns>Returns an ErcResult<List<ulong>>"</returns>
+        /// <returns>Returns an ErcResult&lt;List&lt;ulong&gt;&gt;</returns>
         public ErcResult<List<ulong>> HeapIDs()
         {
             ErcResult<List<ulong>> result = new ErcResult<List<ulong>>(HeapProcess);

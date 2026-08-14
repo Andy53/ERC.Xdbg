@@ -18,8 +18,11 @@ namespace Managed.x64dbg.SDK
         public delegate void CBPLUGIN(CBTYPE cbType, ref IntPtr callbackInfo);
 
 
-        //private const string dll = "x64dbg.dll";   //Uncomment for 64bit
-        private const string dll = "x32dbg.dll"; //Uncomment for 32bit
+#if X64
+        private const string dll = "x64dbg.dll";
+#else
+        private const string dll = "x32dbg.dll";
+#endif
 
         private const CallingConvention cdecl = CallingConvention.Cdecl;
 

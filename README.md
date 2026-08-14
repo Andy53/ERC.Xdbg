@@ -13,7 +13,56 @@ An X64dbg plugin built around the [ERC](https://github.com/Andy53/ERC.net) libra
 ## Installation
 Installing the plugin is reasonably straight forward. Simply download the appropriate zip package for your architecture from the releases page of this repository and save then unzip it in the plugins directory of X64dbg. If X64dbg does not currently have a plugins directory then run it once to create the initial directory structure.
 
-If you wish to build the plugin from source simply clone the Git repository, open the solution in Visual Studio and build the project targeted for your architecture of choice. Then copy the binaries into the plugins directory of your X64dbg installation.
+### Building from source
+
+```
+git clone https://github.com/Andy53/ERC.Xdbg
+cd ERC.Xdbg
+.\build.ps1
+```
+
+That produces both architectures and verifies each one before reporting success:
+
+| Platform | Output | Copy into |
+| --- | --- | --- |
+| x86 | `ErcXdbg\bin\x86\Release\net472\Erc.Xdbg.dp32` | `x32\plugins\` |
+| x64 | `ErcXdbg\bin\x64\Release\net472\Erc.Xdbg.dp64` | `x64\plugins\` |
+
+Build one at a time with `.\build.ps1 -Platform x64`, or a debug build with
+`-Configuration Debug`. The solution also opens and builds in Visual Studio.
+
+**Requirements:** Visual Studio 2022 or the [Build Tools for Visual Studio](https://visualstudio.microsoft.com/downloads/)
+with the *.NET desktop build tools* workload. `dotnet build` alone is not enough:
+x64dbg loads plugins as native DLLs, and the native entry points are added by an
+IL-rewriting step that only runs under full MSBuild. `build.ps1` locates MSBuild
+for you and fails with an explanation if it is missing.
+
+No manual steps are needed to switch architecture. Everything follows from the
+platform you build, and `build.ps1` checks the result really is the architecture
+you asked for before it reports success.
+
+### Running the tests
+
+```
+.\test.ps1                    # both architectures
+.\test.ps1 -Platform x64      # one
+.\test.ps1 -Coverage          # with a per-class coverage summary
+```
+
+The suite runs against both x86 and x64 because the library is built per
+architecture and reads pointer width at run time, so some behaviour genuinely
+differs between the two.
+
+Some tests pin behaviour that is currently **wrong**, asserting what the code does
+today rather than what it should do, so that a refactor cannot quietly change it.
+They carry a `PinnedDefect` trait and explain the defect in a comment:
+
+```
+.\test.ps1 -PinnedDefectsOnly
+```
+
+When one of those defects is fixed, its test must be rewritten to assert the
+correct behaviour — that is the point, the fix has to be deliberate.
 
 It should be noted that if you are running Windows 7 you will need to ensure [.Net Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472) is installed on your system or X64dbg will crash immediately on startup.     
 

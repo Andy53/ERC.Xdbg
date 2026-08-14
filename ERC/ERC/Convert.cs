@@ -20,6 +20,13 @@ namespace ERC.Utilities
         /// <returns>A string containing the equivalent ASCII values</returns>
         public static string HexToAscii(string hex)
         {
+            // Null is treated like any other unusable input. It used to be the one
+            // case that threw, so a caller guarding on an empty result still crashed.
+            if (hex == null)
+            {
+                return string.Empty;
+            }
+
             if (hex.Length % 2 != 0)
             {
                 hex = "0" + hex;

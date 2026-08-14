@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Managed.x64dbg.SDK;
 using Microsoft.VisualBasic;
-using RGiesecke.DllExport;
 
 namespace ErcXdbg
 {

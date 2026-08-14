@@ -1,0 +1,86 @@
+name: Build
+
+# The point of this workflow is to prove the build is reproducible on a machine
+# that has none of the developer's local state: no pre-populated package folder,
+# no hand-edited source, no wizard-generated files.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x86, x64]
+        configuration: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSBuild
+        # The plugin's native exports are produced by an IL-rewriting step that
+        # only runs under full MSBuild, so the .NET SDK alone is not enough.
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build and verify
+        shell: pwsh
+        env:
+          CI: 'true'
+        run: ./build.ps1 -Platform ${{ matrix.platform }} -Configuration ${{ matrix.configuration }}
+
+      - name: Test
+        shell: pwsh
+        env:
+          CI: 'true'
+        run: ./test.ps1 -Platform ${{ matrix.platform }} -Configuration ${{ matrix.configuration }} -Coverage
+
+      - name: Upload coverage
+        if: matrix.configuration == 'Debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.platform }}
+          path: tests/ERC.Net.Tests/coverage/coverage.cobertura.xml
+          if-no-files-found: warn
+
+      - name: Upload plugin
+        if: matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Erc.Xdbg-${{ matrix.platform }}
+          path: |
+            ErcXdbg/bin/${{ matrix.platform }}/Release/net472/Erc.Xdbg.dp*
+            ErcXdbg/bin/${{ matrix.platform }}/Release/net472/*.dll
+          if-no-files-found: error
+
+  no-hand-edited-architecture-switches:
+    # Guards the fix that removed the seven "uncomment for 64bit" sites. If one
+    # comes back, the release build silently ships the wrong architecture again,
+    # so it is worth failing the build over.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for commented-out architecture toggles
+        shell: bash
+        run: |
+          if grep -rniE '^[[:space:]]*//.*(uncomment|comment out).*(32|64)[[:space:]]*bit' \
+               --include='*.cs' . ; then
+            echo
+            echo "Found a commented-out architecture switch."
+            echo "Architecture must be selected by the X64 constant from Directory.Build.props,"
+            echo "not by hand-editing source before a release build."
+            exit 1
+          fi
+          echo "No hand-edited architecture switches found."

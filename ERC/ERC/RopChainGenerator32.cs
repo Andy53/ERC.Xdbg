@@ -50,8 +50,7 @@ namespace ERC.Utilities
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="_info">The ProcessInfo object.</param
-        /// <param name="methods">Integer identifying which Rop mehtods to use</param>
+        /// <param name="_info">The ProcessInfo object.</param>
         public RopChainGenerator32(ProcessInfo _info)
         {
             if (_info.ProcessMachineType == MachineType.I386)

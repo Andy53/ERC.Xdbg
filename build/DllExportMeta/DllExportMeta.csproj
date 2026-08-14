@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Supplies the DllExport marker attribute that the DllExport build step looks
+    for. The step requires this as a real assembly on disk ("MetaLib"), which the
+    upstream wizard would generate into a machine-local cache outside the repo.
+    Building it from source here keeps the whole toolchain in version control.
+
+    The output path is deliberately fixed - no platform or framework subfolders -
+    so the plugin project can point at it with a single stable path.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>DllExport</AssemblyName>
+    <RootNamespace>ErcXdbg</RootNamespace>
+
+    <OutputPath>$(MSBuildThisFileDirectory)bin\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <!-- Never shipped: it exists only to satisfy the compiler and the IL rewriter. -->
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests target net472 because that is what ERC.Net targets today. Once the
+    library multi-targets, this should gain a net8.0-windows leg so the fast
+    tests can run on a modern runtime.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <!-- xUnit v3 test projects are executables. -->
+    <OutputType>Exe</OutputType>
+
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!--
+      The library P/Invokes and reads pointer width, so tests must run as the
+      architecture under test rather than AnyCPU.
+    -->
+    <PlatformTarget>$(Platform)</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <!--
+      Shouldly rather than FluentAssertions: FluentAssertions moved to a paid
+      commercial licence at v8, and this project should stay freely buildable.
+    -->
+    <PackageReference Include="Shouldly" Version="4.3.0" />
+    <PackageReference Include="coverlet.collector" Version="10.0.1" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ERC\ERC\ERC.Net.csproj" />
+  </ItemGroup>
+
+</Project>

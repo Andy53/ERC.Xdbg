@@ -393,11 +393,33 @@ namespace ERC
             PatternExtendedPath = "";
             SystemErrorLogPath = Path.Combine(WorkingDirectory, "System_Error.LOG");
             
-            ErcVersion = "ERC.Xdbg_32-2.0.3"; //Uncomment for 32bit.
-            //ErcVersion = "ERC.Xdbg_64-2.0.3"; //Uncomment for 64bit.
+            ErcVersion = BuildVersionString();
 
-            bool configRead = false;
-            while (configRead == false)
+            ReadOrCreateConfig();
+
+            PatternStandardPath = EnsurePatternFile(PatternStandardPath, "Pattern_Standard", 20277, false);
+            PatternExtendedPath = EnsurePatternFile(PatternExtendedPath, "Pattern_Extended", 66923, true);
+        }
+
+        /// <summary>
+        /// Loads settings from the config file, creating it with defaults if it is
+        /// missing or unreadable.
+        /// </summary>
+        /// <remarks>
+        /// Bounded on purpose. This used to be a "while (configRead == false)" loop
+        /// that called BuildDefaultConfig, which swallows its own save failures, so
+        /// anything that stopped the file being written - most obviously a plugin
+        /// directory the user cannot write to, such as one under Program Files -
+        /// left the loop spinning forever and hung the whole debugger at 100% CPU.
+        ///
+        /// If the config cannot be read or created, the defaults already assigned
+        /// by the constructor are kept and the library carries on.
+        /// </remarks>
+        private void ReadOrCreateConfig()
+        {
+            // Two passes: read what is there, and if that fails, write defaults and
+            // read once more. Never more than that.
+            for (int attempt = 0; attempt < 2; attempt++)
             {
                 if (File.Exists(ConfigPath))
                 {
@@ -414,77 +436,94 @@ namespace ERC
                         PatternExtendedPath = singleNode[0].InnerText;
                         singleNode = ErcConfig.DocumentElement.SelectNodes("//Error_Log_File");
                         SystemErrorLogPath = singleNode[0].InnerText;
-                        configRead = true;
                         ErcConfig = null;
-                        GC.Collect();
+                        return;
                     }
                     catch (Exception e)
                     {
                         SystemError = e;
-                        BuildDefaultConfig();
+                        if (attempt > 0)
+                        {
+                            // Rewriting the defaults did not help; stop trying.
+                            return;
+                        }
                     }
                 }
-                else
-                {
-                    BuildDefaultConfig();
-                }
+
+                BuildDefaultConfig();
+            }
+        }
+
+        /// <summary>
+        /// Returns the path of a pattern file, generating the file if it is absent.
+        /// </summary>
+        /// <remarks>
+        /// Replaces four near-identical blocks that called Environment.Exit(1) when
+        /// pattern generation failed. A library has no business terminating its
+        /// host, and here the host is a debugger that may hold unsaved analysis, so
+        /// failures are recorded and the caller is left to deal with a missing file.
+        /// </remarks>
+        private string EnsurePatternFile(string configuredPath, string defaultFileName, int length, bool extended)
+        {
+            string path = string.IsNullOrEmpty(configuredPath)
+                ? Path.Combine(WorkingDirectory, defaultFileName)
+                : configuredPath;
+
+            if (File.Exists(path))
+            {
+                return path;
             }
 
-            if (PatternStandardPath == "")
+            var pattern = Utilities.PatternTools.PatternCreate(length, this, extended);
+            if (pattern.Error != null)
             {
-                PatternStandardPath = Path.Combine(WorkingDirectory, "Pattern_Standard");
-                if (!File.Exists(PatternStandardPath))
-                {
-                    var patternExt = Utilities.PatternTools.PatternCreate(20277, this, false);
-                    if (patternExt.Error != null)
-                    {
-                        patternExt.LogEvent();
-                        Environment.Exit(1);
-                    }
-                    File.WriteAllText(PatternStandardPath, patternExt.ReturnValue);
-                }
-            }
-            else
-            {
-                if (!File.Exists(PatternStandardPath))
-                {
-                    var patternExt = Utilities.PatternTools.PatternCreate(20277, this, false);
-                    if (patternExt.Error != null)
-                    {
-                        patternExt.LogEvent();
-                        Environment.Exit(1);
-                    }
-                    File.WriteAllText(PatternStandardPath, patternExt.ReturnValue);
-                }
+                SystemError = pattern.Error;
+                pattern.LogEvent();
+                return path;
             }
 
-            if (PatternExtendedPath == "")
+            try
             {
-                PatternExtendedPath = Path.Combine(WorkingDirectory, "Pattern_Extended");
-                if (!File.Exists(PatternExtendedPath))
-                {
-                    var patternExt = Utilities.PatternTools.PatternCreate(66923, this, true);
-                    if (patternExt.Error != null)
-                    {
-                        patternExt.LogEvent();
-                        Environment.Exit(1);
-                    }
-                    File.WriteAllText(PatternExtendedPath, patternExt.ReturnValue);
-                }
+                File.WriteAllText(path, pattern.ReturnValue);
             }
-            else
+            catch (Exception e)
             {
-                if (!File.Exists(PatternExtendedPath))
-                {
-                    var patternExt = Utilities.PatternTools.PatternCreate(66923, this, true);
-                    if (patternExt.Error != null)
-                    {
-                        patternExt.LogEvent();
-                        Environment.Exit(1);
-                    }
-                    File.WriteAllText(PatternExtendedPath, patternExt.ReturnValue);
-                }
+                SystemError = e;
+                LogEvent(e);
             }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Builds the version banner, for example "ERC.Xdbg_64-2.0.3".
+        /// </summary>
+        /// <remarks>
+        /// Both halves are derived rather than hand-edited per build. The bitness
+        /// comes from the process this assembly is loaded into, and the version
+        /// from the assembly itself, which the build stamps from a single place.
+        /// </remarks>
+        private static string BuildVersionString()
+        {
+            string architecture = IntPtr.Size == 8 ? "64" : "32";
+
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            string version = assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+            if (string.IsNullOrEmpty(version))
+            {
+                version = assembly.GetName().Version.ToString();
+            }
+
+            // Source-linked builds append "+<commit sha>"; keep the banner readable.
+            int metadata = version.IndexOf('+');
+            if (metadata > 0)
+            {
+                version = version.Substring(0, metadata);
+            }
+
+            return "ERC.Xdbg_" + architecture + "-" + version;
         }
 
         /// <summary>
@@ -587,23 +626,8 @@ namespace ERC
         /// <param name="path">The filepath of the new standard pattern file</param>
         public void SetPatternStandardPath(string path)
         {
-            if (Directory.Exists(path))
-            {
-                if (!path.EndsWith("\\"))
-                {
-                    path += "\\";
-                }
-                XmlDocument xmldoc = new XmlDocument();
-                xmldoc.Load(ConfigPath);
-                var singleNode = xmldoc.DocumentElement.SelectSingleNode("//Standard_Pattern");
-                singleNode.InnerText = path;
-                xmldoc.Save(ConfigPath);
-                PatternStandardPath = path;
-            }
-            else
-            {
-                throw new Exception("User Input Error: Value supplied for the standard pattern path is not a valid directory");
-            }
+            SetConfigValue("//Standard_Pattern", path, "standard pattern");
+            PatternStandardPath = path;
         }
         #endregion
 
@@ -614,23 +638,40 @@ namespace ERC
         /// <param name="path">The filepath of the new extended pattern file</param>
         public void SetPatternExtendedPath(string path)
         {
-            if (Directory.Exists(path))
+            SetConfigValue("//Extended_Pattern", path, "extended pattern");
+            PatternExtendedPath = path;
+        }
+
+        /// <summary>
+        /// Validates a pattern file path and stores it in the config file.
+        /// </summary>
+        /// <remarks>
+        /// Both pattern setters previously validated with Directory.Exists and then
+        /// appended a trailing backslash, even though what they are given - and what
+        /// PatternOffset later reads with File.ReadAllText - is the path of a *file*.
+        /// The result was that every correct input was rejected outright, so
+        /// "ERC --config SetStandardPattern" could not be made to work at all
+        /// despite being documented.
+        /// </remarks>
+        private void SetConfigValue(string xpath, string path, string description)
+        {
+            if (string.IsNullOrWhiteSpace(path))
             {
-                if (!path.EndsWith("\\"))
-                {
-                    path += "\\";
-                }
-                XmlDocument xmldoc = new XmlDocument();
-                xmldoc.Load(ConfigPath);
-                var singleNode = xmldoc.DocumentElement.SelectSingleNode("//Extended_Pattern");
-                singleNode.InnerText = path;
-                xmldoc.Save(ConfigPath);
-                PatternExtendedPath = path;
+                throw new ERCException(
+                    "User Input Error: No value supplied for the " + description + " file path.");
             }
-            else
+
+            if (!File.Exists(path))
             {
-                throw new Exception("User Input Error: Value supplied for the extended pattern path is not a valid directory");
+                throw new ERCException(
+                    "User Input Error: Value supplied for the " + description +
+                    " file path is not an existing file: " + path);
             }
+
+            XmlDocument xmldoc = new XmlDocument();
+            xmldoc.Load(ConfigPath);
+            xmldoc.DocumentElement.SelectSingleNode(xpath).InnerText = path;
+            xmldoc.Save(ConfigPath);
         }
         #endregion
 
@@ -657,40 +698,49 @@ namespace ERC
         /// <param name="path">The new error log filepath.</param>
         public void SetErrorFile(string path)
         {
+            // Resolve the argument to the file that will actually be written:
+            // an existing file is used as-is, an existing directory gets a log
+            // created inside it, and anything else falls back to the working
+            // directory.
+            //
+            // Previously each branch called File.Create without disposing the
+            // returned stream, leaving the handle open and the new log locked, and
+            // two of the three branches disagreed about what to store in the config
+            // versus the in-memory field, so the two could end up pointing at
+            // different files.
+            string resolved;
+
             if (File.Exists(path))
             {
-                SystemErrorLogPath = path;
-                XmlDocument xmldoc = new XmlDocument();
-                xmldoc.Load(ConfigPath);
-                var singleNode = xmldoc.DocumentElement.SelectSingleNode("//Error_Log_File");
-                singleNode.InnerText = path;
-                xmldoc.Save(ConfigPath);
-                SystemErrorLogPath = path;
-            } 
-            else if (Directory.Exists(Path.GetDirectoryName(path)))
+                resolved = path;
+            }
+            else if (Directory.Exists(path))
             {
-                if (!path.EndsWith("\\"))
-                {
-                    path += "\\";
-                }
-                path += "System_Error.LOG";
-                File.Create(path);
-                XmlDocument xmldoc = new XmlDocument();
-                xmldoc.Load(ConfigPath);
-                var singleNode = xmldoc.DocumentElement.SelectSingleNode("//Error_Log_File");
-                singleNode.InnerText = path;
-                xmldoc.Save(ConfigPath);
+                resolved = Path.Combine(path, "System_Error.LOG");
+            }
+            else if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(Path.GetDirectoryName(path)))
+            {
+                resolved = path;
             }
             else
             {
-                File.Create(WorkingDirectory + "System_Error.LOG");
-                XmlDocument xmldoc = new XmlDocument();
-                xmldoc.Load(ConfigPath);
-                var singleNode = xmldoc.DocumentElement.SelectSingleNode("//Error_Log_File");
-                singleNode.InnerText = path;
-                xmldoc.Save(ConfigPath);
-                SystemErrorLogPath = path;
+                resolved = Path.Combine(WorkingDirectory, "System_Error.LOG");
             }
+
+            if (!File.Exists(resolved))
+            {
+                // "using" so the handle is closed; File.Create leaves it open.
+                using (File.Create(resolved))
+                {
+                }
+            }
+
+            XmlDocument xmldoc = new XmlDocument();
+            xmldoc.Load(ConfigPath);
+            xmldoc.DocumentElement.SelectSingleNode("//Error_Log_File").InnerText = resolved;
+            xmldoc.Save(ConfigPath);
+
+            SystemErrorLogPath = resolved;
         }
         #endregion
 
@@ -701,9 +751,45 @@ namespace ERC
         /// <param name="e">The exception to log</param>
         public void LogEvent(Exception e)
         {
-            using (StreamWriter sw = File.AppendText(SystemErrorLogPath))
+            WriteLogLine(SystemErrorLogPath, e.ToString());
+        }
+
+        /// <summary>
+        /// Appends a line to the error log, giving up rather than throwing.
+        /// </summary>
+        /// <remarks>
+        /// Logging must never be able to take down the debugger. The log is opened
+        /// with File.AppendText, which takes an exclusive lock, so a second thread
+        /// logging at the same time - x64dbg calls plugins from more than one -
+        /// used to raise an IOException out of the error path and replace whatever
+        /// fault was being reported with a confusing one.
+        ///
+        /// Sharing the handle for reading lets a user tail the log while the plugin
+        /// runs. Concurrent writers are still serialised only by luck; giving the
+        /// library a real logging seam is part of the wider refactor.
+        /// </remarks>
+        internal static void WriteLogLine(string path, string text)
+        {
+            if (string.IsNullOrEmpty(path))
             {
-                sw.WriteLine(e);
+                return;
+            }
+
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))
+                using (var writer = new StreamWriter(stream))
+                {
+                    writer.WriteLine(text);
+                }
+            }
+            catch (IOException)
+            {
+                // Log unavailable (locked, full, or read-only). Losing a log line is
+                // always better than losing the debugging session.
+            }
+            catch (UnauthorizedAccessException)
+            {
             }
         }
         #endregion
@@ -766,10 +852,9 @@ namespace ERC
         /// </summary>
         public void LogEvent()
         {
-            using (StreamWriter sw = File.AppendText(base.SystemErrorLogPath))
-            {
-                sw.WriteLine(Error + " TimeStamp: " + DateTime.Now);
-            }
+            // Fails quietly for the same reason as ErcCore.LogEvent: an error
+            // reporter that throws hides the error it was asked to report.
+            WriteLogLine(base.SystemErrorLogPath, Error + " TimeStamp: " + DateTime.Now);
         }
 
         /// <summary>
@@ -778,8 +863,15 @@ namespace ERC
         /// <returns>A string containing information about the object.</returns>
         public override string ToString()
         {
+            // Returns the description it builds. This used to assemble the whole
+            // string into a local and then return base.ToString(), throwing the work
+            // away and handing every caller the type name instead.
+            //
+            // ReturnValue.GetType() also threw when the value was null, which is the
+            // usual state of a result that carries an error - exactly when someone
+            // is most likely to be printing it.
             string ret = "";
-            ret += "ErcResult Type = " + ReturnValue.GetType() + Environment.NewLine;
+            ret += "ErcResult Type = " + (ReturnValue == null ? "NULL" : ReturnValue.GetType().ToString()) + Environment.NewLine;
             if (Error != null)
             {
                 ret += "ErcResult.Error = " + Error.ToString() + Environment.NewLine;
@@ -789,7 +881,7 @@ namespace ERC
                 ret += "ErcResult.Error = NULL" + Environment.NewLine;
             }
             ret += "ErcResult.ErrorLogFile = " + SystemErrorLogPath + Environment.NewLine;
-            return base.ToString();
+            return ret;
         }
     }
     #endregion

@@ -1,0 +1,8 @@
+{
+  "$comment": "Documents the SDK floor. rollForward lets any newer SDK satisfy it, so this pins behaviour without breaking machines that carry a different build.",
+  "sdk": {
+    "version": "8.0.100",
+    "rollForward": "latestMajor",
+    "allowPrerelease": false
+  }
+}
