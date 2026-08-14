@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+ 
 namespace ErcXdbg
 {
     public enum Encoding : int
