@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using ERC;
 
+using ERC.Native;
 namespace ERC.Utilities
 {
     /// <summary> Attempts to create Rop chains from 32 bit processes. </summary>
@@ -480,7 +481,7 @@ namespace ERC.Utilities
                 return returnVar;
             }
 
-            var virtAllocAddress = ErcCore.GetProcAddress(hModule, "VirtualAlloc");
+            var virtAllocAddress = RcgInfo.Native.GetProcAddress(hModule, "VirtualAlloc");
             if (virtAllocAddress == IntPtr.Zero)
             {
                 returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -491,7 +492,7 @@ namespace ERC.Utilities
                 ApiAddresses.Add("VirtualAlloc", virtAllocAddress);
             }
 
-            var HeapCreateAddress = ErcCore.GetProcAddress(hModule, "HeapCreate");
+            var HeapCreateAddress = RcgInfo.Native.GetProcAddress(hModule, "HeapCreate");
             if (HeapCreateAddress == IntPtr.Zero)
             {
                 returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -502,7 +503,7 @@ namespace ERC.Utilities
                 ApiAddresses.Add("HeapCreate", HeapCreateAddress);
             }
 
-            var VirtualProtectAddress = ErcCore.GetProcAddress(hModule, "VirtualProtect");
+            var VirtualProtectAddress = RcgInfo.Native.GetProcAddress(hModule, "VirtualProtect");
             if (VirtualProtectAddress == IntPtr.Zero)
             {
                 returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -513,7 +514,7 @@ namespace ERC.Utilities
                 ApiAddresses.Add("VirtualProtect", VirtualProtectAddress);
             }
 
-            var WriteProcessMemoryAddress = ErcCore.GetProcAddress(hModule, "WriteProcessMemory");
+            var WriteProcessMemoryAddress = RcgInfo.Native.GetProcAddress(hModule, "WriteProcessMemory");
             if (WriteProcessMemoryAddress == IntPtr.Zero)
             {
                 returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -580,7 +581,7 @@ namespace ERC.Utilities
             {
                 byte[] bytes = new byte[20];
                 IntPtr baseAddress = RopNops[i] - 19;
-                ErcCore.ReadProcessMemory(info.ProcessHandle, baseAddress, bytes, 20, out int bytesRead);
+                RcgInfo.Native.ReadProcessMemory(info.ProcessHandle, baseAddress, bytes, 20, out int bytesRead);
                 if (bytesRead != 20)
                 {
                     ret.Error = new ERCException("ReadProcessMemory Error: " + new Win32Exception(Marshal.GetLastWin32Error()).Message);
@@ -1046,591 +1047,51 @@ namespace ERC.Utilities
         private void optimiseLists(ProcessInfo info)
         {
             usableX86Opcodes = new X86Lists();
-            var thisList = x86Opcodes.pushEax.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push eax") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEax.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEbx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push ebx") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEbx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEcx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push ecx") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEcx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEdx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push edx") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEdx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEsp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push esp") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEsp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEbp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push ebp") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEbp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEsi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push esi") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEsi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushEdi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("push edi") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushEdi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.jmpEsp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("jmp esp"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.jmpEsp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.callEsp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("call esp"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.callEsp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.xorEax.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("xor eax") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.xorEax.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.xorEbx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("xor ebx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.xorEbx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.xorEcx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("xor ecx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.xorEcx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.xorEdx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("xor edx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.xorEdx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.xorEsi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("xor esi") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.xorEsi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.xorEdi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("xor edi") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.xorEdi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEax.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop eax") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEax.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEbx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop ebx") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEbx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEcx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop ecx") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEcx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEdx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop edx") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEdx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEsp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop esp") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEsp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEbp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop ebp") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEbp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEsi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop esi") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEsi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.popEdi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pop edi") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.popEdi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.pushad.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("pushad") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.pushad.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEax.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc eax") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEax.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEbx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc ebx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEbx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEcx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc ecx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEcx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEdx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc edx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEdx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEbp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc ebp") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEbp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEsp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc esp") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEsp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEsi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc esi") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEsi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.incEdi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("inc edi") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.incEdi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEax.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec eax") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEax.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEbx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec ebx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEbx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEcx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec ecx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEcx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEdx.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec edx") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEdx.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEbp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec ebp") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEbp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEsp.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec esp") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEsp.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEsi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec esi") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEsi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.decEdi.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("dec edi") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.decEdi.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.add.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("add") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.add.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.sub.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("sub") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.sub.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.mov.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("mov") || !thisList[i].Value.Contains("ret") || thisList[i].Value.Any(char.IsDigit))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.mov.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
-            thisList = x86Opcodes.and.ToList();
-            thisList.Sort((x, y) => x.Value.Length.CompareTo(y.Value.Length));
-            for (int i = 0; i < thisList.Count; i++)
-            {
-                if (!thisList[i].Value.Contains("and") || !thisList[i].Value.Contains("ret"))
-                {
-                    thisList.RemoveAt(i);
-                }
-                else
-                {
-                    usableX86Opcodes.and.Add(thisList[i].Key, thisList[i].Value);
-                }
-            }
+            usableX86Opcodes.pushEax = RopGadgetFilter.SelectUsable(x86Opcodes.pushEax, "push eax", true);
+            usableX86Opcodes.pushEbx = RopGadgetFilter.SelectUsable(x86Opcodes.pushEbx, "push ebx", true);
+            usableX86Opcodes.pushEcx = RopGadgetFilter.SelectUsable(x86Opcodes.pushEcx, "push ecx", true);
+            usableX86Opcodes.pushEdx = RopGadgetFilter.SelectUsable(x86Opcodes.pushEdx, "push edx", true);
+            usableX86Opcodes.pushEsp = RopGadgetFilter.SelectUsable(x86Opcodes.pushEsp, "push esp", true);
+            usableX86Opcodes.pushEbp = RopGadgetFilter.SelectUsable(x86Opcodes.pushEbp, "push ebp", true);
+            usableX86Opcodes.pushEsi = RopGadgetFilter.SelectUsable(x86Opcodes.pushEsi, "push esi", true);
+            usableX86Opcodes.pushEdi = RopGadgetFilter.SelectUsable(x86Opcodes.pushEdi, "push edi", true);
+            usableX86Opcodes.jmpEsp = RopGadgetFilter.SelectUsable(x86Opcodes.jmpEsp, "jmp esp", false);
+            usableX86Opcodes.callEsp = RopGadgetFilter.SelectUsable(x86Opcodes.callEsp, "call esp", false);
+            usableX86Opcodes.xorEax = RopGadgetFilter.SelectUsable(x86Opcodes.xorEax, "xor eax", false);
+            usableX86Opcodes.xorEbx = RopGadgetFilter.SelectUsable(x86Opcodes.xorEbx, "xor ebx", false);
+            usableX86Opcodes.xorEcx = RopGadgetFilter.SelectUsable(x86Opcodes.xorEcx, "xor ecx", false);
+            usableX86Opcodes.xorEdx = RopGadgetFilter.SelectUsable(x86Opcodes.xorEdx, "xor edx", false);
+            usableX86Opcodes.xorEsi = RopGadgetFilter.SelectUsable(x86Opcodes.xorEsi, "xor esi", false);
+            usableX86Opcodes.xorEdi = RopGadgetFilter.SelectUsable(x86Opcodes.xorEdi, "xor edi", false);
+            usableX86Opcodes.popEax = RopGadgetFilter.SelectUsable(x86Opcodes.popEax, "pop eax", true);
+            usableX86Opcodes.popEbx = RopGadgetFilter.SelectUsable(x86Opcodes.popEbx, "pop ebx", true);
+            usableX86Opcodes.popEcx = RopGadgetFilter.SelectUsable(x86Opcodes.popEcx, "pop ecx", true);
+            usableX86Opcodes.popEdx = RopGadgetFilter.SelectUsable(x86Opcodes.popEdx, "pop edx", true);
+            usableX86Opcodes.popEsp = RopGadgetFilter.SelectUsable(x86Opcodes.popEsp, "pop esp", true);
+            usableX86Opcodes.popEbp = RopGadgetFilter.SelectUsable(x86Opcodes.popEbp, "pop ebp", true);
+            usableX86Opcodes.popEsi = RopGadgetFilter.SelectUsable(x86Opcodes.popEsi, "pop esi", true);
+            usableX86Opcodes.popEdi = RopGadgetFilter.SelectUsable(x86Opcodes.popEdi, "pop edi", true);
+            usableX86Opcodes.pushad = RopGadgetFilter.SelectUsable(x86Opcodes.pushad, "pushad", true);
+            usableX86Opcodes.incEax = RopGadgetFilter.SelectUsable(x86Opcodes.incEax, "inc eax", false);
+            usableX86Opcodes.incEbx = RopGadgetFilter.SelectUsable(x86Opcodes.incEbx, "inc ebx", false);
+            usableX86Opcodes.incEcx = RopGadgetFilter.SelectUsable(x86Opcodes.incEcx, "inc ecx", false);
+            usableX86Opcodes.incEdx = RopGadgetFilter.SelectUsable(x86Opcodes.incEdx, "inc edx", false);
+            usableX86Opcodes.incEbp = RopGadgetFilter.SelectUsable(x86Opcodes.incEbp, "inc ebp", false);
+            usableX86Opcodes.incEsp = RopGadgetFilter.SelectUsable(x86Opcodes.incEsp, "inc esp", false);
+            usableX86Opcodes.incEsi = RopGadgetFilter.SelectUsable(x86Opcodes.incEsi, "inc esi", false);
+            usableX86Opcodes.incEdi = RopGadgetFilter.SelectUsable(x86Opcodes.incEdi, "inc edi", false);
+            usableX86Opcodes.decEax = RopGadgetFilter.SelectUsable(x86Opcodes.decEax, "dec eax", false);
+            usableX86Opcodes.decEbx = RopGadgetFilter.SelectUsable(x86Opcodes.decEbx, "dec ebx", false);
+            usableX86Opcodes.decEcx = RopGadgetFilter.SelectUsable(x86Opcodes.decEcx, "dec ecx", false);
+            usableX86Opcodes.decEdx = RopGadgetFilter.SelectUsable(x86Opcodes.decEdx, "dec edx", false);
+            usableX86Opcodes.decEbp = RopGadgetFilter.SelectUsable(x86Opcodes.decEbp, "dec ebp", false);
+            usableX86Opcodes.decEsp = RopGadgetFilter.SelectUsable(x86Opcodes.decEsp, "dec esp", false);
+            usableX86Opcodes.decEsi = RopGadgetFilter.SelectUsable(x86Opcodes.decEsi, "dec esi", false);
+            usableX86Opcodes.decEdi = RopGadgetFilter.SelectUsable(x86Opcodes.decEdi, "dec edi", false);
+            usableX86Opcodes.add = RopGadgetFilter.SelectUsable(x86Opcodes.add, "add", true);
+            usableX86Opcodes.sub = RopGadgetFilter.SelectUsable(x86Opcodes.sub, "sub", true);
+            usableX86Opcodes.mov = RopGadgetFilter.SelectUsable(x86Opcodes.mov, "mov", true);
+            usableX86Opcodes.and = RopGadgetFilter.SelectUsable(x86Opcodes.and, "and", false);
         }
         #endregion
 

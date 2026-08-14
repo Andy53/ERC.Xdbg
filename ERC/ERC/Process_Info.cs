@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using ERC.Native;
 namespace ERC
 {
     /// <summary> Contains information needed for the associated functions relating to the process. </summary>
@@ -105,12 +106,12 @@ namespace ERC
         public ProcessInfo(ErcCore core, IntPtr handle) : base(core)
         {
             uint flags = 0;
-            bool result = GetHandleInformation(handle, out flags);
+            bool result = Native.GetHandleInformation(handle, out flags);
             if(result == false)
             {
                 throw new ERCException("The handle provided is not a valid process (GetHandleInformation returned false)");
             }
-            uint processID = GetProcessId(handle);
+            uint processID = Native.GetProcessId(handle);
             
             Process process = Process.GetProcessById((int)processID);
             ProcessCore = core;
@@ -296,10 +297,10 @@ namespace ERC
                     try
                     {
                         // -- call EnumProcessModules the first time to get the size of the array needed
-                        EnumProcessModulesEx(hProcess, modhWnds, 0, out lpcbNeeded, LIST_MODULES_ALL);
+                        Native.EnumProcessModulesEx(hProcess, modhWnds, 0, out lpcbNeeded, LIST_MODULES_ALL);
 
                         modhWnds = new IntPtr[lpcbNeeded / IntPtr.Size];
-                        EnumProcessModulesEx(hProcess, modhWnds, modhWnds.Length * IntPtr.Size, out lpcbNeeded, LIST_MODULES_ALL);
+                        Native.EnumProcessModulesEx(hProcess, modhWnds, modhWnds.Length * IntPtr.Size, out lpcbNeeded, LIST_MODULES_ALL);
                     }
                     catch
                     {
@@ -310,7 +311,7 @@ namespace ERC
                     for (int i = 0; i < modhWnds.Length; i++)
                     {
                         StringBuilder modName = new StringBuilder(256);
-                        if (GetModuleFileNameEx(hProcess, modhWnds[i], modName, modName.Capacity) != 0)
+                        if (Native.GetModuleFileNameEx(hProcess, modhWnds[i], modName, modName.Capacity) != 0)
                         {
                             if (!modules.ContainsKey(modName.ToString()))
                             {
@@ -339,6 +340,22 @@ namespace ERC
         /// <returns>Returns true if the process is 64bit and false if it is not.</returns>
         public static bool Is64Bit(Process process)
         {
+            return Is64Bit(process, Win32NativeApi.Instance);
+        }
+
+        /// <summary>
+        /// Identifies if a process is 64bit or 32 bit, using the supplied OS access.
+        /// </summary>
+        /// <param name="process">The process to be used</param>
+        /// <param name="native">The OS calls to use.</param>
+        /// <returns>Returns true if the process is 64bit and false if it is not.</returns>
+        /// <remarks>
+        /// The overload exists because this method is static: it cannot reach the
+        /// instance <see cref="ErcCore.Native"/>, and a test needs some way to
+        /// substitute the call.
+        /// </remarks>
+        public static bool Is64Bit(Process process, INativeApi native)
+        {
             bool isWow64;
 
             if(process == null)
@@ -346,12 +363,17 @@ namespace ERC
                 throw new ERCException("No process attached.");
             }
 
+            if (native == null)
+            {
+                throw new ArgumentNullException("native");
+            }
+
             if (!Environment.Is64BitOperatingSystem)
             {
                 return false;
             }
 
-            if (!IsWow64Process(process.Handle, out isWow64))
+            if (!native.IsWow64Process(process.Handle, out isWow64))
             {
                 throw new ERCException("An error has occured in the IsWow64Process call from Process.Is64Bit()");
             }
@@ -378,7 +400,7 @@ namespace ERC
                 do
                 {
                     MEMORY_BASIC_INFORMATION32 m;
-                    int result = VirtualQueryEx32(process.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION32)));
+                    int result = Native.VirtualQueryEx32(process.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION32)));
                     if (address == (long)m.BaseAddress + (long)m.RegionSize)
                         break;
                     address = (long)m.BaseAddress + (long)m.RegionSize;
@@ -403,7 +425,7 @@ namespace ERC
                 do
                 {
                     MEMORY_BASIC_INFORMATION64 m;
-                    int result = VirtualQueryEx64(process.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64)));
+                    int result = Native.VirtualQueryEx64(process.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64)));
                     if (address == (long)m.BaseAddress + (long)m.RegionSize)
                         break;
                     address = (long)m.BaseAddress + (long)m.RegionSize;
@@ -454,7 +476,7 @@ namespace ERC
                         {
                             byte[] buffer = new byte[region / 100]; 
                             int bytesRead = 0;
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
 
                             long pos = 0;
                             long index = 0;
@@ -484,7 +506,7 @@ namespace ERC
                         IntPtr baseAddress = ProcessMemoryBasicInfo32[i].BaseAddress;
                         byte[] buffer = new byte[bufferSize]; 
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
 
                         long pos = 0;
                         long index = 0;
@@ -522,7 +544,7 @@ namespace ERC
 
                         for (ulong j = startAddress; j < endAddress; j += int.MaxValue / 10)
                         {
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
                             long pos = 0;
                             long index = 0;
                             do
@@ -551,7 +573,7 @@ namespace ERC
                         IntPtr baseAddress = (IntPtr)ProcessMemoryBasicInfo64[i].BaseAddress;
                         byte[] buffer1 = new byte[bufferSize]; 
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
                         long pos = 0;
                         long index = 0;
                         do
@@ -604,7 +626,7 @@ namespace ERC
                         {
                             byte[] buffer = new byte[region / 100];
                             int bytesRead = 0;
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
 
                             long pos = 0;
                             long index = 0;
@@ -634,7 +656,7 @@ namespace ERC
                         IntPtr baseAddress = ProcessMemoryBasicInfo32[i].BaseAddress;
                         byte[] buffer = new byte[bufferSize];
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
 
                         long pos = 0;
                         long index = 0;
@@ -672,7 +694,7 @@ namespace ERC
 
                         for (ulong j = startAddress; j < endAddress; j += int.MaxValue / 10)
                         {
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
                             long pos = 0;
                             long index = 0;
                             do
@@ -701,7 +723,7 @@ namespace ERC
                         IntPtr baseAddress = (IntPtr)ProcessMemoryBasicInfo64[i].BaseAddress;
                         byte[] buffer1 = new byte[bufferSize];
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
                         long pos = 0;
                         long index = 0;
                         do
@@ -754,7 +776,7 @@ namespace ERC
                         {
                             byte[] buffer = new byte[region / 100];
                             int bytesRead = 0;
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
                             List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                             if (pprs.Count > 0)
                             {
@@ -775,7 +797,7 @@ namespace ERC
                         IntPtr baseAddress = ProcessMemoryBasicInfo32[i].BaseAddress;
                         byte[] buffer = new byte[bufferSize];
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
                         List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                         if (pprs.Count > 0)
                         {
@@ -804,7 +826,7 @@ namespace ERC
 
                         for (ulong j = startAddress; j < endAddress; j += int.MaxValue / 10)
                         {
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
                             List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                             if (pprs.Count > 0)
                             {
@@ -825,7 +847,7 @@ namespace ERC
                         IntPtr baseAddress = (IntPtr)ProcessMemoryBasicInfo64[i].BaseAddress;
                         byte[] buffer1 = new byte[bufferSize];
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
                         List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer1);
                         if(pprs.Count > 0)
                         {
@@ -862,7 +884,7 @@ namespace ERC
                 byte[] buffer = new byte[modules[i].ModuleSize];
                 int bytesread = 0;
 
-                ReadProcessMemory(ProcessHandle, modules[i].ModuleBase, buffer, buffer.Length, out bytesread);
+                Native.ReadProcessMemory(ProcessHandle, modules[i].ModuleBase, buffer, buffer.Length, out bytesread);
                 List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                 if (pprs.Count > 0)
                 {
@@ -902,7 +924,7 @@ namespace ERC
                         {
                             byte[] buffer = new byte[region / 100];
                             int bytesRead = 0;
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
                             List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                             if (pprs.Count > 0)
                             {
@@ -923,7 +945,7 @@ namespace ERC
                         IntPtr baseAddress = ProcessMemoryBasicInfo32[i].BaseAddress;
                         byte[] buffer = new byte[bufferSize];
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer, buffer.Length, out bytesRead);
                         List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                         if (pprs.Count > 0)
                         {
@@ -952,7 +974,7 @@ namespace ERC
 
                         for (ulong j = startAddress; j < endAddress; j += int.MaxValue / 10)
                         {
-                            ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, (IntPtr)j, buffer, buffer.Length, out bytesRead);
                             List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                             if (pprs.Count > 0)
                             {
@@ -973,7 +995,7 @@ namespace ERC
                         IntPtr baseAddress = (IntPtr)ProcessMemoryBasicInfo64[i].BaseAddress;
                         byte[] buffer1 = new byte[bufferSize];
 
-                        ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
+                        Native.ReadProcessMemory(ProcessHandle, baseAddress, buffer1, buffer1.Length, out bytesRead);
                         List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer1);
                         if (pprs.Count > 0)
                         {
@@ -1010,7 +1032,7 @@ namespace ERC
                 byte[] buffer = new byte[modules[i].ModuleSize];
                 int bytesread = 0;
 
-                ReadProcessMemory(ProcessHandle, modules[i].ModuleBase, buffer, buffer.Length, out bytesread);
+                Native.ReadProcessMemory(ProcessHandle, modules[i].ModuleBase, buffer, buffer.Length, out bytesread);
                 List<int> pprs = ERC.Utilities.Payloads.PopPopRet(buffer);
                 if (pprs.Count > 0)
                 {
@@ -1477,7 +1499,7 @@ namespace ERC
                             ulong bufferSize = ((ulong)ProcessMemoryBasicInfo32[j].BaseAddress + (ulong)ProcessMemoryBasicInfo32[j].RegionSize) - (ulong)registers[i].RegisterValue;
                             byte[] buffer = new byte[bufferSize];
                             int bytesRead = 0;
-                            ReadProcessMemory(ProcessHandle, registers[i].RegisterValue, buffer, (int)bufferSize, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, registers[i].RegisterValue, buffer, (int)bufferSize, out bytesRead);
 
                             string memoryString = "";
                             switch (searchType)
@@ -1824,7 +1846,7 @@ namespace ERC
                             ulong bufferSize = (ProcessMemoryBasicInfo64[j].BaseAddress + ProcessMemoryBasicInfo64[j].RegionSize) - (ulong)registers[i].RegisterValue;
                             byte[] buffer = new byte[bufferSize];
                             int bytesRead = 0;
-                            ReadProcessMemory(ProcessHandle, registers[i].RegisterValue, buffer, (int)bufferSize, out bytesRead);
+                            Native.ReadProcessMemory(ProcessHandle, registers[i].RegisterValue, buffer, (int)bufferSize, out bytesRead);
 
                             string memoryString = "";
                             switch (searchType)
@@ -2288,7 +2310,7 @@ namespace ERC
             byte[] bytes = new byte[length];
             try
             {
-                int retValue = ErcCore.ReadProcessMemory(ProcessHandle, startAddress, bytes, length, out int bytesRead);
+                int retValue = Native.ReadProcessMemory(ProcessHandle, startAddress, bytes, length, out int bytesRead);
                 if (retValue == 0)
                 {
                     ERCException ex = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
+using ERC.Native;
 namespace ERC.Utilities
 {
     /// <summary>
@@ -317,7 +318,7 @@ namespace ERC.Utilities
         public static Tuple<bool, byte[], byte[]> ByteCompare(ProcessInfo info, IntPtr startAddress, byte[] bytes)
         {
             byte[] memoryBytes = new byte[bytes.Length];
-            ErcCore.ReadProcessMemory(info.ProcessHandle, startAddress, bytes, bytes.Length, out int bytesRead);
+            info.Native.ReadProcessMemory(info.ProcessHandle, startAddress, bytes, bytes.Length, out int bytesRead);
             for(int i = 0; i < bytes.Length; i++)
             {
                 if(bytes[i] != memoryBytes[i])
@@ -343,7 +344,7 @@ namespace ERC.Utilities
             {
                 byte[] bytes = File.ReadAllBytes(byteFilePath);
                 byte[] memoryBytes = new byte[bytes.Length];
-                ErcCore.ReadProcessMemory(info.ProcessHandle, startAddress, bytes, bytes.Length, out int bytesRead);
+                info.Native.ReadProcessMemory(info.ProcessHandle, startAddress, bytes, bytes.Length, out int bytesRead);
                 for (int i = 0; i < bytes.Length; i++)
                 {
                     if (bytes[i] != memoryBytes[i])

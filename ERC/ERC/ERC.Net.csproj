@@ -1,7 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <!--
+      net472 is what the x64dbg plugin loads. net8.0-windows exists so the library
+      can be tested and consumed on a modern runtime; it is Windows-specific because
+      the whole library is built on Win32 process inspection.
+    -->
+    <TargetFrameworks>net472;net8.0-windows</TargetFrameworks>
     <AssemblyName>ERC.Net</AssemblyName>
     <RootNamespace>ERC</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -11,6 +16,22 @@
       part of the documentation pass; suppressed here to keep build output useful.
     -->
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
+    <!--
+      Obsoletions that the modern runtime flags but that this library keeps
+      deliberately:
+
+      SYSLIB0001 - Encoding.UTF7. Insecure for new work, but the "convert 7toH" command
+                   and the UTF-7 search encodings exist precisely to reproduce what
+                   a target application does with UTF-7 input.
+      SYSLIB0012 - Assembly.CodeBase, used only as a fallback when
+                   AppContext.BaseDirectory is empty.
+      SYSLIB0051 - the serialization constructor on ERCException, kept so the type
+                   stays binary-compatible for existing consumers.
+    -->
+    <NoWarn>$(NoWarn);SYSLIB0001;SYSLIB0012;SYSLIB0051</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

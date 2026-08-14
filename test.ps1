@@ -31,7 +31,11 @@ param(
     [switch] $Coverage,
 
     # Run only tests tagged as pinning a known defect.
-    [switch] $PinnedDefectsOnly
+    [switch] $PinnedDefectsOnly,
+
+    # Force every target framework on every platform. Requires an x86 .NET runtime
+    # for the x86 net8.0 leg.
+    [switch] $AllFrameworks
 )
 
 $ErrorActionPreference = 'Stop'
@@ -52,6 +56,14 @@ foreach ($p in $platforms) {
         "-p:Platform=$p",
         '--nologo'
     )
+
+    # Running the net8.0 leg as x86 needs an x86 .NET runtime installed alongside
+    # the x64 one, which most machines do not have. net472 always works because the
+    # .NET Framework ships both. So x86 covers net472 only; x64 covers both, which
+    # is enough to prove the library works on a modern runtime.
+    if ($p -eq 'x86' -and -not $AllFrameworks) {
+        $args += @('-f', 'net472')
+    }
 
     if ($PinnedDefectsOnly) {
         $args += @('--filter', 'Category=PinnedDefect')

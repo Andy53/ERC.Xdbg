@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using ERC;
 using ERC.Utilities;
@@ -82,12 +82,12 @@ namespace ERC.Net.Tests
 
             var pointers = new List<IntPtr>
             {
-                (IntPtr)0x00007FFA12345678L,   // clean
-                (IntPtr)0x00007FFA12340A78L    // contains 0x0A
+                unchecked((IntPtr)0x00007FFA12345678L),   // clean
+                unchecked((IntPtr)0x00007FFA12340A78L)    // contains 0x0A
             };
 
             PtrRemover.RemovePointers(MachineType.x64, pointers, new byte[] { 0x0A })
-                      .ShouldBe(new List<IntPtr> { (IntPtr)0x00007FFA12345678L });
+                      .ShouldBe(new List<IntPtr> { unchecked((IntPtr)0x00007FFA12345678L) });
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace ERC.Net.Tests
             }
 
             // The whole pointer is inspected, not just its low 32 bits.
-            var pointers = new List<IntPtr> { (IntPtr)0x0A007FFA12345678L };
+            var pointers = new List<IntPtr> { unchecked((IntPtr)0x0A007FFA12345678L) };
 
             PtrRemover.RemovePointers(MachineType.x64, pointers, new byte[] { 0x0A })
                       .ShouldBeEmpty();

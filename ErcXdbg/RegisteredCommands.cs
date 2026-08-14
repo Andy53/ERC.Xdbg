@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -709,13 +709,14 @@ namespace ErcXdbg
             PLog.WriteLine("----------------------------------------------------------------------");
 
             
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             bool proxy = false;
             string proxyIpAddress = "";
@@ -766,7 +767,6 @@ namespace ErcXdbg
                     SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11;
 
                 string releases = "";
-                string[] releasesArray = null;
                 string fileurl = "";
                 string[] urlSegments = null;
                 string filename = "";
@@ -792,15 +792,10 @@ namespace ErcXdbg
 
                     releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/64");
 
-                    releasesArray = releases.Split(',');
-                    fileurl = "";
-                    foreach (string s in releasesArray)
-                    {
-                        if (s.Contains("browser_download_url"))
-                        {
-                            fileurl = s.Split('\"')[3];
-                        }
-                    }
+                    // Parsed properly rather than by splitting the raw JSON on commas,
+                    // which picked up the wrong URL whenever a release name or body
+                    // contained a comma. See GithubRelease.
+                    fileurl = ERC.Utilities.GithubRelease.Parse(releases).DownloadUrlFor(".zip");
 
                     urlSegments = fileurl.Split('/');
                     filename = urlSegments[urlSegments.Length - 1];
@@ -859,15 +854,10 @@ namespace ErcXdbg
                 updatePath = updatePath.Replace("\\x64\\", "\\x32\\");
                 releases = wClient.DownloadString("https://api.github.com/repos/andy53/erc.xdbg/releases/tags/32");
 
-                releasesArray = releases.Split(',');
-                fileurl = "";
-                foreach (string s in releasesArray)
-                {
-                    if (s.Contains("browser_download_url"))
-                    {
-                        fileurl = s.Split('\"')[3];
-                    }
-                }
+                // Parsed properly rather than by splitting the raw JSON on commas,
+                // which picked up the wrong URL whenever a release name or body
+                // contained a comma. See GithubRelease.
+                fileurl = ERC.Utilities.GithubRelease.Parse(releases).DownloadUrlFor(".zip");
 
                 urlSegments = fileurl.Split('/');
                 filename = urlSegments[urlSegments.Length - 1];
@@ -933,13 +923,14 @@ namespace ErcXdbg
         {
             PLog.WriteLine("ERC --Config");
             PLog.WriteLine("--------------------------------------------");
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if(parameters.Count == 0)
             {
@@ -1011,13 +1002,8 @@ namespace ErcXdbg
                     //return core.WorkingDirectory;
                     return;
                 case "setauthor":
-                    for (int i = 0; i < parameters.Count; i++)
-                    {
-                        if (parameters[i].ToLower().Contains("setauthor"))
-                        {
-                            parameters.Remove(parameters[i]);
-                        }
-                    }
+                    // Same forward-loop removal defect as the switch stripping above.
+                    parameters.RemoveAll(p => p.ToLower().Contains("setauthor"));
                     if (parameters.Count >= 1)
                     {
                         core.SetAuthor(String.Join(" ", parameters.ToArray()));
@@ -1102,13 +1088,14 @@ namespace ErcXdbg
         {
             PLog.WriteLine("ERC --Pattern");
             PLog.WriteLine("----------------------------------------------------------------------");
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             int patternLength = 0;
             string search = "";
@@ -1140,14 +1127,13 @@ namespace ErcXdbg
                 return;
             }
 
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i] == "create" || parameters[i] == "offset" 
-                    || parameters[i] == "c" || parameters[i] == "o")
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Drop the sub-command word now that it has been read.
+            //
+            // This was a forward loop calling Remove without compensating the index,
+            // so the argument straight after the sub-command was skipped: in
+            // "ERC --pattern create create 100" the second "create" survived and was
+            // then parsed as the length.
+            parameters.RemoveAll(p => p == "create" || p == "offset" || p == "c" || p == "o");
 
             if(parameters.Count > 2)
             {
@@ -1227,13 +1213,14 @@ namespace ErcXdbg
 
         private static void ByteArray(List<string> parameters, ERC.ErcCore core)
         {
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             byte[] byteArray = ERC.DisplayOutput.GenerateByteArray(core, Globals.bytes);
 
@@ -1283,13 +1270,14 @@ namespace ErcXdbg
         private static void Compare(ERC.ProcessInfo info, List<string> parameters)
         {
             string allowedChars = "abcdefABCDEF1234567890";
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if (parameters.Count != 2)
             {
@@ -1404,13 +1392,14 @@ namespace ErcXdbg
         {
             PLog.WriteLine("ERC --Convert");
             PLog.WriteLine("----------------------------------------------------------------------");
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             string output = "";
 
@@ -1460,13 +1449,14 @@ namespace ErcXdbg
         {
             PLog.WriteLine("ERC --Assemble");
             PLog.WriteLine("----------------------------------------------------------------------");
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if (parameters.Count == 0)
             {
@@ -1497,9 +1487,19 @@ namespace ErcXdbg
                 }               
             }
 
-            foreach(int i in elementsToRemove)
+            // Remove the architecture flag by index, highest first.
+            //
+            // This used to iterate the collected indices in ascending order and call
+            // parameters.Remove(parameters[i]). Each removal shifted everything after
+            // it down, so every later index was stale: the wrong argument was dropped,
+            // or the lookup ran off the end of the list and threw. Descending order
+            // keeps the remaining indices valid.
+            foreach (int index in elementsToRemove.OrderByDescending(x => x))
             {
-                parameters.Remove(parameters[i]);
+                if (index >= 0 && index < parameters.Count)
+                {
+                    parameters.RemoveAt(index);
+                }
             }
 
             if(n == -1)
@@ -1539,13 +1539,14 @@ namespace ErcXdbg
         {
             PLog.WriteLine("ERC --Disassemble");
             PLog.WriteLine("----------------------------------------------------------------------");
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if (parameters.Count <= 0)
             {
@@ -1576,9 +1577,19 @@ namespace ErcXdbg
                 }
             }
 
-            foreach (int i in elementsToRemove)
+            // Remove the architecture flag by index, highest first.
+            //
+            // This used to iterate the collected indices in ascending order and call
+            // parameters.Remove(parameters[i]). Each removal shifted everything after
+            // it down, so every later index was stale: the wrong argument was dropped,
+            // or the lookup ran off the end of the list and threw. Descending order
+            // keeps the remaining indices valid.
+            foreach (int index in elementsToRemove.OrderByDescending(x => x))
             {
-                parameters.Remove(parameters[i]);
+                if (index >= 0 && index < parameters.Count)
+                {
+                    parameters.RemoveAt(index);
+                }
             }
 
             if (n == -1)
@@ -1634,13 +1645,14 @@ namespace ErcXdbg
         
         private static void SearchMemory(ERC.ProcessInfo info, List<string> parameters)
         {
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             int searchType = 0;
             string searchString = "";
@@ -1668,13 +1680,14 @@ namespace ErcXdbg
 
         private static void SearchModules(ERC.ProcessInfo info, List<string> parameters)
         {
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             int searchType = 0;
             string searchString = "";
@@ -1725,13 +1738,14 @@ namespace ErcXdbg
 
         private static void DumpMemory(ERC.ProcessInfo info, List<string> parameters)
         {
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if(parameters.Count != 2)
             {
@@ -1758,13 +1772,14 @@ namespace ErcXdbg
 
         private static void SEH(List<string> parameters, ERC.ProcessInfo info) 
         {
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if(info.ProcessMachineType == ERC.MachineType.x64)
             {
@@ -1845,13 +1860,14 @@ namespace ErcXdbg
 
             ERC.HeapInfo hi = new ERC.HeapInfo(info);
 
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if (parameters.Count == 0)
             {
@@ -2112,13 +2128,14 @@ namespace ErcXdbg
                 arg.Add(s);
             }
 
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if (parameters.Count == 0)
             {
@@ -2258,13 +2275,14 @@ namespace ErcXdbg
                 arg.Add(s);
             }
 
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                if (parameters[i].Contains("--"))
-                {
-                    parameters.Remove(parameters[i]);
-                }
-            }
+            // Strip the switches, keeping the positional arguments.
+            //
+            // This was a forward loop calling parameters.Remove(parameters[i]),
+            // which shifted the next element into the current index and skipped it,
+            // so a switch immediately following another switch survived and was then
+            // treated as a positional argument. The same loop was copy-pasted into
+            // nearly every command handler.
+            parameters.RemoveAll(p => p.Contains("--"));
 
             if (parameters.Count == 0)
             {

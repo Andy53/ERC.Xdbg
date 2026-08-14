@@ -48,14 +48,12 @@ namespace ERC.Net.Tests
         }
 
         [Fact]
-        [Trait(Defect.Category, Defect.Pinned)]
-        public void Constructing_ErcCore_writes_files_to_the_assembly_directory()
+        public void Pattern_files_are_generated_on_first_use()
         {
-            // The constructor is not a constructor so much as an installer: it
-            // creates a config file and generates two pattern files totalling
-            // ~87 KB next to the assembly. That makes the type impossible to use
-            // in a read-only directory and impossible to unit test in isolation.
-            File.Exists(Path.Combine(_core.WorkingDirectory, "ERC_Config.XML")).ShouldBeTrue();
+            // Was a pinned defect: the constructor generated ~87 KB of pattern files
+            // and wrote a config next to the assembly, so the type could not be used
+            // in a read-only directory or tested in isolation. Generation is now
+            // deferred to the first read of the path.
             File.Exists(_core.PatternStandardPath).ShouldBeTrue();
             File.Exists(_core.PatternExtendedPath).ShouldBeTrue();
 
@@ -194,13 +192,19 @@ namespace ERC.Net.Tests
         }
 
         [Fact]
-        [Trait(Defect.Category, Defect.Pinned)]
-        public void ErcResult_inherits_from_ErcCore()
+        public void ErcResult_does_not_inherit_from_ErcCore()
         {
-            // Every result value in the library is-a ErcCore, so constructing one
-            // drags configuration state along with it. Phase 02 replaces this with
-            // a plain result type; this test exists to make that change deliberate.
-            typeof(ErcCore).IsAssignableFrom(typeof(ErcResult<string>)).ShouldBeTrue();
+            // Was a pinned defect: every result value in the library was-a ErcCore,
+            // so constructing one dragged configuration state along and a result
+            // exposed nonsense members like SetWorkingDirectory.
+            typeof(ErcCore).IsAssignableFrom(typeof(ErcResult<string>)).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void ErcResult_reports_success_and_failure()
+        {
+            new ErcResult<string>(_core) { ReturnValue = "ok" }.IsSuccess.ShouldBeTrue();
+            new ErcResult<string>(_core) { Error = new ERCException("no") }.IsSuccess.ShouldBeFalse();
         }
     }
 }

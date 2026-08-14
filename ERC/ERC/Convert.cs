@@ -40,26 +40,22 @@ namespace ERC.Utilities
                 }
             }
 
-            try
+            // No try/catch here any more. It caught every exception and reported it
+            // with Console.WriteLine, which goes nowhere at all inside x64dbg, then
+            // returned "" - indistinguishable from a valid conversion of empty input.
+            //
+            // Nothing in this loop can throw: the input has already been checked to
+            // contain only hex characters and to have an even length, so Substring is
+            // in range and two hex digits always convert to a value of 0 to 255.
+            var ascii = new StringBuilder(hex.Length / 2);
+
+            for (int i = 0; i < hex.Length; i += 2)
             {
-                string ascii = string.Empty;
-
-                for (int i = 0; i < hex.Length; i += 2)
-                {
-                    String hs = string.Empty;
-
-                    hs = hex.Substring(i, 2);
-                    uint decval = System.Convert.ToUInt32(hs, 16);
-                    char character = System.Convert.ToChar(decval);
-                    ascii += character;
-
-                }
-
-                return ascii;
+                uint value = System.Convert.ToUInt32(hex.Substring(i, 2), 16);
+                ascii.Append((char)value);
             }
-            catch (Exception ex) { Console.WriteLine(ex.Message); }
 
-            return string.Empty;
+            return ascii.ToString();
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
+using ERC.Native;
 namespace ERC
 {
     /// <summary>
@@ -257,7 +258,7 @@ namespace ERC
                     do
                     {
                         ERC.Structures.MEMORY_BASIC_INFORMATION32 m;
-                        int result = ErcCore.VirtualQueryEx32(ModuleProcess.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION32)));
+                        int result = ModuleCore.Native.VirtualQueryEx32(ModuleProcess.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION32)));
                         if (address == (long)m.BaseAddress + (long)m.RegionSize)
                             break;
                         address = (long)m.BaseAddress + (long)m.RegionSize;
@@ -276,7 +277,7 @@ namespace ERC
                     do
                     {
                         ERC.Structures.MEMORY_BASIC_INFORMATION64 m;
-                        int result = ErcCore.VirtualQueryEx64(ModuleProcess.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64)));
+                        int result = ModuleCore.Native.VirtualQueryEx64(ModuleProcess.Handle, (IntPtr)address, out m, (uint)Marshal.SizeOf(typeof(MEMORY_BASIC_INFORMATION64)));
                         if (address == (long)m.BaseAddress + (long)m.RegionSize)
                             break;
                         address = (long)m.BaseAddress + (long)m.RegionSize;
@@ -328,7 +329,7 @@ namespace ERC
                     };
                     
                     byte[] bytes = new byte[256];
-                    var ret = ErcCore.ReadProcessMemory(ModuleProcess.Handle,
+                    var ret = ModuleCore.Native.ReadProcessMemory(ModuleProcess.Handle,
                         (IntPtr)((uint)ModuleBase + ImageOptionalHeader32.LoadConfigTable.VirtualAddress), bytes, 256, out int BytesRead);
                     if (BitConverter.ToUInt32(bytes, 58) > 0 || BitConverter.ToUInt32(bytes, 62) > 0)
                     {
@@ -350,7 +351,7 @@ namespace ERC
                     };
 
                     byte[] bytes = new byte[256];
-                    var ret = ErcCore.ReadProcessMemory(ModuleProcess.Handle,
+                    var ret = ModuleCore.Native.ReadProcessMemory(ModuleProcess.Handle,
                         (IntPtr)((long)ModuleBase + (long)ImageOptionalHeader64.LoadConfigTable.VirtualAddress), bytes, 256, out int BytesRead);
                     if (BitConverter.ToUInt64(bytes, 88) > 0 || BitConverter.ToUInt64(bytes, 96) > 0)
                     {
@@ -377,18 +378,18 @@ namespace ERC
                 dll = false;
             }
 
-            var MaLRet = ErcCore.MapAndLoad(name, path, out loadedImage, dll, true);
-            var modPtr = ErcCore.ImageLoad(name, path);
+            var MaLRet = ModuleCore.Native.MapAndLoad(name, path, out loadedImage, dll, true);
+            var modPtr = ModuleCore.Native.ImageLoad(name, path);
 
             if (ModuleMachineType == MachineType.I386)
             {
                 IMAGE_LOAD_CONFIG_DIRECTORY32 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY32();
-                var check = ErcCore.GetImageConfigInformation32(ref loadedImage, ref ImageConfigDir);
+                var check = ModuleCore.Native.GetImageConfigInformation32(ref loadedImage, ref ImageConfigDir);
             }
             else if (ModuleMachineType == MachineType.x64)
             {
                 IMAGE_LOAD_CONFIG_DIRECTORY64 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY64();
-                var check = ErcCore.GetImageConfigInformation64(ref loadedImage, ref ImageConfigDir);
+                var check = ModuleCore.Native.GetImageConfigInformation64(ref loadedImage, ref ImageConfigDir);
             }
         }
         #endregion
@@ -408,7 +409,7 @@ namespace ERC
             byte[] buffer = new byte[ModuleSize];
             int bytesread = 0;
 
-            ErcCore.ReadProcessMemory(ModuleProcess.Handle, ModuleBase, buffer, buffer.Length, out bytesread);
+            ModuleCore.Native.ReadProcessMemory(ModuleProcess.Handle, ModuleBase, buffer, buffer.Length, out bytesread);
             List<int> positions = SearchBytePattern(searchBytes, buffer);
 
             for(int i = 0; i < positions.Count; i++)

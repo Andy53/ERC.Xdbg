@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
+using ERC.Native;
 namespace ERC
 {
     /// <summary>
@@ -63,8 +64,13 @@ namespace ERC
 
             try
             {
-                ThreadHandle = ErcCore.OpenThread(ThreadAccess.All_ACCESS, false, (uint)thread.Id);
-                if(ThreadHandle == null)
+                ThreadHandle = ThreadCore.Native.OpenThread(ThreadAccess.All_ACCESS, false, (uint)thread.Id);
+
+                // OpenThread reports failure with a null *handle value*, which is
+                // IntPtr.Zero, not a null reference. The previous "== null" test
+                // could never be true, so a thread that failed to open was treated
+                // as having opened successfully and the invalid handle was used.
+                if (ThreadHandle == IntPtr.Zero)
                 {
                     ThreadFailed = true;
                     
@@ -103,7 +109,7 @@ namespace ERC
                 Context64.ContextFlags = CONTEXT_FLAGS.CONTEXT_ALL;
                 try
                 {
-                    bool returnVar = ErcCore.GetThreadContext64(ThreadHandle, ref Context64);
+                    bool returnVar = ThreadCore.Native.GetThreadContext64(ThreadHandle, ref Context64);
                     if (returnVar == false)
                     {
                         throw new ERCException("Win32 Exception encountered when attempting to get thread context: " + 
@@ -128,7 +134,7 @@ namespace ERC
                 Context32.ContextFlags = CONTEXT_FLAGS.CONTEXT_ALL;
                 try
                 {
-                    bool returnVar = ErcCore.Wow64GetThreadContext(ThreadHandle, ref Context32);
+                    bool returnVar = ThreadCore.Native.Wow64GetThreadContext(ThreadHandle, ref Context32);
                     if (returnVar == false)
                     {
                         throw new ERCException("Win32 Exception encountered when attempting to get thread context: " +
@@ -153,7 +159,7 @@ namespace ERC
                 Context32.ContextFlags = CONTEXT_FLAGS.CONTEXT_ALL;
                 try
                 {
-                    bool returnVar = ErcCore.GetThreadContext32(ThreadHandle, ref Context32);
+                    bool returnVar = ThreadCore.Native.GetThreadContext32(ThreadHandle, ref Context32);
                     if (returnVar == false)
                     {
                         throw new ERCException("Win32 Exception encountered when attempting to get thread context: " +
@@ -183,7 +189,7 @@ namespace ERC
         {
             ErcResult<string> returnString = new ErcResult<string>(ThreadCore);
 
-            var retInt = ErcCore.ZwQueryInformationThread(ThreadHandle, 0,
+            var retInt = ThreadCore.Native.ZwQueryInformationThread(ThreadHandle, 0,
                 ref ThreadBasicInfo, Marshal.SizeOf(typeof(ThreadBasicInformation)), IntPtr.Zero);
 
             if (retInt != 0)
@@ -197,12 +203,12 @@ namespace ERC
             if(X64 == MachineType.x64)
             {
                 tebBytes = new byte[0x16A0];
-                ErcCore.ReadProcessMemory(ThreadProcess.ProcessHandle, ThreadBasicInfo.TebBaseAdress, tebBytes, 0x16A0, out ret);
+                ThreadCore.Native.ReadProcessMemory(ThreadProcess.ProcessHandle, ThreadBasicInfo.TebBaseAdress, tebBytes, 0x16A0, out ret);
             }
             else
             {
                 tebBytes = new byte[3888];
-                ErcCore.ReadProcessMemory(ThreadProcess.ProcessHandle, ThreadBasicInfo.TebBaseAdress, tebBytes, 3888, out ret);
+                ThreadCore.Native.ReadProcessMemory(ThreadProcess.ProcessHandle, ThreadBasicInfo.TebBaseAdress, tebBytes, 3888, out ret);
             }
             
 
@@ -413,13 +419,13 @@ namespace ERC
 
                 if(X64 == MachineType.x64)
                 {
-                    ret = ErcCore.ReadProcessMemory(ThreadProcess.ProcessHandle, (IntPtr)BitConverter.ToInt64(sehEntry, 0), sehHolder, arraySize * 2, out int retInt);
+                    ret = ThreadCore.Native.ReadProcessMemory(ThreadProcess.ProcessHandle, (IntPtr)BitConverter.ToInt64(sehEntry, 0), sehHolder, arraySize * 2, out int retInt);
                     Array.Copy(sehHolder, 0, sehEntry, 0, arraySize);
                     Array.Copy(sehHolder, arraySize, nSeh, 0, arraySize);
                 }
                 else
                 {
-                    ret = ErcCore.ReadProcessMemory(ThreadProcess.ProcessHandle, (IntPtr)BitConverter.ToInt32(sehEntry, 0), sehHolder, arraySize * 2, out int retInt);
+                    ret = ThreadCore.Native.ReadProcessMemory(ThreadProcess.ProcessHandle, (IntPtr)BitConverter.ToInt32(sehEntry, 0), sehHolder, arraySize * 2, out int retInt);
                     Array.Copy(sehHolder, 0, sehEntry, 0, arraySize);
                     Array.Copy(sehHolder, arraySize, nSeh, 0, arraySize);
                 }

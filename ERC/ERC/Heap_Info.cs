@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using ERC.Structures;
 
+using ERC.Native;
 namespace ERC
 {
     public class HeapInfo
@@ -20,14 +21,14 @@ namespace ERC
             HeapProcess = info;
             HEAPLIST32 firstHeapList = new HEAPLIST32();
             firstHeapList.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPLIST32));
-            IntPtr Handle = ErcCore.CreateToolhelp32Snapshot(SnapshotFlags.HeapList, (uint)info.ProcessID);
+            IntPtr Handle = HeapProcess.Native.CreateToolhelp32Snapshot(SnapshotFlags.HeapList, (uint)info.ProcessID);
 
             if ((int)Handle == -1)
             {
                 throw new ERCException("CreateToolhelp32Snapshot returned an invalid handle value (-1)");
             }
 
-            if (ErcCore.Heap32ListFirst(Handle, ref firstHeapList))
+            if (HeapProcess.Native.Heap32ListFirst(Handle, ref firstHeapList))
             {
                 HeapLists.Add(firstHeapList);
                 bool moreHeaps = false;
@@ -35,7 +36,7 @@ namespace ERC
                 {
                     HEAPLIST32 currentHeap = new HEAPLIST32();
                     currentHeap.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPLIST32));
-                    moreHeaps = ErcCore.Heap32ListNext(Handle, ref currentHeap);
+                    moreHeaps = HeapProcess.Native.Heap32ListNext(Handle, ref currentHeap);
                     if(HeapEntries.Count == 0)
                     {
                         currentHeap = firstHeapList;
@@ -47,13 +48,13 @@ namespace ERC
                         HEAPENTRY32 heapentry32 = new HEAPENTRY32();
                         heapentry32.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPENTRY32));
 
-                        if (ErcCore.Heap32First(ref heapentry32, (uint)HeapProcess.ProcessID, currentHeap.th32HeapID))
+                        if (HeapProcess.Native.Heap32First(ref heapentry32, (uint)HeapProcess.ProcessID, currentHeap.th32HeapID))
                         {
                             bool moreheapblocks = false;
                             do
                             {
                                 HeapEntries.Add(heapentry32);
-                                moreheapblocks = ErcCore.Heap32Next(ref heapentry32);
+                                moreheapblocks = HeapProcess.Native.Heap32Next(ref heapentry32);
                             }
                             while (moreheapblocks);
                         }
