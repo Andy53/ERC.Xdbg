@@ -57,7 +57,15 @@
     <!-- Merges every managed dependency into the single plugin file x64dbg loads. -->
     <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="all" />
     <PackageReference Include="Fody" Version="6.5.5" PrivateAssets="all" />
-    <PackageReference Include="DllExport" Version="1.7.4" PrivateAssets="all" />
+    <!--
+      GeneratePathProperty asks NuGet to define $(PkgDllExport) pointing at wherever
+      this package actually landed. The import below used to build that path itself
+      from $(NuGetPackageRoot), which assumes the package resolved out of the global
+      packages folder - true on a developer machine, not necessarily true elsewhere.
+      When the assumption failed the import was silently skipped and the plugin was
+      produced without its native exports.
+    -->
+    <PackageReference Include="DllExport" Version="1.7.4" PrivateAssets="all" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,20 +79,37 @@
   </ItemGroup>
 
   <!--
-    The DllExport package ships no build/ folder, so NuGet does not auto-import
-    its targets; the import is explicit. NuGetPackageRoot is only set once restore
-    has run, hence the Exists guard.
+    The DllExport package ships no build/ folder, so NuGet does not auto-import its
+    targets; the import is explicit. Both properties are only set once restore has
+    written obj/*.nuget.g.props, hence the Exists guards.
+
+    $(PkgDllExport) is NuGet's own answer to "where did this package go" and is
+    tried first. The hand-built path is kept as a fallback for the case where the
+    package was restored by something that does not emit the path property.
   -->
-  <Import Project="$(NuGetPackageRoot)dllexport\1.7.4\tools\net.r_eg.DllExport.targets"
-          Condition="Exists('$(NuGetPackageRoot)dllexport\1.7.4\tools\net.r_eg.DllExport.targets')" />
+  <PropertyGroup>
+    <ErcDllExportTargets Condition="'$(PkgDllExport)' != ''">$(PkgDllExport)\tools\net.r_eg.DllExport.targets</ErcDllExportTargets>
+    <ErcDllExportTargets Condition="!Exists('$(ErcDllExportTargets)') And '$(NuGetPackageRoot)' != ''">$(NuGetPackageRoot)dllexport\1.7.4\tools\net.r_eg.DllExport.targets</ErcDllExportTargets>
+  </PropertyGroup>
+
+  <Import Project="$(ErcDllExportTargets)" Condition="Exists('$(ErcDllExportTargets)')" />
 
   <Target Name="ErcVerifyDllExportRan" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'">
     <!--
       Without the native export table x64dbg silently refuses to load the plugin,
       which is a slow and confusing failure. Fail the build here instead.
+
+      The message reports what was looked for. This failed on CI for months while
+      building perfectly on a developer machine, and "targets were not imported"
+      alone gave nothing to act on.
     -->
+    <PropertyGroup>
+      <ErcDllExportTargetsFound>no</ErcDllExportTargetsFound>
+      <ErcDllExportTargetsFound Condition="Exists('$(ErcDllExportTargets)')">yes</ErcDllExportTargetsFound>
+    </PropertyGroup>
+
     <Error Condition="'$(DllExportModImported)' != 'true'"
-           Text="DllExport targets were not imported - the plugin would have no native exports and x64dbg would not load it. Run restore first, then build with full MSBuild (see build.ps1)." />
+           Text="DllExport targets were not imported, so the plugin has no native exports and x64dbg would not load it.%0A  PkgDllExport       = '$(PkgDllExport)'%0A  NuGetPackageRoot   = '$(NuGetPackageRoot)'%0A  NuGetPackageFolders= '$(NuGetPackageFolders)'%0A  targets looked for = '$(ErcDllExportTargets)'%0A  targets found      = $(ErcDllExportTargetsFound)%0A  MSBuild            = $(MSBuildBinPath)%0ARestore first, then build with full MSBuild (see build.ps1)." />
   </Target>
 
   <Target Name="ErcRenameToPluginExtension" AfterTargets="Build" DependsOnTargets="ErcVerifyDllExportRan"
