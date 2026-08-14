@@ -1,0 +1,148 @@
+name: Release
+
+# Publishes the plugin so that "ERC --update" can install it.
+#
+# The updater looks for a release under a fixed tag - "32" or "64" - rather than the
+# newest one, so those two tags are moved to whatever is being released. That is not
+# how tags are usually used, but it is the contract the shipped plugin already
+# follows, and changing it would strand every installation that predates the change.
+#
+# Each release carries exactly one .zip and its .sha256. The updater refuses any
+# download whose hash is not published beside it, so a release missing the hash
+# cannot be installed.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, for example v2.1.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    strategy:
+      # Sequential. Both jobs move a tag and create a release, and GitHub does not
+      # serialise that for us.
+      max-parallel: 1
+      fail-fast: true
+      matrix:
+        include:
+          - platform: x86
+            tag: '32'
+          - platform: x64
+            tag: '64'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up MSBuild
+        # The native exports come from an IL-rewriting step that only runs under full
+        # MSBuild, so the .NET SDK alone cannot produce a loadable plugin.
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Determine version
+        id: version
+        shell: pwsh
+        run: |
+          $version = if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            '${{ github.event.inputs.version }}'
+          } else {
+            '${{ github.ref_name }}'
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Releasing $version"
+
+      - name: Build and verify
+        shell: pwsh
+        env:
+          CI: 'true'
+        run: ./build.ps1 -Platform ${{ matrix.platform }} -Configuration Release
+
+      - name: Test
+        shell: pwsh
+        env:
+          CI: 'true'
+        # Including the live-process tests. A release is the last place to find out
+        # that memory searching or module parsing is broken.
+        run: ./test.ps1 -Platform ${{ matrix.platform }} -Configuration Release
+
+      - name: Package
+        shell: pwsh
+        run: ./package.ps1 -Platform ${{ matrix.platform }} -Configuration Release -SkipBuild
+
+      - name: Verify the package installs
+        shell: pwsh
+        env:
+          CI: 'true'
+        # ReleasePackageTests takes the archive just produced and runs it through the
+        # real updater. It skips when nothing has been packaged, which is why this
+        # runs after the packaging step rather than as part of the suite above.
+        run: ./test.ps1 -Platform ${{ matrix.platform }} -Configuration Release -SkipIntegration
+
+      - name: Move the tag the updater looks for
+        shell: bash
+        run: |
+          # The shipped plugin fetches releases/tags/32 and /64. Both have to point at
+          # this build, or an update installs whatever was released last time.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "${{ matrix.tag }}"
+          git push -f origin "refs/tags/${{ matrix.tag }}"
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          tag="${{ matrix.tag }}"
+          version="${{ steps.version.outputs.version }}"
+          zip="artifacts/Erc.Xdbg-${{ matrix.platform }}.zip"
+
+          notes=$(cat <<EOF
+          ERC.Xdbg $version, ${{ matrix.platform }}.
+
+          Install by unzipping into the \`${{ matrix.platform == 'x86' && 'x32' || 'x64' }}/plugins\` directory
+          of x64dbg, or run \`ERC --update\` in a plugin you already have installed.
+
+          The archive contains the plugin and the native assembler it needs. Its
+          SHA-256 is published beside it as \`$(basename "$zip").sha256\`; the updater
+          refuses any download that does not match.
+          EOF
+          )
+
+          title="ERC.Xdbg $version (${{ matrix.platform }})"
+
+          # Updated in place rather than deleted and recreated. Deleting first leaves
+          # a window - and, if the create then fails, a permanent state - where the
+          # tag the plugin fetches has no release at all, which is worse than an
+          # out-of-date one. --clobber replaces the assets so nothing stale survives.
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "$title" --notes "$notes" --verify-tag
+            gh release upload "$tag" "$zip" "$zip.sha256" --clobber
+          else
+            gh release create "$tag" \
+              "$zip" "$zip.sha256" \
+              --title "$title" \
+              --notes "$notes"
+          fi
+
+      - name: Upload the archive as a workflow artifact too
+        uses: actions/upload-artifact@v4
+        with:
+          name: Erc.Xdbg-${{ matrix.platform }}
+          path: |
+            artifacts/Erc.Xdbg-${{ matrix.platform }}.zip
+            artifacts/Erc.Xdbg-${{ matrix.platform }}.zip.sha256
+          if-no-files-found: error

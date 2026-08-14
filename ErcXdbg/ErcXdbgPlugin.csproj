@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!--
     The x64dbg plugin itself.
@@ -15,7 +15,17 @@
     <OutputType>Library</OutputType>
     <AssemblyName>Erc.Xdbg</AssemblyName>
     <RootNamespace>ErcXdbg</RootNamespace>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <!--
+      Assembly metadata is generated from MSBuild properties, so the version comes
+      from Directory.Build.props like everything else. It used to be turned off in
+      favour of a hand-written AssemblyInfo.cs, which hard-coded 1.0.0.0 and had
+      never been touched: every release since the first reported version 1.0.0.0 in
+      its file properties regardless of what was being released.
+    -->
+    <AssemblyTitle>ErcXdbgPlugin</AssemblyTitle>
+    <Description>ERC plugin for X64dbg</Description>
+    <Trademark>by Andy Bowden</Trademark>
+    <ComVisible>false</ComVisible>
 
     <!-- Unify the versions Reloaded and Costura disagree on, to keep the merged plugin loadable. -->
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

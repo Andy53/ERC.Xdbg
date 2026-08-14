@@ -42,7 +42,21 @@
     -->
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
 
-    <!-- Reproducibility: no timestamps or machine paths baked into output. -->
+    <!--
+      Deterministic compilation: the same source produces the same IL, with a
+      content-derived module version id rather than a random one, and no machine
+      paths baked in.
+
+      This does not make the shipped plugin byte-for-byte reproducible, and it is
+      worth being clear about why. The compiler's output is rewritten twice after
+      it is produced - once by Fody/Costura to embed the managed dependencies, and
+      once by the export weaver to add the native entry points x64dbg calls - and
+      each re-emits the PE file with a fresh timestamp and module version id.
+      Two builds of identical source differ in exactly those 18 bytes.
+
+      That is why every release publishes a SHA-256 of the archive rather than
+      inviting users to rebuild and compare.
+    -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
@@ -53,7 +67,7 @@
     <Authors>Andy Bowden</Authors>
     <Copyright>Copyright (c) Andy Bowden</Copyright>
     <Product>Erc.Xdbg</Product>
-    <Version>2.0.3</Version>
+    <Version>3.0.0</Version>
 
     <!--
       x64dbg reads the plugin's architecture from the file extension, and the
