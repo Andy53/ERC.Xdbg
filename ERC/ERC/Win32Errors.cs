@@ -55,11 +55,14 @@ namespace ERC.Utilities
                     return "Unable to get error code string from System - Error " + le.ToString();
                 }
 
-                string sRet = Marshal.PtrToStringAnsi(lpMsgBuf);
+                string? sRet = Marshal.PtrToStringAnsi(lpMsgBuf);
 
                 // Free the buffer.
                 lpMsgBuf = LocalFree(lpMsgBuf);
-                return sRet;
+
+                // PtrToStringAnsi returns null for a null buffer. The caller asked
+                // for a description, so give one rather than a null string.
+                return sRet ?? ("Unknown error code " + errorCode);
             }
             catch (Exception e)
             {

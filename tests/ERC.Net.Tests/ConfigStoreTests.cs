@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using ERC;
 using ERC.Config;
@@ -74,7 +74,7 @@ namespace ERC.Net.Tests
             core.SetAuthor("Someone Else");
 
             core.Author.ShouldBe("Someone Else");
-            store.Load().Author.ShouldBe("Someone Else");
+            store.Load().ShouldNotBeNull().Author.ShouldBe("Someone Else");
         }
 
         [Fact]
@@ -148,7 +148,7 @@ namespace ERC.Net.Tests
                 ErcConfig written = SampleConfig(directory);
                 store.Save(written).ShouldBeTrue();
 
-                ErcConfig read = store.Load();
+                ErcConfig? read = store.Load();
                 read.ShouldNotBeNull();
                 read.WorkingDirectory.ShouldBe(written.WorkingDirectory);
                 read.Author.ShouldBe(written.Author);
@@ -234,9 +234,10 @@ namespace ERC.Net.Tests
 
             try
             {
-                ErcCore core = null;
+                ErcCore? core = null;
                 Should.NotThrow(() => core = new ErcCore(new XmlConfigStore(file), new InMemoryErcLogger()));
 
+                core.ShouldNotBeNull();
                 core.WorkingDirectory.ShouldNotBeNullOrEmpty();
                 core.SystemError.ShouldNotBeNull("the failure to persist should be recorded");
             }
@@ -267,7 +268,7 @@ namespace ERC.Net.Tests
 
             seed.Author = "mutated after handing over";
 
-            store.Load().Author.ShouldBe("Test Author");
+            store.Load().ShouldNotBeNull().Author.ShouldBe("Test Author");
         }
 
         [Fact]

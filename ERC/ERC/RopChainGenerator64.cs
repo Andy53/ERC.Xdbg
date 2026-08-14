@@ -1,4 +1,14 @@
-﻿using System;
+﻿// Nullable analysis is off for this file.
+//
+// The two ROP generators are ~7,000 lines of copy-pasted per-register blocks that
+// the planned rework replaces with a table-driven core. Annotating code that is
+// about to be deleted is throwaway effort, and the noise would hide real warnings
+// elsewhere. This pragma comes out as part of that rework.
+// "disable warnings" rather than "disable": nullable annotations elsewhere in
+// the file stay legal, only the warnings are silenced.
+#nullable disable warnings
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -262,7 +272,7 @@ namespace ERC.Utilities
         /// <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopGadgets64(byte[] ptrsToExclude = null, List<string> excludes = null)
+        public ErcResult<string> GenerateRopGadgets64(byte[]? ptrsToExclude = null, List<string>? excludes = null)
         {
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
             x64Opcodes = new X64Lists();
@@ -391,7 +401,7 @@ namespace ERC.Utilities
         /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain64(byte[] ptrsToExclude, byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
+        public ErcResult<string> GenerateRopChain64(byte[] ptrsToExclude, byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -561,7 +571,7 @@ namespace ERC.Utilities
         /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain64(byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
+        public ErcResult<string> GenerateRopChain64(byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -711,7 +721,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GetRopNops
-        private ErcResult<List<IntPtr>> GetRopNops(ProcessInfo info, List<string> excludes = null)
+        private ErcResult<List<IntPtr>> GetRopNops(ProcessInfo info, List<string>? excludes = null)
         {
             ErcResult<List<IntPtr>> ropNopsResult = new ErcResult<List<IntPtr>>(info.ProcessCore);
             ropNopsResult.ReturnValue = new List<IntPtr>();

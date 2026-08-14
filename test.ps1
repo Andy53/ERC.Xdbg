@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Runs the ERC.Net test suite.
 
@@ -35,7 +35,10 @@ param(
 
     # Force every target framework on every platform. Requires an x86 .NET runtime
     # for the x86 net8.0 leg.
-    [switch] $AllFrameworks
+    [switch] $AllFrameworks,
+
+    # Skip the live-process tests, which launch a target and take a few seconds.
+    [switch] $SkipIntegration
 )
 
 $ErrorActionPreference = 'Stop'
@@ -45,6 +48,20 @@ $repoRoot = $PSScriptRoot
 $project  = Join-Path $repoRoot 'tests\ERC.Net.Tests\ERC.Net.Tests.csproj'
 
 $platforms = if ($Platform -eq 'both') { @('x86', 'x64') } else { @($Platform) }
+
+# The fixture the live-process tests launch. It is deliberately not a
+# ProjectReference - that would tie its target framework and runtime identifier to
+# the test project's - so it is built here instead. Without this the integration
+# tests skip rather than run.
+if (-not $PinnedDefectsOnly -and -not $SkipIntegration) {
+    $fixture = Join-Path $repoRoot 'tests\Fixtures\ErcTestTarget\ErcTestTarget.csproj'
+
+    foreach ($p in $platforms) {
+        Write-Host "==> Building fixture target ($p)" -ForegroundColor DarkGray
+        & dotnet build $fixture -c $Configuration "-p:Platform=$p" --nologo -v quiet | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "The fixture target failed to build for $p." }
+    }
+}
 
 foreach ($p in $platforms) {
     Write-Host ""
@@ -67,6 +84,9 @@ foreach ($p in $platforms) {
 
     if ($PinnedDefectsOnly) {
         $args += @('--filter', 'Category=PinnedDefect')
+    }
+    elseif ($SkipIntegration) {
+        $args += @('--filter', 'Category!=Integration')
     }
 
     if ($Coverage) {

@@ -28,16 +28,16 @@ namespace ERC.Utilities
     public class GithubRelease
     {
         [DataMember(Name = "tag_name")]
-        public string TagName { get; set; }
+        public string? TagName { get; set; }
 
         [DataMember(Name = "assets")]
-        public List<GithubReleaseAsset> Assets { get; set; }
+        public List<GithubReleaseAsset>? Assets { get; set; }
 
         /// <summary>
         /// Reads a release from a GitHub API response.
         /// </summary>
         /// <exception cref="ERCException">The response could not be parsed.</exception>
-        public static GithubRelease Parse(string json)
+        public static GithubRelease Parse(string? json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
@@ -49,7 +49,16 @@ namespace ERC.Utilities
                 var serialiser = new DataContractJsonSerializer(typeof(GithubRelease));
                 using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
                 {
-                    return (GithubRelease)serialiser.ReadObject(stream);
+                    // ReadObject can hand back null for input that is valid JSON but
+                    // not an object, such as the literal "null".
+                    var release = serialiser.ReadObject(stream) as GithubRelease;
+                    if (release == null)
+                    {
+                        throw new ERCException(
+                            "The update server response did not contain a release.");
+                    }
+
+                    return release;
                 }
             }
             catch (SerializationException e)
@@ -72,11 +81,13 @@ namespace ERC.Utilities
             {
                 foreach (GithubReleaseAsset asset in Assets)
                 {
-                    if (!string.IsNullOrEmpty(asset.Name) &&
-                        asset.Name.EndsWith(extension, StringComparison.OrdinalIgnoreCase) &&
-                        !string.IsNullOrEmpty(asset.BrowserDownloadUrl))
+                    string? name = asset.Name;
+                    string? url = asset.BrowserDownloadUrl;
+
+                    if (name != null && url != null && url.Length > 0 &&
+                        name.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
                     {
-                        return asset.BrowserDownloadUrl;
+                        return url;
                     }
                 }
             }
@@ -93,9 +104,9 @@ namespace ERC.Utilities
     public class GithubReleaseAsset
     {
         [DataMember(Name = "name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [DataMember(Name = "browser_download_url")]
-        public string BrowserDownloadUrl { get; set; }
+        public string? BrowserDownloadUrl { get; set; }
     }
 }

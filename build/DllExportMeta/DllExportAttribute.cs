@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace ErcXdbg
@@ -45,7 +45,7 @@ namespace ErcXdbg
         /// <summary>
         /// The name the method is exported under. Defaults to the method name.
         /// </summary>
-        public string ExportName { get; set; }
+        public string? ExportName { get; set; }
 
         /// <summary>
         /// The calling convention of the exported entry point. x64dbg expects Cdecl.

@@ -1,8 +1,9 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using ERC;
 using ERC.Config;
 using ERC.Native;
+using ERC.Output;
 using ERC.Net.Tests.TestSupport;
 using Shouldly;
 using Xunit;
@@ -100,6 +101,35 @@ namespace ERC.Net.Tests
         public void Is64Bit_rejects_a_missing_process()
         {
             Should.Throw<ERCException>(() => ProcessInfo.Is64Bit(null, new FakeNativeApi()));
+        }
+
+        [Fact]
+        public void Opcode_helpers_built_from_a_ProcessInfo_keep_its_seams()
+        {
+            // ProcessInfo's protected copy constructor had no ": base(parent)", so it
+            // fell through to the parameterless ErcCore constructor. Building an
+            // OpcodeAssembler or OpcodeDisassembler from a ProcessInfo therefore made
+            // a second ErcCore that re-read the config from disk and took the default
+            // OS access and output sink, silently discarding the parent's.
+            //
+            // Uses the test process as its own target, so it needs the real Win32 API
+            // but no separate debuggee.
+            var sink = new InMemoryOutputSink();
+            var logger = new InMemoryErcLogger();
+            var core = new ErcCore(new InMemoryConfigStore(), logger, null, sink);
+
+            var info = new ProcessInfo(core, Process.GetCurrentProcess());
+            info.Output.ShouldBeSameAs(sink);
+
+            var assembler = new ERC.Utilities.OpcodeAssembler(info);
+            var disassembler = new ERC.Utilities.OpcodeDisassembler(info);
+
+            assembler.Output.ShouldBeSameAs(sink, "the assembler should share its parent's output sink");
+            assembler.Logger.ShouldBeSameAs(logger);
+            assembler.Native.ShouldBeSameAs(core.Native);
+
+            disassembler.Output.ShouldBeSameAs(sink);
+            disassembler.Logger.ShouldBeSameAs(logger);
         }
 
         [Fact]

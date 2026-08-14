@@ -346,5 +346,21 @@ namespace ERC.Native
         /// <returns>Returns TRUE if information about the next block in the heap has been copied to the buffer or FALSE otherwise. </returns>
         [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.StdCall)]
         internal static extern bool Heap32Next(ref HEAPENTRY32 heapentry32);
+
+        /// <summary>
+        /// Releases the resources of an image mapped with MapAndLoad.
+        /// </summary>
+        /// <param name="loadedImage">The image to release.</param>
+        /// <returns>True on success.</returns>
+        [DllImport("Imagehlp.dll", SetLastError = true)]
+        internal static extern bool UnMapAndLoad(ref LOADED_IMAGE loadedImage);
+
+        /// <summary>
+        /// Releases an image loaded with ImageLoad.
+        /// </summary>
+        /// <param name="loadedImage">Pointer returned by ImageLoad.</param>
+        /// <returns>True on success.</returns>
+        [DllImport("Imagehlp.dll", SetLastError = true)]
+        internal static extern bool ImageUnload(IntPtr loadedImage);
     }
 }

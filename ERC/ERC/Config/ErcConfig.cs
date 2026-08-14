@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 namespace ERC.Config
@@ -17,27 +17,27 @@ namespace ERC.Config
         /// <summary>
         /// Directory where output files are written.
         /// </summary>
-        public string WorkingDirectory { get; set; }
+        public string? WorkingDirectory { get; set; }
 
         /// <summary>
         /// Name credited in generated output files.
         /// </summary>
-        public string Author { get; set; }
+        public string? Author { get; set; }
 
         /// <summary>
         /// File holding the standard non-repeating pattern.
         /// </summary>
-        public string PatternStandardPath { get; set; }
+        public string? PatternStandardPath { get; set; }
 
         /// <summary>
         /// File holding the extended non-repeating pattern.
         /// </summary>
-        public string PatternExtendedPath { get; set; }
+        public string? PatternExtendedPath { get; set; }
 
         /// <summary>
         /// File that errors are appended to.
         /// </summary>
-        public string SystemErrorLogPath { get; set; }
+        public string? SystemErrorLogPath { get; set; }
 
         /// <summary>
         /// Builds the default settings for a given working directory.

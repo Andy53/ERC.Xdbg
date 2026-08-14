@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using ERC.Net.Tests.TestSupport;
 using Shouldly;
 using Xunit;
@@ -76,14 +76,50 @@ namespace ERC.Net.Tests
             ErcConvert.HexToBytes("").ShouldBeEmpty();
         }
 
-        [Fact]
-        [Trait(Defect.Category, Defect.Pinned)]
-        public void HexToBytes_throws_on_non_hex_while_HexToAscii_returns_empty()
+        [Theory]
+        [InlineData("zz")]
+        [InlineData("41ZZ")]
+        [InlineData(" 41")]
+        public void HexToBytes_and_HexToAscii_reject_bad_input_the_same_way(string hex)
         {
-            // The two hex parsers disagree on how to reject bad input: this one
-            // throws, HexToAscii returns "". Callers cannot handle both uniformly.
-            Should.Throw<FormatException>(() => ErcConvert.HexToBytes("zz"));
-            ErcConvert.HexToAscii("zz").ShouldBe(string.Empty);
+            // Was the last pinned defect: HexToBytes threw a FormatException from
+            // inside byte.Parse while HexToAscii returned "" for the same input, so
+            // no caller could handle both uniformly and the plugin surfaced a raw
+            // parse error for ordinary user input.
+            ErcConvert.HexToBytes(hex).ShouldBeEmpty();
+            ErcConvert.HexToAscii(hex).ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public void HexToBytes_returns_empty_for_null()
+        {
+            ErcConvert.HexToBytes(null).ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void TryHexToBytes_distinguishes_empty_input_from_invalid_input()
+        {
+            // The plain methods cannot tell the two apart, which is why this exists.
+            byte[] bytes;
+
+            ErcConvert.TryHexToBytes("4142", out bytes).ShouldBeTrue();
+            bytes.ShouldBe(new byte[] { 0x41, 0x42 });
+
+            ErcConvert.TryHexToBytes("", out bytes).ShouldBeTrue();
+            bytes.ShouldBeEmpty();
+
+            ErcConvert.TryHexToBytes("zz", out bytes).ShouldBeFalse();
+            bytes.ShouldBeEmpty();
+
+            ErcConvert.TryHexToBytes(null, out bytes).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void TryHexToBytes_pads_odd_length_input()
+        {
+            byte[] bytes;
+            ErcConvert.TryHexToBytes("F", out bytes).ShouldBeTrue();
+            bytes.ShouldBe(new byte[] { 0x0F });
         }
 
         // ---------------------------------------------------------------- Encodings

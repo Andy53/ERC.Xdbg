@@ -1,4 +1,14 @@
-﻿using System;
+﻿// Nullable analysis is off for this file.
+//
+// The two ROP generators are ~7,000 lines of copy-pasted per-register blocks that
+// the planned rework replaces with a table-driven core. Annotating code that is
+// about to be deleted is throwaway effort, and the noise would hide real warnings
+// elsewhere. This pragma comes out as part of that rework.
+// "disable warnings" rather than "disable": nullable annotations elsewhere in
+// the file stay legal, only the warnings are silenced.
+#nullable disable warnings
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -166,7 +176,7 @@ namespace ERC.Utilities
         /// <param name="ptrsToExclude">Takes a byte array of values used to disqualify ROP gadgets</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopGadgets32(byte[] ptrsToExclude = null, List<string> excludes = null)
+        public ErcResult<string> GenerateRopGadgets32(byte[]? ptrsToExclude = null, List<string>? excludes = null)
         {
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
             x86Opcodes = new X86Lists();
@@ -254,7 +264,7 @@ namespace ERC.Utilities
         /// <param name="startAddress">A Address to be used as the start location for which memory will be made executable</param>
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain32(byte[] ptrsToExclude, byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
+        public ErcResult<string> GenerateRopChain32(byte[] ptrsToExclude, byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -380,7 +390,7 @@ namespace ERC.Utilities
         /// <param name="excludes">A list of modules to be excluded from the search for ROP gadgets.</param>
         /// <param name="methods">Enum value representing which methods to build rop chains with.</param>
         /// <returns>Returns an ErcResult string containing</returns>
-        public ErcResult<string> GenerateRopChain32(byte[] startAddress = null, List<string> excludes = null, RopMethod methods = RopMethod.All)
+        public ErcResult<string> GenerateRopChain32(byte[]? startAddress = null, List<string>? excludes = null, RopMethod methods = RopMethod.All)
         {
             Methods = methods;
             ErcResult<string> RopChain = new ErcResult<string>(RcgInfo.ProcessCore);
@@ -535,7 +545,7 @@ namespace ERC.Utilities
         /// </summary>
         /// <param name="excludes">A list of modules to be excluded from the search</param>
         /// <returns>Returns a ErcResult containing a list of IntPtr</returns>
-        private ErcResult<List<IntPtr>> GetRopNops(List<string> excludes = null)
+        private ErcResult<List<IntPtr>> GetRopNops(List<string>? excludes = null)
         {
             ErcResult<List<IntPtr>> ropNopsResult = new ErcResult<List<IntPtr>>(RcgInfo.ProcessCore);
             ropNopsResult.ReturnValue = new List<IntPtr>();
@@ -1071,7 +1081,7 @@ namespace ERC.Utilities
             usableX86Opcodes.popEbp = RopGadgetFilter.SelectUsable(x86Opcodes.popEbp, "pop ebp", true);
             usableX86Opcodes.popEsi = RopGadgetFilter.SelectUsable(x86Opcodes.popEsi, "pop esi", true);
             usableX86Opcodes.popEdi = RopGadgetFilter.SelectUsable(x86Opcodes.popEdi, "pop edi", true);
-            usableX86Opcodes.pushad = RopGadgetFilter.SelectUsable(x86Opcodes.pushad, "pushad", true);
+            usableX86Opcodes.pushad = RopGadgetFilter.SelectUsable(x86Opcodes.pushad, "pusha", true);   // "pusha" matches both renderings; see DisassemblyContractTests
             usableX86Opcodes.incEax = RopGadgetFilter.SelectUsable(x86Opcodes.incEax, "inc eax", false);
             usableX86Opcodes.incEbx = RopGadgetFilter.SelectUsable(x86Opcodes.incEbx, "inc ebx", false);
             usableX86Opcodes.incEcx = RopGadgetFilter.SelectUsable(x86Opcodes.incEcx, "inc ecx", false);
@@ -1096,7 +1106,7 @@ namespace ERC.Utilities
         #endregion
 
         #region GenerateVirtualAllocChain32
-        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain32(ProcessInfo info, byte[] startAddress = null)
+        private ErcResult<List<Tuple<byte[], string>>> GenerateVirtualAllocChain32(ProcessInfo info, byte[]? startAddress = null)
         {
             ////////////////////////////////////////////////////////////////
             // VirtualAlloc Template:                                     //

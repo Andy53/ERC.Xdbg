@@ -20,12 +20,20 @@ namespace ERC
         /// <summary>
         /// The value produced on success. Default when <see cref="Error"/> is set.
         /// </summary>
-        public T ReturnValue { get; set; }
+        // Left at its default until the operation sets it, so a result that
+        // carries an error carries no value.
+        //
+        // Deliberately typed T rather than T?. T? is the truthful annotation,
+        // but it makes all 248 "result.ReturnValue.Something" sites warn, and
+        // almost every one of those dereferences a collection the same method
+        // just built. Expressing success in the type itself - a Try pattern or
+        // a discriminated result - is the real fix and is a separate change.
+        public T ReturnValue { get; set; } = default!;
 
         /// <summary>
         /// The failure, or null when the operation succeeded.
         /// </summary>
-        public Exception Error { get; set; }
+        public Exception? Error { get; set; }
 
         /// <summary>
         /// True when no error was recorded.
@@ -40,7 +48,7 @@ namespace ERC
         /// <summary>
         /// Path this result logs to, kept for callers that read it.
         /// </summary>
-        public string SystemErrorLogPath { get; }
+        public string? SystemErrorLogPath { get; }
 
         /// <summary>
         /// Creates a result that logs wherever the supplied core logs.
@@ -62,7 +70,7 @@ namespace ERC
         /// </summary>
         /// <param name="core">The core this result belongs to.</param>
         /// <param name="errorFile">File to log to instead of the core's log.</param>
-        public ErcResult(ErcCore core, string errorFile)
+        public ErcResult(ErcCore core, string? errorFile)
         {
             if (core == null)
             {
@@ -77,7 +85,7 @@ namespace ERC
         /// Creates a result with an explicit logger.
         /// </summary>
         /// <param name="logger">Where to report failures.</param>
-        public ErcResult(IErcLogger logger)
+        public ErcResult(IErcLogger? logger)
         {
             Logger = logger ?? new InMemoryErcLogger();
         }

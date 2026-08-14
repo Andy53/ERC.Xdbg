@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
 
   <!--
     Shared build configuration for every project in the repository.
@@ -15,6 +15,20 @@
     <PlatformTarget>$(Platform)</PlatformTarget>
 
     <LangVersion>latest</LangVersion>
+
+    <!--
+      Nullable reference types on, everywhere. This is part of the public contract:
+      consumers of the NuGet package see which arguments and results can be null.
+    -->
+    <Nullable>enable</Nullable>
+
+    <!--
+      Nullable warnings are errors. The codebase is at zero, and the value of the
+      annotations is that they stay true; a warning nobody acts on is worse than
+      not having enabled it. The two ROP generators opt out with a file-level
+      pragma until they are rewritten.
+    -->
+    <WarningsAsErrors>$(WarningsAsErrors);Nullable</WarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!-- Reproducibility: no timestamps or machine paths baked into output. -->

@@ -19,19 +19,19 @@ namespace ERC
         /// <summary>
         /// Module name.
         /// </summary>
-        public string ModuleName { get; private set; }
+        public string ModuleName { get; private set; } = string.Empty;
         /// <summary>
         /// Module path.
         /// </summary>
-        public string ModulePath { get; private set; }
+        public string ModulePath { get; private set; } = string.Empty;
         /// <summary>
         /// Module version.
         /// </summary>
-        public string ModuleVersion { get; private set; }
+        public string ModuleVersion { get; private set; } = string.Empty;
         /// <summary>
         /// Module product.
         /// </summary>
-        public string ModuleProduct { get; private set; }
+        public string ModuleProduct { get; private set; } = string.Empty;
 
         /// <summary>
         /// Memory protection of this module.
@@ -115,11 +115,12 @@ namespace ERC
         /// <param name="core">An ErcCore object</param>
         internal unsafe ModuleInfo(string module, IntPtr ptr, Process process, ErcCore core)
         {
+            ModuleCore = core;
+            ModuleProcess = process;
+
             try
             {
-                ModuleCore = core;
-                ModuleProcess = process;
-                ModuleName = FileVersionInfo.GetVersionInfo(module).InternalName;
+                ModuleName = FileVersionInfo.GetVersionInfo(module).InternalName ?? string.Empty;
                 ModulePath = FileVersionInfo.GetVersionInfo(module).FileName;
                 ModuleBase = ptr;
 
@@ -127,44 +128,24 @@ namespace ERC
                 FileStream file = fileInfo.Open(FileMode.Open, FileAccess.Read, FileShare.Read);
                 PopulateHeaderStructs(file);
 
-                if (!string.IsNullOrEmpty(FileVersionInfo.GetVersionInfo(module).FileVersion))
-                {
-                    ModuleVersion = FileVersionInfo.GetVersionInfo(module).FileVersion.Split(' ')[0];
-                }
-                else
-                {
-                    ModuleVersion = "";
-                }
+                string? fileVersion = FileVersionInfo.GetVersionInfo(module).FileVersion;
+                ModuleVersion = string.IsNullOrEmpty(fileVersion)
+                    ? ""
+                    : fileVersion!.Split(' ')[0];
 
-                ModuleProduct = FileVersionInfo.GetVersionInfo(module).ProductName;
+                ModuleProduct = FileVersionInfo.GetVersionInfo(module).ProductName ?? string.Empty;
                 
                 if (ModuleMachineType == MachineType.I386)
                 {
                     ModuleEntry = (IntPtr)ImageOptionalHeader32.AddressOfEntryPoint;
                     ModuleSize = (int)ImageOptionalHeader32.SizeOfImage;
                     ModuleImageBase = (IntPtr)ImageOptionalHeader32.ImageBase;
-                    byte[] dllByte = BitConverter.GetBytes(ImageOptionalHeader32.DllCharacteristics);
-                    BitArray bits = new BitArray(dllByte);
-                    for (int i = 0; i < bits.Count; i++)
-                    {
-                        if (bits[i] == true && i == 6)
-                        {
-                            ModuleASLR = true;
-                        }
-                        else
-                        {
-                            ModuleASLR = false;
-                        }
-
-                        if (bits[i] == true && i == 8)
-                        {
-                            ModuleNXCompat = true;
-                        }
-                        else
-                        {
-                            ModuleNXCompat = false;
-                        }
-                    }
+                    // The bit walk this replaces assigned inside a plain "else", so
+                    // every iteration past the interesting bit reset the flag to
+                    // false and both of these always read as false on a 32-bit
+                    // target. See PeCharacteristics.
+                    ModuleASLR = Utilities.PeCharacteristics.HasAslr(ImageOptionalHeader32.DllCharacteristics);
+                    ModuleNXCompat = Utilities.PeCharacteristics.HasNxCompat(ImageOptionalHeader32.DllCharacteristics);
 
                     if(ModuleMachineType == MachineType.I386)
                     {
@@ -190,28 +171,10 @@ namespace ERC
                     ModuleEntry = (IntPtr)ImageOptionalHeader64.AddressOfEntryPoint;
                     ModuleSize = (int)ImageOptionalHeader64.SizeOfImage;
                     ModuleImageBase = (IntPtr)ImageOptionalHeader64.ImageBase;
-                    byte[] dllByte = BitConverter.GetBytes(ImageOptionalHeader64.DllCharacteristics);
-                    BitArray bits = new BitArray(dllByte);
-                    for (int i = 0; i < bits.Count; i++)
-                    {
-                        if (bits[i] == true && i == 6)
-                        {
-                            ModuleASLR = true;
-                        }
-                        else if (bits[i] == false && i == 6)
-                        {
-                            ModuleASLR = false;
-                        }
-
-                        if (bits[i] == true && i == 8)
-                        {
-                            ModuleNXCompat = true;
-                        }
-                        else if (bits[i] == false && i == 8)
-                        {
-                            ModuleNXCompat = false;
-                        }
-                    }
+                    // Same derivation as the 32-bit branch, which this copy used to
+                    // duplicate - correctly here, incorrectly there.
+                    ModuleASLR = Utilities.PeCharacteristics.HasAslr(ImageOptionalHeader64.DllCharacteristics);
+                    ModuleNXCompat = Utilities.PeCharacteristics.HasNxCompat(ImageOptionalHeader64.DllCharacteristics);
                    
                     PopulateConfigStruct();
                     
@@ -367,7 +330,9 @@ namespace ERC
 
         private void PopulateConfigStruct()
         {
-            string path = Path.GetDirectoryName(ModulePath);
+            // A module path always has a directory; GetDirectoryName only returns
+            // null for a root path.
+            string path = Path.GetDirectoryName(ModulePath) ?? string.Empty;
             string name = Path.GetFileName(ModulePath);
             
             bool dll = true;
@@ -378,18 +343,37 @@ namespace ERC
                 dll = false;
             }
 
+            // Both of these acquire OS resources, and neither was ever released.
+            // A ProcessInfo builds a ModuleInfo per loaded module, and the plugin
+            // builds a ProcessInfo on every command, so a target with fifty modules
+            // leaked fifty mapped images per command for the life of the session.
             var MaLRet = ModuleCore.Native.MapAndLoad(name, path, out loadedImage, dll, true);
             var modPtr = ModuleCore.Native.ImageLoad(name, path);
 
-            if (ModuleMachineType == MachineType.I386)
+            try
             {
-                IMAGE_LOAD_CONFIG_DIRECTORY32 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY32();
-                var check = ModuleCore.Native.GetImageConfigInformation32(ref loadedImage, ref ImageConfigDir);
+                if (ModuleMachineType == MachineType.I386)
+                {
+                    IMAGE_LOAD_CONFIG_DIRECTORY32 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY32();
+                    var check = ModuleCore.Native.GetImageConfigInformation32(ref loadedImage, ref ImageConfigDir);
+                }
+                else if (ModuleMachineType == MachineType.x64)
+                {
+                    IMAGE_LOAD_CONFIG_DIRECTORY64 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY64();
+                    var check = ModuleCore.Native.GetImageConfigInformation64(ref loadedImage, ref ImageConfigDir);
+                }
             }
-            else if (ModuleMachineType == MachineType.x64)
+            finally
             {
-                IMAGE_LOAD_CONFIG_DIRECTORY64 ImageConfigDir = new IMAGE_LOAD_CONFIG_DIRECTORY64();
-                var check = ModuleCore.Native.GetImageConfigInformation64(ref loadedImage, ref ImageConfigDir);
+                if (modPtr != IntPtr.Zero)
+                {
+                    ModuleCore.Native.ImageUnload(modPtr);
+                }
+
+                if (MaLRet != 0)
+                {
+                    ModuleCore.Native.UnMapAndLoad(ref loadedImage);
+                }
             }
         }
         #endregion

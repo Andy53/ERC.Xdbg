@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Reflection;
 using System.Xml;
@@ -44,15 +44,23 @@ namespace ERC.Config
         /// </remarks>
         public static string DefaultDirectory()
         {
-            string directory = AppContext.BaseDirectory;
+            string? directory = AppContext.BaseDirectory;
 
             if (string.IsNullOrEmpty(directory))
             {
-                directory = System.IO.Path.GetDirectoryName(
-                    new Uri(typeof(XmlConfigStore).Assembly.CodeBase).LocalPath);
+                string? codeBase = typeof(XmlConfigStore).Assembly.CodeBase;
+                if (codeBase != null)
+                {
+                    directory = System.IO.Path.GetDirectoryName(new Uri(codeBase).LocalPath);
+                }
             }
 
-            if (!directory.EndsWith("\\", StringComparison.Ordinal))
+            if (string.IsNullOrEmpty(directory))
+            {
+                directory = System.IO.Directory.GetCurrentDirectory();
+            }
+
+            if (!directory!.EndsWith("\\", StringComparison.Ordinal))
             {
                 directory += "\\";
             }
@@ -68,7 +76,7 @@ namespace ERC.Config
             return System.IO.Path.Combine(DefaultDirectory(), DefaultFileName);
         }
 
-        public ErcConfig Load()
+        public ErcConfig? Load()
         {
             if (!File.Exists(_path))
             {
@@ -117,8 +125,9 @@ namespace ERC.Config
                 XmlDeclaration declaration = document.CreateXmlDeclaration("1.0", "UTF-8", null);
                 document.InsertBefore(declaration, document.DocumentElement);
 
+                Version? assemblyVersion = typeof(XmlConfigStore).Assembly.GetName().Version;
                 XmlElement root = document.CreateElement(string.Empty, "ERC.Net",
-                    typeof(XmlConfigStore).Assembly.GetName().Version.ToString());
+                    assemblyVersion == null ? string.Empty : assemblyVersion.ToString());
                 document.AppendChild(root);
 
                 XmlElement parameters = document.CreateElement(string.Empty, "Parameters", string.Empty);
@@ -144,16 +153,16 @@ namespace ERC.Config
             }
         }
 
-        private static string Read(XmlDocument document, string xpath)
+        private static string? Read(XmlDocument document, string xpath)
         {
-            XmlNode node = document.DocumentElement == null
+            XmlNode? node = document.DocumentElement == null
                 ? null
                 : document.DocumentElement.SelectSingleNode(xpath);
 
             return node == null ? null : node.InnerText;
         }
 
-        private static void Write(XmlDocument document, XmlElement parent, string name, string value)
+        private static void Write(XmlDocument document, XmlElement parent, string name, string? value)
         {
             XmlElement element = document.CreateElement(string.Empty, name, string.Empty);
             element.AppendChild(document.CreateTextNode(value ?? string.Empty));

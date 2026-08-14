@@ -32,7 +32,7 @@ namespace ERC
         /// <returns></returns>
         public static string[] SearchMemory(ProcessInfo info, int searchType, string searchString, bool aslr = false, 
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false, 
-            byte[] unwantedBytes = null, string protection = "exec")
+            byte[]? unwantedBytes = null, string protection = "exec")
         {
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
             Dictionary<IntPtr, string> result = new Dictionary<IntPtr, string>();
@@ -146,7 +146,7 @@ namespace ERC
         /// <returns></returns>
         public static string[] SearchModules(ProcessInfo info, int searchType, string searchString, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[] unwantedBytes = null, List<string> modules = null, string protection = "exec")
+            byte[]? unwantedBytes = null, List<string>? modules = null, string protection = "exec")
         {
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
             Dictionary<IntPtr, string> result = new Dictionary<IntPtr, string>();
@@ -257,7 +257,7 @@ namespace ERC
         /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         public static string[] GetSEHJumps(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[] unwantedBytes = null, string protection = "exec")
+            byte[]? unwantedBytes = null, string protection = "exec")
         {
             List<string> ret = new List<string>();
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
@@ -365,9 +365,9 @@ namespace ERC
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        throw e;
+                        throw;   // "throw;" keeps the original stack trace; "throw e;" reset it
                     }
 
                     for (int i = 0; i < info.ModulesInfo.Count; i++)
@@ -401,7 +401,7 @@ namespace ERC
         /// <param name="ptrsToExclude">Ptrs containing these byte values will be discarded.</param>
         /// <param name="excludes">Modules to be ignored when searching for the instruction sets.</param>
         /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
-        public static string[] GetSEHJumps(ProcessInfo info, byte[] ptrsToExclude, List<string> excludes = null)
+        public static string[] GetSEHJumps(ProcessInfo info, byte[] ptrsToExclude, List<string>? excludes = null)
         {
             List<string> ret = new List<string>();
             ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(ptrsToExclude, excludes);
@@ -472,9 +472,9 @@ namespace ERC
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        throw e;
+                        throw;   // "throw;" keeps the original stack trace; "throw e;" reset it
                     }
                     for (int i = 0; i < info.ModulesInfo.Count; i++)
                     {
@@ -514,7 +514,7 @@ namespace ERC
         /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         public static string[] GetSEHJumpsUnicode(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[] unwantedBytes = null, string protection = "exec")
+            byte[]? unwantedBytes = null, string protection = "exec")
         {
             List<string> ret = new List<string>();
             List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
@@ -633,9 +633,9 @@ namespace ERC
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        throw e;
+                        throw;   // "throw;" keeps the original stack trace; "throw e;" reset it
                     }
 
                     for (int i = 0; i < info.ModulesInfo.Count; i++)

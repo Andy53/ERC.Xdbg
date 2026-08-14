@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace ERC.Config
 {
@@ -12,7 +12,7 @@ namespace ERC.Config
     /// </remarks>
     public class InMemoryConfigStore : IConfigStore
     {
-        private ErcConfig _config;
+        private ErcConfig? _config;
 
         /// <summary>
         /// Creates an empty store, so the first Load returns null and the caller
@@ -41,7 +41,7 @@ namespace ERC.Config
         /// </summary>
         public int SaveCount { get; private set; }
 
-        public ErcConfig Load()
+        public ErcConfig? Load()
         {
             return _config == null ? null : _config.Clone();
         }

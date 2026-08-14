@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 namespace ERC.Config
@@ -25,9 +25,9 @@ namespace ERC.Config
     /// </summary>
     public class FileErcLogger : IErcLogger
     {
-        private readonly string _path;
+        private readonly string? _path;
 
-        public FileErcLogger(string path)
+        public FileErcLogger(string? path)
         {
             _path = path;
         }
@@ -35,7 +35,7 @@ namespace ERC.Config
         /// <summary>
         /// The file being appended to.
         /// </summary>
-        public string Path { get { return _path; } }
+        public string? Path { get { return _path; } }
 
         public void Log(string message)
         {

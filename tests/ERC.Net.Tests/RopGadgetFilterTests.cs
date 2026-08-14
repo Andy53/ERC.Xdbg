@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using ERC.Utilities;
@@ -160,7 +160,7 @@ namespace ERC.Net.Tests
         [Theory]
         [InlineData(null)]
         [InlineData("")]
-        public void Empty_input_yields_no_gadgets(string _)
+        public void Empty_input_yields_no_gadgets(string? _)
         {
             RopGadgetFilter.SelectUsable(null, "push eax", false).ShouldBeEmpty();
             RopGadgetFilter.SelectUsable(new Dictionary<IntPtr, string>(), "push eax", false).ShouldBeEmpty();

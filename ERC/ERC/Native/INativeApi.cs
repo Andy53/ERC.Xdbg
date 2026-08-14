@@ -54,5 +54,7 @@ namespace ERC.Native
         bool Heap32ListNext(IntPtr hSnapshot, ref HEAPLIST32 lphl);
         bool Heap32First(ref HEAPENTRY32 heapentry32, uint processID, IntPtr heapID);
         bool Heap32Next(ref HEAPENTRY32 heapentry32);
+        bool UnMapAndLoad(ref LOADED_IMAGE loadedImage);
+        bool ImageUnload(IntPtr loadedImage);
     }
 }

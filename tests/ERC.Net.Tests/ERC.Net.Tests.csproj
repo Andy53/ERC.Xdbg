@@ -17,7 +17,12 @@
 
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!--
+      The suite deliberately exercises APIs the modern runtime marks obsolete:
+      UTF-7, because the library supports searching for it, and Assembly.CodeBase,
+      because a test reproduces the path handling the library falls back to.
+    -->
+    <NoWarn>$(NoWarn);CS1591;SYSLIB0001;SYSLIB0012</NoWarn>
 
     <!--
       The library P/Invokes and reads pointer width, so tests must run as the
@@ -41,6 +46,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\ERC\ERC\ERC.Net.csproj" />
+
+
   </ItemGroup>
 
 </Project>

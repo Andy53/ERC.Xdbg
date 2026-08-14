@@ -22,7 +22,7 @@ namespace ERC
         /// <param name="unwantedBytes">An array of bytes to be excluded from the final byte array</param>
         /// <param name="core">An ErcCore object</param>
         /// <returns>Returns a byte array of all possible bytes.</returns>
-        public static byte[] GenerateByteArray(ErcCore core, byte[] unwantedBytes = null)
+        public static byte[] GenerateByteArray(ErcCore core, byte[]? unwantedBytes = null)
         {
             string byteFilename = GetFilePath(core.WorkingDirectory, "ByteArray_", ".bin");
             byte[] byteArray = Payloads.ByteArrayConstructor(unwantedBytes);
@@ -186,7 +186,7 @@ namespace ERC
         /// <param name="core">(Optional) If an ErcCore object is provided the output will also be written out to the working directory </param>
         /// <param name="tag">(Optional) If a tag is provided the payloads will be altered to search for that tag, the default tag is ERCD</param>
         /// <returns>Returns a string containing all EggHunters </returns>
-        public static string GenerateEggHunters(ErcCore core = null, string tag = null)
+        public static string GenerateEggHunters(ErcCore? core = null, string? tag = null)
         {
             var eggHunters = Payloads.EggHunterConstructor(tag);
             string eggFilename = "";
@@ -253,7 +253,7 @@ namespace ERC
         /// <returns>Returns null if the method fails.</returns>
         public static string[] AssembleOpcodes(string[] instructions, uint machine)
         {
-            string[] opcodeArray = null;
+            string[]? opcodeArray = null;
             MachineType mt;
             if(machine == 0)
             {
@@ -286,7 +286,7 @@ namespace ERC
         /// <returns>Returns null if the method fails.</returns>
         public static string[] AssembleOpcodes(string[] instructions, MachineType machine)
         {
-            string[] opcodeArray = null;
+            string[]? opcodeArray = null;
             if(machine != MachineType.I386 && machine != MachineType.x64)
             {
                 throw new ERCException("Invalid machine type provided.");
@@ -312,7 +312,7 @@ namespace ERC
         /// <returns>Returns null if the method fails.</returns>
         public static string[] DisassembleOpcodes(byte[] opcodes, uint machine)
         {
-            string[] instructionArray = null;
+            string[]? instructionArray = null;
             MachineType mt;
             if (machine == 0)
             {
@@ -344,7 +344,7 @@ namespace ERC
         /// <returns>Returns null if the method fails.</returns>
         public static string[] DisassembleOpcodes(byte[] opcodes, MachineType machine)
         {
-            string[] instructionArray = null;
+            string[]? instructionArray = null;
             if (machine != MachineType.I386 && machine != MachineType.x64)
             {
                 throw new ERCException("Invalid machine type provided.");

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -28,7 +28,7 @@ namespace ERC.Utilities
         /// </param>
         /// <returns>A new dictionary; the source is not modified.</returns>
         public static Dictionary<IntPtr, string> SelectUsable(
-            Dictionary<IntPtr, string> source,
+            Dictionary<IntPtr, string>? source,
             string mnemonic,
             bool excludeNumericOperands)
         {
@@ -59,9 +59,9 @@ namespace ERC.Utilities
         /// <summary>
         /// Whether a single disassembled gadget is usable.
         /// </summary>
-        public static bool IsUsable(string disassembly, string mnemonic, bool excludeNumericOperands)
+        public static bool IsUsable(string? disassembly, string mnemonic, bool excludeNumericOperands)
         {
-            if (string.IsNullOrEmpty(disassembly))
+            if (disassembly == null || disassembly.Length == 0)
             {
                 return false;
             }

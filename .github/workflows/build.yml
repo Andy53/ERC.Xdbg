@@ -45,6 +45,8 @@ jobs:
         shell: pwsh
         env:
           CI: 'true'
+        # No -SkipIntegration: the live-process tests are the point of running this
+        # on a real Windows runner rather than only locally.
         run: ./test.ps1 -Platform ${{ matrix.platform }} -Configuration ${{ matrix.configuration }} -Coverage
 
       - name: Upload coverage
@@ -54,6 +56,19 @@ jobs:
           name: coverage-${{ matrix.platform }}
           path: tests/ERC.Net.Tests/coverage/coverage.cobertura.xml
           if-no-files-found: warn
+
+      - name: Publish SHA-256 for the plugin
+        if: matrix.configuration == 'Release'
+        shell: pwsh
+        run: |
+          # The in-plugin updater refuses any download whose hash is not published
+          # beside it, so a release without these files cannot be installed.
+          $dir = "ErcXdbg/bin/${{ matrix.platform }}/Release/net472"
+          Get-ChildItem "$dir/Erc.Xdbg.dp*" | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Out-File "$($_.FullName).sha256" -Encoding ascii -NoNewline
+            Write-Host "$($_.Name) -> $hash"
+          }
 
       - name: Upload plugin
         if: matrix.configuration == 'Release'

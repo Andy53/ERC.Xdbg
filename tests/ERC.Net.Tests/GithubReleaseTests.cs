@@ -1,4 +1,4 @@
-using ERC;
+﻿using ERC;
 using ERC.Utilities;
 using Shouldly;
 using Xunit;
@@ -99,7 +99,7 @@ namespace ERC.Net.Tests
         [InlineData("")]
         [InlineData("   ")]
         [InlineData(null)]
-        public void An_empty_response_is_refused(string json)
+        public void An_empty_response_is_refused(string? json)
         {
             Should.Throw<ERCException>(() => GithubRelease.Parse(json))
                   .Message.ShouldContain("empty response");

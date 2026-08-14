@@ -44,27 +44,23 @@ you asked for before it reports success.
 ### Running the tests
 
 ```
-.\test.ps1                    # both architectures
-.\test.ps1 -Platform x64      # one
-.\test.ps1 -Coverage          # with a per-class coverage summary
+.\test.ps1                     # both architectures
+.\test.ps1 -Platform x64       # one
+.\test.ps1 -Coverage           # with a per-class coverage summary
+.\test.ps1 -SkipIntegration    # skip the live-process tests
 ```
 
 The suite runs against both x86 and x64 because the library is built per
 architecture and reads pointer width at run time, so some behaviour genuinely
-differs between the two.
+differs between the two - pointer filtering and PE flag parsing both did.
 
-Some tests pin behaviour that is currently **wrong**, asserting what the code does
-today rather than what it should do, so that a refactor cannot quietly change it.
-They carry a `PinnedDefect` trait and explain the defect in a comment:
-
-```
-.\test.ps1 -PinnedDefectsOnly
-```
-
-When one of those defects is fixed, its test must be rewritten to assert the
-correct behaviour — that is the point, the fix has to be deliberate.
-
-It should be noted that if you are running Windows 7 you will need to ensure [.Net Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472) is installed on your system or X64dbg will crash immediately on startup.     
+Some tests launch a real target process and inspect it, so that memory searching,
+gadget finding, module parsing and thread enumeration are exercised against
+something real rather than a substitute. The target
+(`tests/Fixtures/ErcTestTarget`) plants known byte sequences and strings in
+unmanaged memory and prints their addresses, and the tests assert that ERC finds
+the exact address the target reported. They are tagged `Integration`, take a few
+seconds, and can be skipped during a fast edit loop.
 
 ## Documentation
 This library contains the fundamental specifications, documentation, and architecture that underpin ERC.Xdbg. If you're looking to understand the system better, or want to know how to integrate the various components, there is a lot of valuable information contained here.    

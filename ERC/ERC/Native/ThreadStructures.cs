@@ -626,7 +626,7 @@ namespace ERC
             /// <summary>
             /// Register name.
             /// </summary>
-            public string Register { get; set; }
+            public string Register { get; set; } = string.Empty;
             /// <summary>
             /// Register value.
             /// </summary>

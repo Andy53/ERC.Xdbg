@@ -101,12 +101,20 @@ namespace ErcXdbg
                     return true;
                 }
                 PLog.WriteLine("");
-                GC.Collect();
 
+                // One core, shared. This used to construct two: one for "core" and a
+                // second passed to ProcessInfo, so the two halves of a command read
+                // and wrote separate configuration and logged to separate loggers.
                 ERC.ErcCore core = new ERC.ErcCore();
-                ERC.ProcessInfo info = new ERC.ProcessInfo(new ERC.ErcCore(), hProcess);
 
-                ParseCommand(argv[0], core, info);
+                // "using" so the thread handles opened while inspecting the target are
+                // closed when the command finishes. This runs on every ERC command, and
+                // a ProcessInfo opens one handle per thread in the debuggee, so without
+                // it handles accumulated for the whole debugging session.
+                using (ERC.ProcessInfo info = new ERC.ProcessInfo(core, hProcess))
+                {
+                    ParseCommand(argv[0], core, info);
+                }
             }
             catch (Exception e)
             {
@@ -119,7 +127,7 @@ namespace ErcXdbg
             return true;
         }
 
-        private static void PrintHelp(string errorMessage = null)
+        private static void PrintHelp(string? errorMessage = null)
         {
             PLog.WriteLine("    __________   ______  ");
             PLog.WriteLine("   / ____ / __\\ / ____/ ");
@@ -703,6 +711,47 @@ namespace ErcXdbg
             return parameters;
         }
 
+
+        /// <summary>
+        /// Confirms a downloaded update matches the hash published with the release.
+        /// </summary>
+        /// <remarks>
+        /// The extracted DLL is loaded by x64dbg, so an unverified download is code
+        /// execution. TLS stops the file being swapped in transit; this stops a file
+        /// that was never the published one being installed at all.
+        ///
+        /// The release workflow publishes "&lt;asset&gt;.sha256" beside each asset.
+        /// If it is missing, the update is refused rather than installed unchecked.
+        /// </remarks>
+        private static void VerifyDownload(WebClient client, string fileUrl, string zipPath)
+        {
+            string publishedHash;
+
+            try
+            {
+                publishedHash = client.DownloadString(fileUrl + ".sha256");
+            }
+            catch (WebException e)
+            {
+                File.Delete(zipPath);
+                throw new ERC.ERCException(
+                    "No published hash was found for this release (" + fileUrl + ".sha256), so the " +
+                    "download could not be verified and has been discarded. " + e.Message);
+            }
+
+            try
+            {
+                ERC.Utilities.ReleaseVerifier.Verify(zipPath, publishedHash);
+            }
+            catch
+            {
+                File.Delete(zipPath);
+                throw;
+            }
+
+            PLog.WriteLine("Update verified against the published SHA-256.");
+        }
+
         private static void Update(List<string> parameters)
         {
             PLog.WriteLine("ERC --Update");
@@ -721,7 +770,7 @@ namespace ErcXdbg
             bool proxy = false;
             string proxyIpAddress = "";
             string proxyPort = "";
-            IPAddress address = null;
+            IPAddress? address = null;
 
             if (parameters.Count > 1)
             {
@@ -768,10 +817,10 @@ namespace ErcXdbg
 
                 string releases = "";
                 string fileurl = "";
-                string[] urlSegments = null;
+                string[]? urlSegments = null;
                 string filename = "";
                 string zipPath = "";
-                string[] files = null;
+                string[]? files = null;
                 bool oldPluginRenamed = false;
 
                 if (Environment.Is64BitOperatingSystem) { 
@@ -801,6 +850,7 @@ namespace ErcXdbg
                     filename = urlSegments[urlSegments.Length - 1];
                     zipPath = updatePath + "\\" + filename;
                     wClient.DownloadFile(fileurl, zipPath);
+                    VerifyDownload(wClient, fileurl, zipPath);
 
                     // Ensures that the last character on the extraction path
                     // is the directory separator char. 
@@ -863,6 +913,7 @@ namespace ErcXdbg
                 filename = urlSegments[urlSegments.Length - 1];
                 zipPath = updatePath + "\\" + filename;
                 wClient.DownloadFile(fileurl, zipPath);
+                VerifyDownload(wClient, fileurl, zipPath);
 
                 // Ensures that the last character on the extraction path
                 // is the directory separator char. 
@@ -1703,7 +1754,8 @@ namespace ErcXdbg
                 }
             }
 
-            List<string> includedModules = new List<string>();
+            // Nulled below to mean "no module filter", which is what SearchModules expects.
+            List<string>? includedModules = new List<string>();
 
             foreach(string s in parameters)
             {
@@ -1822,7 +1874,7 @@ namespace ErcXdbg
             return;
         }
 
-        private static void EggHunters(ERC.ErcCore core = null, string tag = null)
+        private static void EggHunters(ERC.ErcCore? core = null, string? tag = null)
         {
             string holder = ERC.DisplayOutput.GenerateEggHunters(core, tag);
             Plugins._plugin_logputs(holder);
@@ -1856,7 +1908,7 @@ namespace ErcXdbg
             string hexStartAddress = "";
             ulong heapID = 0;
             bool writeToFile = true;
-            byte[] bytes = null;
+            byte[]? bytes = null;
 
             ERC.HeapInfo hi = new ERC.HeapInfo(info);
 
@@ -1944,6 +1996,13 @@ namespace ErcXdbg
                 {
                     bytes = ERC.Utilities.Convert.HexToBytes(hexStartAddress);
                     hexStartAddress = "";
+                }
+
+                if (bytes == null)
+                {
+                    PrintHelp("Heap search requires a byte pattern to search for. " +
+                        "Example: ERC --HeapInfo search FFE4");
+                    return;
                 }
 
                 var result = ERC.DisplayOutput.SearchHeap(hi, bytes, heapID, hexStartAddress, writeToFile);

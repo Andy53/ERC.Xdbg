@@ -28,43 +28,52 @@ namespace ERC
                 throw new ERCException("CreateToolhelp32Snapshot returned an invalid handle value (-1)");
             }
 
-            if (HeapProcess.Native.Heap32ListFirst(Handle, ref firstHeapList))
+            // try/finally so the snapshot handle is closed on every path. It was
+            // never closed at all before, and "ERC --heapinfo" leaks one per call.
+            try
             {
-                HeapLists.Add(firstHeapList);
-                bool moreHeaps = false;
-                do
+                if (HeapProcess.Native.Heap32ListFirst(Handle, ref firstHeapList))
                 {
-                    HEAPLIST32 currentHeap = new HEAPLIST32();
-                    currentHeap.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPLIST32));
-                    moreHeaps = HeapProcess.Native.Heap32ListNext(Handle, ref currentHeap);
-                    if(HeapEntries.Count == 0)
+                    HeapLists.Add(firstHeapList);
+                    bool moreHeaps = false;
+                    do
                     {
-                        currentHeap = firstHeapList;
-                    }
-
-                    if (moreHeaps)
-                    {
-                        HeapLists.Add(currentHeap);
-                        HEAPENTRY32 heapentry32 = new HEAPENTRY32();
-                        heapentry32.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPENTRY32));
-
-                        if (HeapProcess.Native.Heap32First(ref heapentry32, (uint)HeapProcess.ProcessID, currentHeap.th32HeapID))
+                        HEAPLIST32 currentHeap = new HEAPLIST32();
+                        currentHeap.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPLIST32));
+                        moreHeaps = HeapProcess.Native.Heap32ListNext(Handle, ref currentHeap);
+                        if(HeapEntries.Count == 0)
                         {
-                            bool moreheapblocks = false;
-                            do
+                            currentHeap = firstHeapList;
+                        }
+
+                        if (moreHeaps)
+                        {
+                            HeapLists.Add(currentHeap);
+                            HEAPENTRY32 heapentry32 = new HEAPENTRY32();
+                            heapentry32.dwSize = (IntPtr)Marshal.SizeOf(typeof(HEAPENTRY32));
+
+                            if (HeapProcess.Native.Heap32First(ref heapentry32, (uint)HeapProcess.ProcessID, currentHeap.th32HeapID))
                             {
-                                HeapEntries.Add(heapentry32);
-                                moreheapblocks = HeapProcess.Native.Heap32Next(ref heapentry32);
+                                bool moreheapblocks = false;
+                                do
+                                {
+                                    HeapEntries.Add(heapentry32);
+                                    moreheapblocks = HeapProcess.Native.Heap32Next(ref heapentry32);
+                                }
+                                while (moreheapblocks);
                             }
-                            while (moreheapblocks);
                         }
                     }
+                    while (moreHeaps);
                 }
-                while (moreHeaps);
+                else
+                {
+                    throw new ERCException("Heap32ListFirst returned an invalid response. Error: " + Utilities.Win32Errors.GetLastWin32Error());
+                }
             }
-            else
+            finally
             {
-                throw new ERCException("Heap32ListFirst returned an invalid response. Error: " + Utilities.Win32Errors.GetLastWin32Error());
+                HeapProcess.Native.CloseHandle(Handle);
             }
         }
 
@@ -124,7 +133,11 @@ namespace ERC
             if (searchBytes.Length < 3)
             {
                 result.Error = new ERCException("Search pattern not long enough. Minimum length is 3 bytes");
-                result.ReturnValue = null;
+                // Deliberately cleared to signal "no results" alongside the error.
+                // The honest annotation is ErcResult<T>.ReturnValue being T?, but that
+                // cascades through every caller that dereferences it, so it belongs
+                // with the null-dereference work rather than here.
+                result.ReturnValue = default!;
                 return result;
             }
 

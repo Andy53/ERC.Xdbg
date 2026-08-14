@@ -84,7 +84,7 @@ namespace ERC.Utilities
         /// </summary>
         /// <param name="unwantedBytes">Takes a byte array of bytes to be excluded</param>
         /// <returns>Returns an array of all other possible bytes.</returns>
-        public static byte[] ByteArrayConstructor(byte[] unwantedBytes)
+        public static byte[] ByteArrayConstructor(byte[]? unwantedBytes)
         {
             // Built into a list rather than a pre-sized array. The previous version
             // sized the result as 256 minus the *number of bytes supplied*, so a
@@ -124,7 +124,7 @@ namespace ERC.Utilities
         /// </summary>
         /// <param name="tag">A custom tag which the egg hunters will search for.</param>
         /// <returns>Returns a dictionary containing a list of EggHunters and string detailing them</returns>
-        public static Dictionary<string, byte[]> EggHunterConstructor(string tag = null)
+        public static Dictionary<string, byte[]> EggHunterConstructor(string? tag = null)
         {
             Dictionary<string, byte[]> eggHunters = new Dictionary<string, byte[]>();
             string eggHunter641Description = "64 Bit Egg Hunter 1:" + Environment.NewLine +

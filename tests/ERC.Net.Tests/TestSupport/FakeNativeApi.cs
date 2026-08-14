@@ -256,5 +256,19 @@ namespace ERC.Net.Tests.TestSupport
             throw new NotImplementedException(
                 "Heap32Next was called. Override it in the test double if the test needs it.");
         }
+
+        /// <summary>Not implemented. Override in a test that needs it.</summary>
+        public virtual bool UnMapAndLoad(ref LOADED_IMAGE loadedImage)
+        {
+            throw new NotImplementedException(
+                "UnMapAndLoad was called. Override it in the test double if the test needs it.");
+        }
+
+        /// <summary>Not implemented. Override in a test that needs it.</summary>
+        public virtual bool ImageUnload(IntPtr loadedImage)
+        {
+            throw new NotImplementedException(
+                "ImageUnload was called. Override it in the test double if the test needs it.");
+        }
     }
 }

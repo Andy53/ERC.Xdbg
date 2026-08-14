@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -11,6 +11,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DllExportMeta", "build\DllExportMeta\DllExportMeta.csproj", "{7C4B1D3E-5A2F-4C68-9B41-2E8D6F0A9C13}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ERC.Net.Tests", "tests\ERC.Net.Tests\ERC.Net.Tests.csproj", "{B6E1F09A-3D47-4C25-8A7E-1F5C2D830B44}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ErcTestTarget", "tests\Fixtures\ErcTestTarget\ErcTestTarget.csproj", "{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,6 +62,14 @@ Global
 		{B6E1F09A-3D47-4C25-8A7E-1F5C2D830B44}.Release|x64.Build.0 = Release|x64
 		{B6E1F09A-3D47-4C25-8A7E-1F5C2D830B44}.Release|x86.ActiveCfg = Release|x86
 		{B6E1F09A-3D47-4C25-8A7E-1F5C2D830B44}.Release|x86.Build.0 = Release|x86
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Debug|x64.ActiveCfg = Debug|x64
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Debug|x64.Build.0 = Debug|x64
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Debug|x86.ActiveCfg = Debug|x86
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Debug|x86.Build.0 = Debug|x86
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Release|x64.ActiveCfg = Release|x64
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Release|x64.Build.0 = Release|x64
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Release|x86.ActiveCfg = Release|x86
+		{C4A1F8B2-6D93-4E57-9F02-3A6B8D1C4E77}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

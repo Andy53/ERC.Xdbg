@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using ERC;
 using ERC.Config;
@@ -113,7 +113,7 @@ namespace ERC.Net.Tests
             {
                 File.WriteAllText(Path.Combine(directory, "modules_backup.txt"), "x");
 
-                string next = null;
+                string? next = null;
                 Should.NotThrow(() => next = new FileOutputSink().NextFilePath(directory, "modules_", ".txt"));
                 next.ShouldBe(Path.Combine(directory, "modules_1.txt"));
             }

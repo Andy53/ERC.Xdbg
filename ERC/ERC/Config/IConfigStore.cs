@@ -1,4 +1,4 @@
-namespace ERC.Config
+﻿namespace ERC.Config
 {
     /// <summary>
     /// Where the library's settings are read from and written to.
@@ -18,7 +18,7 @@ namespace ERC.Config
         /// fall back to defaults; a debugger plugin must not fail to load because a
         /// config file is missing or malformed.
         /// </remarks>
-        ErcConfig Load();
+        ErcConfig? Load();
 
         /// <summary>
         /// Persists the settings.

@@ -1,12 +1,23 @@
 ﻿using System;
-using System.Linq;
+using System.Text;
+using Iced.Intel;
 
 namespace ERC.Utilities
 {
     /// <summary>
-    /// OpcodeDisassembler class, can be declared and inherit from a ProcessInfo object to inherit the values of the current process or be called as 
-    /// a static function to disassemble opcodes.
+    /// Disassembles opcodes into instructions. Can be constructed from a ProcessInfo
+    /// to take the architecture of the attached process, or called statically.
     /// </summary>
+    /// <remarks>
+    /// Built on Iced. This previously used SharpDisasm, a udis86 port whose last
+    /// release was in 2017 and which does not know about instructions added since.
+    ///
+    /// The exact text produced here is a contract, not a presentation choice: the ROP
+    /// generators find gadgets by searching the disassembly string for things like
+    /// "push eax" and "ret", and reject immediates by testing for a digit. The
+    /// formatter is configured below to preserve that rendering, and
+    /// DisassemblyContractTests pins it.
+    /// </remarks>
     public class OpcodeDisassembler : ProcessInfo
     {
         /// <summary>
@@ -15,191 +26,135 @@ namespace ERC.Utilities
         /// <param name="parent">ProcessInfo object to be inherited from.</param>
         public OpcodeDisassembler(ProcessInfo parent) : base(parent)
         {
-
         }
 
         /// <summary>
-        /// Disassembles opcodes into the associated instructions. Takes a byte array containing opcodes. 
+        /// Disassembles opcodes into the associated instructions, using the
+        /// architecture of the attached process.
         /// </summary>
         /// <param name="opcodes">The opcodes to be disassembled</param>
-        /// <returns>Returns an ERC_Result containing associated instructions.</returns>
+        /// <returns>Returns an ErcResult containing the associated instructions.</returns>
         public ErcResult<string> Disassemble(byte[] opcodes)
         {
-            ErcResult<string> result = new ErcResult<string>(ProcessCore);
-            SharpDisasm.Disassembler.Translator.IncludeAddress = true;
-            SharpDisasm.Disassembler.Translator.IncludeBinary = true;
-            SharpDisasm.Disassembler disasm;
-            SharpDisasm.ArchitectureMode mode;
-
-            try
-            {
-                if (ProcessMachineType == MachineType.I386)
-                {
-                    mode = SharpDisasm.ArchitectureMode.x86_32;
-                }
-                else if (ProcessMachineType == MachineType.x64)
-                {
-                    mode = SharpDisasm.ArchitectureMode.x86_64;
-                }
-                else
-                {
-                    throw new ERCException("User input error: Machine Type is invalid, must be ERC.MachineType.x86_64 or ERC.MachineType.x86_32");
-                }
-            }
-            catch (ERCException e)
-            {
-                result.Error = e;
-                result.LogEvent();
-                return result;
-            }
-
-            try
-            {
-                disasm = new SharpDisasm.Disassembler(
-                HexStringToByteArray(BitConverter.ToString(opcodes).Replace("-", "")),
-                mode, 0, true);
-            }
-            catch (Exception e)
-            {
-                result.Error = e;
-                result.LogEvent(e);
-                return result;
-            }
-
-            foreach (var insn in disasm.Disassemble())
-            {
-                var mne = insn.ToString().Split(new string[] { "  " }, StringSplitOptions.None);
-                result.ReturnValue += mne[mne.Length - 1].Trim() + Environment.NewLine;
-            }
-
-            return result;
+            return Run(opcodes, ProcessMachineType, new ErcResult<string>(ProcessCore));
         }
 
         /// <summary>
-        /// Disassembles opcodes into the associated instructions. Takes a byte array containing opcodes, a MachineType of I386 or x64, 
-        /// an instance of the ERC_Core object and returns an ERC_Result containing associated instructions.
+        /// Disassembles opcodes into the associated instructions.
         /// </summary>
         /// <param name="opcodes">A byte array containing opcodes to be disassembled</param>
-        /// <param name="machineType">a ERC.MachineType of either I386 or x64</param>
-        /// <returns>Returns an ERC_Result containing associated instructions.</returns>
+        /// <param name="machineType">An ERC.MachineType of either I386 or x64</param>
+        /// <returns>Returns an ErcResult containing the associated instructions.</returns>
         public static ErcResult<string> Disassemble(byte[] opcodes, MachineType machineType)
         {
-            ErcResult<string> result = new ErcResult<string>(new ErcCore());
-            SharpDisasm.Disassembler.Translator.IncludeAddress = true;
-            SharpDisasm.Disassembler.Translator.IncludeBinary = true;
-            SharpDisasm.Disassembler disasm;
-            SharpDisasm.ArchitectureMode mode;
+            return Run(opcodes, machineType, new ErcResult<string>(new ErcCore()));
+        }
 
-            try
+        /// <summary>
+        /// Disassembles opcodes into the associated instructions, reporting errors
+        /// through the supplied core.
+        /// </summary>
+        /// <param name="opcodes">A byte array containing opcodes to be disassembled</param>
+        /// <param name="machineType">An ERC.MachineType of either I386 or x64</param>
+        /// <param name="core">An ErcCore object</param>
+        /// <returns>Returns an ErcResult containing the associated instructions.</returns>
+        public static ErcResult<string> Disassemble(byte[] opcodes, MachineType machineType, ErcCore core)
+        {
+            return Run(opcodes, machineType, new ErcResult<string>(core));
+        }
+
+        /// <summary>
+        /// The single implementation behind all three overloads, which previously
+        /// carried three near-identical copies of this logic.
+        /// </summary>
+        private static ErcResult<string> Run(byte[] opcodes, MachineType machineType, ErcResult<string> result)
+        {
+            int bitness;
+            if (machineType == MachineType.I386)
             {
-                if (machineType == MachineType.I386)
-                {
-                    mode = SharpDisasm.ArchitectureMode.x86_32;
-                }
-                else if (machineType == MachineType.x64)
-                {
-                    mode = SharpDisasm.ArchitectureMode.x86_64;
-                }
-                else
-                {
-                    throw new ERCException("User input error: Machine Type is invalid, must be ERC.MachineType.x86_64 or ERC.MachineType.x86_32");
-                }
+                bitness = 32;
             }
-            catch(ERCException e)
+            else if (machineType == MachineType.x64)
             {
-                result.Error = e;
+                bitness = 64;
+            }
+            else
+            {
+                result.Error = new ERCException(
+                    "User input error: Machine Type is invalid, must be ERC.MachineType.x64 or ERC.MachineType.I386");
                 result.LogEvent();
                 return result;
             }
 
-            try
+            if (opcodes == null)
             {
-                disasm = new SharpDisasm.Disassembler(
-                HexStringToByteArray(BitConverter.ToString(opcodes).Replace("-", "")),
-                mode, 0, true);
-            }
-            catch(Exception e)
-            {
-                result.Error = e;
-                result.LogEvent(e);
+                result.Error = new ERCException("User input error: No opcodes supplied.");
+                result.LogEvent();
                 return result;
             }
 
-            foreach (var insn in disasm.Disassemble())
+            result.ReturnValue = string.Empty;
+
+            if (opcodes.Length == 0)
             {
-                var mne = insn.ToString().Split(new string[] { "  " }, StringSplitOptions.None);
-                result.ReturnValue += mne[mne.Length - 1].Trim() + Environment.NewLine;
+                return result;
+            }
+
+            try
+            {
+                var reader = new ByteArrayCodeReader(opcodes);
+                Iced.Intel.Decoder decoder = Iced.Intel.Decoder.Create(bitness, reader);
+                decoder.IP = 0;
+
+                Formatter formatter = CreateFormatter();
+                var output = new StringOutput();
+                var text = new StringBuilder();
+
+                while (decoder.IP < (ulong)opcodes.Length)
+                {
+                    Instruction instruction = decoder.Decode();
+                    formatter.Format(instruction, output);
+                    text.Append(output.ToStringAndReset()).Append(Environment.NewLine);
+                }
+
+                result.ReturnValue = text.ToString();
+            }
+            catch (Exception e)
+            {
+                result.Error = e;
+                result.LogEvent(e);
             }
 
             return result;
         }
 
         /// <summary>
-        /// Disassembles opcodes into the associated instructions. Takes a byte array containing opcodes, a MachineType of I386 or x64, 
-        /// an instance of the ERC_Core object and returns an ERC_Result containing associated instructions.
+        /// Builds the formatter, configured to match the rendering the rest of the
+        /// library depends on.
         /// </summary>
-        /// <param name="opcodes">A byte array containing opcodes to be disassembled</param>
-        /// <param name="machineType">a ERC.MachineType of either I386 or x64</param>
-        /// <param name="core">a ErcCore object</param>
-        /// <returns>Returns an ERC_Result containing associated instructions.</returns>
-        public static ErcResult<string> Disassemble(byte[] opcodes, MachineType machineType, ErcCore core)
+        private static Formatter CreateFormatter()
         {
-            ErcResult<string> result = new ErcResult<string>(core);
-            SharpDisasm.Disassembler.Translator.IncludeAddress = true;
-            SharpDisasm.Disassembler.Translator.IncludeBinary = true;
-            SharpDisasm.Disassembler disasm;
-            SharpDisasm.ArchitectureMode mode;
+            // MASM syntax: closest to what x64dbg shows, and to what SharpDisasm
+            // produced, so gadget searches keep matching.
+            var formatter = new MasmFormatter();
 
-            try
-            {
-                if (machineType == MachineType.I386)
-                {
-                    mode = SharpDisasm.ArchitectureMode.x86_32;
-                }
-                else if (machineType == MachineType.x64)
-                {
-                    mode = SharpDisasm.ArchitectureMode.x86_64;
-                }
-                else
-                {
-                    throw new ERCException("User input error: Machine Type is invalid, must be ERC.MachineType.x86_64 or ERC.MachineType.x86_32");
-                }
-            }
-            catch (ERCException e)
-            {
-                result.Error = e;
-                result.LogEvent();
-                return result;
-            }
+            // "xor eax, eax" rather than "xor eax,eax". The generators search for
+            // strings containing a space after the comma.
+            formatter.Options.SpaceAfterOperandSeparator = true;
 
-            try
-            {
-                disasm = new SharpDisasm.Disassembler(
-                HexStringToByteArray(BitConverter.ToString(opcodes).Replace("-", "")),
-                mode, 0, true);
-            }
-            catch (Exception e)
-            {
-                result.Error = e;
-                result.LogEvent(e);
-                return result;
-            }
+            // Lower case throughout: the gadget searches compare against lower-case
+            // literals such as "push eax".
+            formatter.Options.UppercaseMnemonics = false;
+            formatter.Options.UppercaseRegisters = false;
+            formatter.Options.UppercaseKeywords = false;
+            formatter.Options.UppercaseDecorators = false;
+            formatter.Options.UppercaseAll = false;
 
-            foreach (var insn in disasm.Disassemble())
-            {
-                var mne = insn.ToString().Split(new string[] { "  " }, StringSplitOptions.None);
-                result.ReturnValue += mne[mne.Length - 1].Trim() + Environment.NewLine;
-            }
+            // MASM would otherwise print a "ds:" segment prefix that SharpDisasm did
+            // not, which would change the text the gadget search sees.
+            formatter.Options.ShowSymbolAddress = false;
 
-            return result;
-        }
-
-        private static byte[] HexStringToByteArray(string hex)
-        {
-            return Enumerable.Range(0, hex.Length)
-                             .Where(x => x % 2 == 0)
-                             .Select(x => System.Convert.ToByte(hex.Substring(x, 2), 16))
-                             .ToArray();
+            return formatter;
         }
     }
 }

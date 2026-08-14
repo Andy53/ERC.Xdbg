@@ -119,7 +119,7 @@ namespace ERC.Utilities
         /// <param name="core">An ErcCore object</param>
         /// <param name="extended">(Optional) bool specifying whether the extended character set should be used</param>
         /// <returns>Returns an ErcResult int containing the offset of the supplied pattern within the generated pattern</returns>
-        public static ErcResult<string> PatternOffset(string pattern, ErcCore core, bool extended = false)
+        public static ErcResult<string> PatternOffset(string? pattern, ErcCore core, bool extended = false)
         {
             ErcResult<string> result = new ErcResult<string>(core);
 
@@ -127,7 +127,7 @@ namespace ERC.Utilities
             // after an 87 KB file load, and set only Error while leaving ReturnValue
             // null - but the plugin prints ReturnValue, so "ERC --pattern o Aa"
             // reported nothing at all rather than explaining the problem.
-            if (string.IsNullOrEmpty(pattern) || pattern.Length < 3)
+            if (pattern == null || pattern.Length < 3)
             {
                 result.Error = new ERCException("User Input Error: Pattern length must be 3 characters or longer.");
                 result.ReturnValue = "Search string must be 3 characters or longer.";

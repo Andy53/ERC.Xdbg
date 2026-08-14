@@ -26,6 +26,10 @@ namespace ERC
         #region Class Variables
 
         private readonly IConfigStore _configStore;
+        // Every field of _config is non-null once the constructor has run:
+        // a stored config has its gaps filled from ErcConfig.CreateDefault, and
+        // an absent one is replaced by CreateDefault outright. That is why the
+        // properties below can present them as non-null.
         private readonly ErcConfig _config;
         private bool _patternFilesChecked;
 
@@ -39,7 +43,7 @@ namespace ERC
         /// </summary>
         public string WorkingDirectory
         {
-            get { return _config.WorkingDirectory; }
+            get { return _config.WorkingDirectory!; }
             internal set { _config.WorkingDirectory = value; }
         }
 
@@ -48,7 +52,7 @@ namespace ERC
         /// </summary>
         public string Author
         {
-            get { return _config.Author; }
+            get { return _config.Author!; }
             set { _config.Author = value; }
         }
 
@@ -57,7 +61,7 @@ namespace ERC
         /// </summary>
         public string SystemErrorLogPath
         {
-            get { return _config.SystemErrorLogPath; }
+            get { return _config.SystemErrorLogPath!; }
             set { _config.SystemErrorLogPath = value; }
         }
 
@@ -70,7 +74,7 @@ namespace ERC
         /// </remarks>
         public string PatternStandardPath
         {
-            get { EnsurePatternFiles(); return _config.PatternStandardPath; }
+            get { EnsurePatternFiles(); return _config.PatternStandardPath!; }
             set { _config.PatternStandardPath = value; }
         }
 
@@ -82,7 +86,7 @@ namespace ERC
         /// </remarks>
         public string PatternExtendedPath
         {
-            get { EnsurePatternFiles(); return _config.PatternExtendedPath; }
+            get { EnsurePatternFiles(); return _config.PatternExtendedPath!; }
             set { _config.PatternExtendedPath = value; }
         }
 
@@ -112,7 +116,7 @@ namespace ERC
         /// <summary>
         /// The most recent internal failure, for diagnostics.
         /// </summary>
-        public Exception SystemError { get; private set; }
+        public Exception? SystemError { get; private set; }
 
         #endregion
 
@@ -140,7 +144,7 @@ namespace ERC
         /// </summary>
         /// <param name="configStore">Where settings are read from and written to.</param>
         /// <param name="logger">Where errors are reported. Defaults to the configured log file.</param>
-        public ErcCore(IConfigStore configStore, IErcLogger logger)
+        public ErcCore(IConfigStore configStore, IErcLogger? logger)
             : this(configStore, logger, null)
         {
         }
@@ -151,7 +155,7 @@ namespace ERC
         /// <param name="configStore">Where settings are read from and written to.</param>
         /// <param name="logger">Where errors are reported. Defaults to the configured log file.</param>
         /// <param name="native">The OS calls to use. Defaults to the real Win32 API.</param>
-        public ErcCore(IConfigStore configStore, IErcLogger logger, INativeApi native)
+        public ErcCore(IConfigStore configStore, IErcLogger? logger, INativeApi? native)
             : this(configStore, logger, native, null)
         {
         }
@@ -164,7 +168,7 @@ namespace ERC
         /// <param name="logger">Where errors are reported. Defaults to the configured log file.</param>
         /// <param name="native">The OS calls to use. Defaults to the real Win32 API.</param>
         /// <param name="output">Where output is written. Defaults to the filesystem.</param>
-        public ErcCore(IConfigStore configStore, IErcLogger logger, INativeApi native, IOutputSink output)
+        public ErcCore(IConfigStore configStore, IErcLogger? logger, INativeApi? native, IOutputSink? output)
         {
             if (configStore == null)
             {
@@ -175,7 +179,7 @@ namespace ERC
             ErcVersion = BuildVersionString();
 
             ErcConfig defaults = ErcConfig.CreateDefault(DefaultWorkingDirectory(configStore));
-            ErcConfig stored = configStore.Load();
+            ErcConfig? stored = configStore.Load();
 
             if (stored == null)
             {
@@ -228,7 +232,7 @@ namespace ERC
             var xmlStore = configStore as XmlConfigStore;
             if (xmlStore != null)
             {
-                string directory = Path.GetDirectoryName(xmlStore.Path);
+                string? directory = Path.GetDirectoryName(xmlStore.Path);
                 if (!string.IsNullOrEmpty(directory))
                 {
                     return directory;
@@ -267,11 +271,14 @@ namespace ERC
                 _config.PatternExtendedPath, "Pattern_Extended", 66923, true);
         }
 
-        private string EnsurePatternFile(string configuredPath, string defaultFileName, int length, bool extended)
+        private string EnsurePatternFile(string? configuredPath, string defaultFileName, int length, bool extended)
         {
+            // The "!" states what IsNullOrEmpty already guarantees. On net472 the base
+            // class library carries no nullable annotations, so the compiler cannot
+            // infer it from the check alone.
             string path = string.IsNullOrEmpty(configuredPath)
                 ? Path.Combine(_config.WorkingDirectory ?? string.Empty, defaultFileName)
-                : configuredPath;
+                : configuredPath!;
 
             if (File.Exists(path))
             {
@@ -307,7 +314,7 @@ namespace ERC
         /// Changes the working directory, in the config store and in this instance.
         /// </summary>
         /// <param name="path">An existing directory.</param>
-        public void SetWorkingDirectory(string path)
+        public void SetWorkingDirectory(string? path)
         {
             if (!Directory.Exists(path))
             {
@@ -315,7 +322,7 @@ namespace ERC
                     "User Input Error: Value supplied for working directory is not a valid directory: " + path);
             }
 
-            if (!path.EndsWith("\\", StringComparison.Ordinal))
+            if (path != null && !path.EndsWith("\\", StringComparison.Ordinal))
             {
                 path += "\\";
             }
@@ -329,7 +336,7 @@ namespace ERC
         /// pattern when searching, but it must be written to a file first.
         /// </summary>
         /// <param name="path">The filepath of the new standard pattern file.</param>
-        public void SetPatternStandardPath(string path)
+        public void SetPatternStandardPath(string? path)
         {
             ValidatePatternPath(path, "standard pattern");
             _config.PatternStandardPath = path;
@@ -340,7 +347,7 @@ namespace ERC
         /// Sets the extended pattern file path.
         /// </summary>
         /// <param name="path">The filepath of the new extended pattern file.</param>
-        public void SetPatternExtendedPath(string path)
+        public void SetPatternExtendedPath(string? path)
         {
             ValidatePatternPath(path, "extended pattern");
             _config.PatternExtendedPath = path;
@@ -364,7 +371,7 @@ namespace ERC
         /// An existing file, a directory to create the log in, or a path whose parent
         /// directory exists. Anything else falls back to the working directory.
         /// </param>
-        public void SetErrorFile(string path)
+        public void SetErrorFile(string? path)
         {
             string resolved = ResolveLogPath(path);
 
@@ -381,28 +388,28 @@ namespace ERC
             Persist();
         }
 
-        private string ResolveLogPath(string path)
+        private string ResolveLogPath(string? path)
         {
-            if (File.Exists(path))
+            if (path != null && File.Exists(path))
             {
                 return path;
             }
 
-            if (Directory.Exists(path))
+            if (path != null && Directory.Exists(path))
             {
                 return Path.Combine(path, "System_Error.LOG");
             }
 
-            if (!string.IsNullOrWhiteSpace(path))
+            if (path != null && !string.IsNullOrWhiteSpace(path))
             {
-                string parent = Path.GetDirectoryName(path);
+                string? parent = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(parent) && Directory.Exists(parent))
                 {
                     return path;
                 }
             }
 
-            return Path.Combine(_config.WorkingDirectory, "System_Error.LOG");
+            return Path.Combine(WorkingDirectory, "System_Error.LOG");
         }
 
         /// <summary>
@@ -415,7 +422,7 @@ namespace ERC
         /// correct input was rejected, so "ERC --config SetStandardPattern" could not
         /// be made to work at all despite being documented.
         /// </remarks>
-        private static void ValidatePatternPath(string path, string description)
+        private static void ValidatePatternPath(string? path, string description)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -469,16 +476,19 @@ namespace ERC
             string architecture = IntPtr.Size == 8 ? "64" : "32";
 
             Assembly assembly = Assembly.GetExecutingAssembly();
-            string version = assembly
+            string? version = assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
 
             if (string.IsNullOrEmpty(version))
             {
-                version = assembly.GetName().Version.ToString();
+                // AssemblyVersion is always stamped, but the reflection API cannot
+                // promise it, and a version-less banner is better than a crash.
+                Version? assemblyVersion = assembly.GetName().Version;
+                version = assemblyVersion == null ? "unknown" : assemblyVersion.ToString();
             }
 
             // Source-linked builds append "+<commit sha>"; keep the banner readable.
-            int metadata = version.IndexOf('+');
+            int metadata = version!.IndexOf('+');
             if (metadata > 0)
             {
                 version = version.Substring(0, metadata);

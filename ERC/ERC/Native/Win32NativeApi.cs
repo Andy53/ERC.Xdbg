@@ -188,5 +188,15 @@ namespace ERC.Native
         {
             return NativeMethods.Heap32Next(ref heapentry32);
         }
+
+        public bool UnMapAndLoad(ref LOADED_IMAGE loadedImage)
+        {
+            return NativeMethods.UnMapAndLoad(ref loadedImage);
+        }
+
+        public bool ImageUnload(IntPtr loadedImage)
+        {
+            return NativeMethods.ImageUnload(loadedImage);
+        }
     }
 }

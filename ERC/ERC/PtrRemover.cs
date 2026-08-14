@@ -16,9 +16,16 @@ namespace ERC.Utilities
         /// <param name="srcList">The list from which to remove the pointers</param>
         /// <param name="bytes">If a pointer contains any of these bytes it will be discarded</param>
         /// <returns>Returns a ErcResult of List IntPtr</returns>
-        public static List<IntPtr> RemovePointers(MachineType mt, List<IntPtr> srcList, byte[] bytes)
+        public static List<IntPtr> RemovePointers(MachineType mt, List<IntPtr> srcList, byte[]? bytes)
         {
-            if (bytes == null || bytes.Length == 0 || srcList == null)
+            // A null list is a caller error rather than a filter instruction, so
+            // it yields an empty result instead of propagating the null onward.
+            if (srcList == null)
+            {
+                return new List<IntPtr>();
+            }
+
+            if (bytes == null || bytes.Length == 0)
             {
                 return srcList;
             }
@@ -44,9 +51,14 @@ namespace ERC.Utilities
         /// <param name="srcList">The list from which to remove the pointers</param>
         /// <param name="bytes">If a pointer contains any of these bytes it will be discarded</param>
         /// <returns>Returns a ErcResult of Dictionary IntPtr, String</returns>
-        public static Dictionary<IntPtr, string> RemovePointers(MachineType mt, Dictionary<IntPtr, string> srcList, byte[] bytes)
+        public static Dictionary<IntPtr, string> RemovePointers(MachineType mt, Dictionary<IntPtr, string> srcList, byte[]? bytes)
         {
-            if (bytes == null || bytes.Length == 0 || srcList == null)
+            if (srcList == null)
+            {
+                return new Dictionary<IntPtr, string>();
+            }
+
+            if (bytes == null || bytes.Length == 0)
             {
                 return srcList;
             }
@@ -251,12 +263,12 @@ namespace ERC.Utilities
                 IntPtr ptr = srcList[i];
                 if (info.ProcessMachineType == MachineType.I386)
                 {
-                    for (int j = 0; j < info.ProcessMemoryBasicInfo32.Count; j++)
+                    for (int j = 0; j < info.MemoryRegions32.Count; j++)
                     {
-                        ulong topAddress = (ulong)info.ProcessMemoryBasicInfo32[j].BaseAddress + (ulong)info.ProcessMemoryBasicInfo32[j].RegionSize;
-                        if ((ulong)srcList[i] > (ulong)info.ProcessMemoryBasicInfo32[j].BaseAddress && (ulong)srcList[i] < topAddress)
+                        ulong topAddress = (ulong)info.MemoryRegions32[j].BaseAddress + (ulong)info.MemoryRegions32[j].RegionSize;
+                        if ((ulong)srcList[i] > (ulong)info.MemoryRegions32[j].BaseAddress && (ulong)srcList[i] < topAddress)
                         {
-                            if (!acceptedProtectionValues.Contains(info.ProcessMemoryBasicInfo32[j].AllocationProtect) && srcList.Contains(ptr))
+                            if (!acceptedProtectionValues.Contains(info.MemoryRegions32[j].AllocationProtect) && srcList.Contains(ptr))
                             {
                                 srcList.Remove(ptr);
                             }
@@ -265,12 +277,12 @@ namespace ERC.Utilities
                 }
                 else
                 {
-                    for (int j = 0; j < info.ProcessMemoryBasicInfo64.Count; j++)
+                    for (int j = 0; j < info.MemoryRegions64.Count; j++)
                     {
-                        ulong topAddress = (ulong)info.ProcessMemoryBasicInfo64[j].BaseAddress + (ulong)info.ProcessMemoryBasicInfo64[j].RegionSize;
-                        if ((ulong)srcList[i] > (ulong)info.ProcessMemoryBasicInfo64[j].BaseAddress && (ulong)srcList[i] < topAddress)
+                        ulong topAddress = (ulong)info.MemoryRegions64[j].BaseAddress + (ulong)info.MemoryRegions64[j].RegionSize;
+                        if ((ulong)srcList[i] > (ulong)info.MemoryRegions64[j].BaseAddress && (ulong)srcList[i] < topAddress)
                         {
-                            if (!acceptedProtectionValues.Contains(info.ProcessMemoryBasicInfo64[j].AllocationProtect) && srcList.Contains(ptr))
+                            if (!acceptedProtectionValues.Contains(info.MemoryRegions64[j].AllocationProtect) && srcList.Contains(ptr))
                             {
                                 srcList.Remove(ptr);
                             }
@@ -295,12 +307,12 @@ namespace ERC.Utilities
                 IntPtr ptr = srcList[i];
                 if (info.ProcessMachineType == MachineType.I386)
                 {
-                    for (int j = 0; j < info.ProcessMemoryBasicInfo32.Count; j++)
+                    for (int j = 0; j < info.MemoryRegions32.Count; j++)
                     {
-                        ulong topAddress = (ulong)info.ProcessMemoryBasicInfo32[j].BaseAddress + (ulong)info.ProcessMemoryBasicInfo32[j].RegionSize;
-                        if ((ulong)srcList[i] > (ulong)info.ProcessMemoryBasicInfo32[j].BaseAddress && (ulong)srcList[i] < topAddress)
+                        ulong topAddress = (ulong)info.MemoryRegions32[j].BaseAddress + (ulong)info.MemoryRegions32[j].RegionSize;
+                        if ((ulong)srcList[i] > (ulong)info.MemoryRegions32[j].BaseAddress && (ulong)srcList[i] < topAddress)
                         {
-                            if (protection != info.ProcessMemoryBasicInfo32[j].AllocationProtect && srcList.Contains(ptr))
+                            if (protection != info.MemoryRegions32[j].AllocationProtect && srcList.Contains(ptr))
                             {
                                 srcList.Remove(ptr);
                                 i--;
@@ -310,12 +322,12 @@ namespace ERC.Utilities
                 }
                 else
                 {
-                    for (int j = 0; j < info.ProcessMemoryBasicInfo64.Count; j++)
+                    for (int j = 0; j < info.MemoryRegions64.Count; j++)
                     {
-                        ulong topAddress = (ulong)info.ProcessMemoryBasicInfo64[j].BaseAddress + (ulong)info.ProcessMemoryBasicInfo64[j].RegionSize;
-                        if ((ulong)srcList[i] > (ulong)info.ProcessMemoryBasicInfo64[j].BaseAddress && (ulong)srcList[i] < topAddress)
+                        ulong topAddress = (ulong)info.MemoryRegions64[j].BaseAddress + (ulong)info.MemoryRegions64[j].RegionSize;
+                        if ((ulong)srcList[i] > (ulong)info.MemoryRegions64[j].BaseAddress && (ulong)srcList[i] < topAddress)
                         {
-                            if (protection != info.ProcessMemoryBasicInfo64[j].AllocationProtect && srcList.Contains(ptr))
+                            if (protection != info.MemoryRegions64[j].AllocationProtect && srcList.Contains(ptr))
                             {
                                 srcList.Remove(ptr);
                                 i--;

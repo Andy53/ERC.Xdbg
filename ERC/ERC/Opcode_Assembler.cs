@@ -42,22 +42,23 @@ namespace ERC.Utilities
                 mnemonics.Add(instructions[i]);
             }
 
-            var asm = new Assembler();
+            // "using" rather than a Dispose in each branch, and no GC.Collect:
+            // forcing a full collection after every assemble was cargo cult, and it
+            // stalls the debugger UI for no benefit. The assembler holds a native
+            // FASM handle, which the using block releases on both paths.
+            using (var asm = new Assembler())
+            {
+                try
+                {
+                    result.ReturnValue = asm.Assemble(mnemonics);
+                }
+                catch (Exception e)
+                {
+                    result.Error = e;
+                    result.LogEvent();
+                }
+            }
 
-            try
-            {
-                result.ReturnValue = asm.Assemble(mnemonics);
-                asm.Dispose();
-            }
-            catch (Exception e)
-            {
-                result.Error = e;
-                result.LogEvent();
-                asm.Dispose();
-                GC.Collect();
-                return result;
-            }
-            GC.Collect();
             return result;
         }
 
@@ -86,22 +87,20 @@ namespace ERC.Utilities
                 mnemonics.Add(instructions[i]);
             }
 
-            var asm = new Assembler();
+            // See the instance overload: using-block, no forced collection.
+            using (var asm = new Assembler())
+            {
+                try
+                {
+                    result.ReturnValue = asm.Assemble(mnemonics);
+                }
+                catch (Exception e)
+                {
+                    result.Error = e;
+                    result.LogEvent();
+                }
+            }
 
-            try
-            {
-                result.ReturnValue = asm.Assemble(mnemonics);
-                asm.Dispose();
-            }
-            catch(Exception e)
-            {
-                result.Error = e;
-                result.LogEvent();
-                asm.Dispose();
-                GC.Collect();
-                return result;
-            }
-            GC.Collect();
             return result;
         }
     }

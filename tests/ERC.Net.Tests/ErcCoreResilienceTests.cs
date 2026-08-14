@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Threading;
 using ERC;
@@ -24,8 +24,10 @@ namespace ERC.Net.Tests
 
         public ErcCoreResilienceTests()
         {
-            _assemblyDirectory = Path.GetDirectoryName(
-                new Uri(typeof(ErcCore).Assembly.CodeBase).LocalPath);
+            // GetDirectoryName only returns null for a root path, which the path of
+            // a loaded assembly never is.
+            string codeBase = typeof(ErcCore).Assembly.CodeBase!;
+            _assemblyDirectory = Path.GetDirectoryName(new Uri(codeBase).LocalPath)!;
             _configPath = Path.Combine(_assemblyDirectory, "ERC_Config.XML");
             _backupPath = _configPath + ".testbackup";
 
@@ -49,8 +51,8 @@ namespace ERC.Net.Tests
             // by a worker that had not returned after six seconds.
             Directory.CreateDirectory(_configPath);
 
-            ErcCore core = null;
-            Exception thrown = null;
+            ErcCore? core = null;
+            Exception? thrown = null;
 
             var worker = new Thread(() =>
             {

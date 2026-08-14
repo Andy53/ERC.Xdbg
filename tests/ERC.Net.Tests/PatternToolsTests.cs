@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ERC;
 using ERC.Net.Tests.TestSupport;
 using ERC.Utilities;
@@ -159,7 +159,7 @@ namespace ERC.Net.Tests
         [InlineData("A")]
         [InlineData("")]
         [InlineData(null)]
-        public void PatternOffset_explains_itself_for_too_short_input(string search)
+        public void PatternOffset_explains_itself_for_too_short_input(string? search)
         {
             // Was a pinned defect: input under three characters set Error but left
             // ReturnValue null, while every other failure path sets an explanatory

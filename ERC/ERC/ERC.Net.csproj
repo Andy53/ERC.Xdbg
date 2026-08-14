@@ -43,7 +43,12 @@
     -->
     <PackageReference Include="Reloaded.Assembler" Version="1.0.14" />
     <PackageReference Include="Reloaded.Memory" Version="8.0.1" />
-    <PackageReference Include="SharpDisasm" Version="1.1.11" />
+    <!--
+      Iced replaces SharpDisasm, a udis86 port last released in 2017 that does not
+      know about instructions added since. Iced is actively maintained and decodes
+      the full modern instruction set.
+    -->
+    <PackageReference Include="Iced" Version="1.21.0" />
   </ItemGroup>
 
   <ItemGroup>

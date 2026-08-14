@@ -14,7 +14,7 @@ namespace ERC
     /// <summary>
     /// Stores information about the current thread.
     /// </summary>
-    public class ThreadInfo
+    public class ThreadInfo : IDisposable
     {
         #region Variables
         /// <summary>
@@ -42,7 +42,7 @@ namespace ERC
         private ErcCore ThreadCore { get; set; }
         private ThreadBasicInformation ThreadBasicInfo = new ThreadBasicInformation();
         private TEB Teb;
-        private List<Tuple<byte[], byte[]>> SehChain;
+        private List<Tuple<byte[], byte[]>>? SehChain;
         #endregion
 
         #region Constructor
@@ -86,10 +86,18 @@ namespace ERC
                 exceptionThrower.LogEvent();
             }
 
-            var errorCheck = PopulateTEB(); 
+            var errorCheck = PopulateTEB();
             if (errorCheck.Error != null && errorCheck.Error.Message != "Error: No SEH chain has been generated yet. An SEH chain will not be generated until a crash occurs.")
             {
-                throw errorCheck.Error;
+                // Flagged rather than thrown. ProcessInfo builds a ThreadInfo for every
+                // thread in the target and already skips any whose ThreadFailed is set,
+                // but this used to throw straight out of the constructor - so one thread
+                // that exited between the thread list being taken and its TEB being read
+                // aborted the whole ProcessInfo, and with it whichever ERC command was
+                // running. Threads come and go constantly in a live process, which made
+                // it an intermittent failure with no obvious cause.
+                ThreadFailed = true;
+                errorCheck.LogEvent();
             }
         }
         #endregion
@@ -601,6 +609,55 @@ namespace ERC
             }
             return ret;
         }
+        #endregion
+
+        #region IDisposable
+
+        private bool _disposed;
+
+        /// <summary>
+        /// Closes the thread handle this object opened.
+        /// </summary>
+        /// <remarks>
+        /// OpenThread hands back a handle that has to be closed, and nothing ever
+        /// closed it. A ProcessInfo opens one per thread in the target and the plugin
+        /// builds a ProcessInfo on every command, so handles accumulated for the whole
+        /// debugging session.
+        /// </remarks>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases the thread handle.
+        /// </summary>
+        /// <param name="disposing">True when called from Dispose rather than the finalizer.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (ThreadHandle != IntPtr.Zero)
+            {
+                ThreadCore.Native.CloseHandle(ThreadHandle);
+                ThreadHandle = IntPtr.Zero;
+            }
+
+            _disposed = true;
+        }
+
+        /// <summary>
+        /// Closes the handle if the caller forgot to.
+        /// </summary>
+        ~ThreadInfo()
+        {
+            Dispose(false);
+        }
+
         #endregion
     }
 }

@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A target process for the integration tests to inspect.
+
+    It allocates unmanaged memory, writes known artefacts into it, and prints the
+    addresses on stdout. Reporting its own addresses is what makes fixed image
+    bases and /DYNAMICBASE:NO unnecessary: the test asserts that ERC finds the
+    exact address the target says it planted, which is a stronger claim than
+    finding something at an address baked into the test.
+
+    Targets net472 only and is never referenced by the tests - they start it as a
+    process - so it needs no framework relationship with them. It is built for both
+    platforms because a 32-bit inspector cannot read a 64-bit target.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>ErcTestTarget</AssemblyName>
+    <RootNamespace>ErcTestTarget</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>
