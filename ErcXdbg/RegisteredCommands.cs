@@ -258,6 +258,18 @@ namespace ErcXdbg
                 case "--seh":
                     SEH(parameters, info, session);
                     break;
+                case "--jmp":
+                    Jmp(info, parameters, session);
+                    return;
+                case "--sehchain":
+                    SehChain(info, parameters, session);
+                    return;
+                case "--ropfunc":
+                    RopFunc(info, parameters, session);
+                    return;
+                case "--gadget":
+                    Gadget(info, parameters, session);
+                    return;
                 case "--egghunters":
                     if(parameters.Count <= 2)
                     {

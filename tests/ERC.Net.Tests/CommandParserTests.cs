@@ -31,7 +31,7 @@ namespace ERC.Net.Tests
             "--convert", "--assemble", "--disassemble", "--searchmemory", "--searchmodules",
             "--dump", "--listprocesses", "--processinfo", "--moduleinfo", "--threadinfo",
             "--seh", "--egghunters", "--findnrp", "--heapinfo", "--rop", "--ropgadgets",
-            "--reset"
+            "--reset", "--jmp", "--sehchain", "--ropfunc", "--gadget"
         };
 
         public static TheoryData<string> AllDocumentedOptions()

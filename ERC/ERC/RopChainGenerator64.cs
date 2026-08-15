@@ -314,6 +314,68 @@ namespace ERC.Utilities
         }
         #endregion 
 
+
+        #region FindGadgets64
+        /// <summary>
+        /// Collects the gadgets of a single kind.
+        /// </summary>
+        /// <param name="instruction">
+        /// The instruction wanted, for example "pop rcx". The catalogue's own list
+        /// name, such as "popRcx", is accepted too.
+        /// </param>
+        /// <param name="ptrsToExclude">Bytes which disqualify a gadget's address.</param>
+        /// <param name="excludes">Modules to leave out of the scan.</param>
+        /// <returns>
+        /// The matching gadgets, or an error naming the kinds that exist when the
+        /// instruction is not one of them.
+        /// </returns>
+        /// <remarks>
+        /// The full listing runs to 85 sections and is written to a file. When what
+        /// is wanted is one of them, producing all of it and reading the rest back out
+        /// is a poor trade - and until now it was the only way.
+        /// </remarks>
+        public ErcResult<Dictionary<IntPtr, string>> FindGadgets(
+            string instruction, byte[]? ptrsToExclude = null, List<string>? excludes = null)
+        {
+            var result = new ErcResult<Dictionary<IntPtr, string>>(RcgInfo.ProcessCore);
+            result.ReturnValue = new Dictionary<IntPtr, string>();
+
+            string? matched;
+            if (GadgetLookup.Select64(new RopChainGenerator64.X64Lists(), instruction, out matched) == null)
+            {
+                result.Error = new ERCException(
+                    "\"" + instruction + "\" is not a kind of gadget ERC collects. Available: " +
+                    string.Join(", ", GadgetLookup.Available(MachineType.x64)));
+                return result;
+            }
+
+            x64Opcodes = new X64Lists();
+
+            var nops = GetRopNops(RcgInfo, excludes);
+            if (nops.Error != null && RopNops.Count <= 0)
+            {
+                result.Error = nops.Error;
+                return result;
+            }
+
+            PopulateOpcodes(RcgInfo);
+            OptimiseLists(RcgInfo);
+
+            if (ptrsToExclude != null)
+            {
+                foreach (var list in GadgetCatalog.X64Lists)
+                {
+                    list.Set(usableX64Opcodes, PtrRemover.RemovePointers(
+                        RcgInfo.ProcessMachineType, list.Get(usableX64Opcodes), ptrsToExclude));
+                }
+            }
+
+            result.ReturnValue = GadgetLookup.Select64(usableX64Opcodes, instruction, out matched)
+                                 ?? new Dictionary<IntPtr, string>();
+            return result;
+        }
+        #endregion
+
         #region GenerateRopChain64
         /// <summary>
         /// Creates a ROP chain for a specific process.

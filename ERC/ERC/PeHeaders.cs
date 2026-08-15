@@ -76,7 +76,8 @@ namespace ERC.Utilities
         private const ushort Pe32PlusMagic = 0x020B;
         private const int AddressOfEntryPointOffset = 16;
 
-        // The load config directory is index 10 of the data directory.
+        // Indexes into the data directory.
+        private const int ExportDirectoryIndex = 0;
         private const int LoadConfigDirectoryIndex = 10;
         private const int DataDirectoryEntrySize = 8;
 
@@ -107,6 +108,12 @@ namespace ERC.Utilities
 
         /// <summary>Size of the load config directory, or 0 when the image has none.</summary>
         public uint LoadConfigTableSize { get; private set; }
+
+        /// <summary>RVA of the export directory, or 0 when the image exports nothing.</summary>
+        public uint ExportTableRva { get; private set; }
+
+        /// <summary>Size of the export directory, or 0 when the image exports nothing.</summary>
+        public uint ExportTableSize { get; private set; }
 
         /// <summary>The image's sections, in the order the section table lists them.</summary>
         public IReadOnlyList<PeSection> Sections { get; private set; } = new PeSection[0];
@@ -294,22 +301,55 @@ namespace ERC.Utilities
             // permits, and then simply has no load config. Reading entry 10 regardless
             // would read whatever follows the optional header - usually the section
             // table.
-            if (numberOfRvaAndSizes > LoadConfigDirectoryIndex)
+            uint loadConfigRva, loadConfigSize;
+            if (TryReadDirectory(image, optionalHeader, dataDirectoryOffset, sizeOfOptionalHeader,
+                                 numberOfRvaAndSizes, LoadConfigDirectoryIndex,
+                                 out loadConfigRva, out loadConfigSize))
             {
-                int entry = optionalHeader + dataDirectoryOffset +
-                            (LoadConfigDirectoryIndex * DataDirectoryEntrySize);
+                result.LoadConfigTableRva = loadConfigRva;
+                result.LoadConfigTableSize = loadConfigSize;
+            }
 
-                if (entry <= image.Length - DataDirectoryEntrySize &&
-                    entry + DataDirectoryEntrySize <= optionalHeader + sizeOfOptionalHeader)
-                {
-                    result.LoadConfigTableRva = BitConverter.ToUInt32(image, entry);
-                    result.LoadConfigTableSize = BitConverter.ToUInt32(image, entry + 4);
-                }
+            uint exportRva, exportSize;
+            if (TryReadDirectory(image, optionalHeader, dataDirectoryOffset, sizeOfOptionalHeader,
+                                 numberOfRvaAndSizes, ExportDirectoryIndex,
+                                 out exportRva, out exportSize))
+            {
+                result.ExportTableRva = exportRva;
+                result.ExportTableSize = exportSize;
             }
 
             result.Sections = ReadSections(image, fileHeader, optionalHeader + sizeOfOptionalHeader);
 
             headers = result;
+            return true;
+        }
+
+        /// <summary>
+        /// Reads one entry of the data directory, if the image declares that many.
+        /// </summary>
+        private static bool TryReadDirectory(
+            byte[] image, int optionalHeader, int dataDirectoryOffset, ushort sizeOfOptionalHeader,
+            uint numberOfRvaAndSizes, int index, out uint rva, out uint size)
+        {
+            rva = 0;
+            size = 0;
+
+            if (numberOfRvaAndSizes <= index)
+            {
+                return false;
+            }
+
+            int entry = optionalHeader + dataDirectoryOffset + (index * DataDirectoryEntrySize);
+
+            if (entry > image.Length - DataDirectoryEntrySize ||
+                entry + DataDirectoryEntrySize > optionalHeader + sizeOfOptionalHeader)
+            {
+                return false;
+            }
+
+            rva = BitConverter.ToUInt32(image, entry);
+            size = BitConverter.ToUInt32(image, entry + 4);
             return true;
         }
 

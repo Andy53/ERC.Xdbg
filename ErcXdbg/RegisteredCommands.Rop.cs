@@ -34,15 +34,13 @@ namespace ErcXdbg
             // one produces a plausible-looking chain that cannot work on the target.
             bool target64Bit = info.ProcessMachineType == ERC.MachineType.x64;
 
-            List<string> excludes = new List<string>();
-            foreach(ERC.ModuleInfo mi in info.ModulesInfo)
-            {
-                if(!mi.ModuleASLR == session.Aslr || !mi.ModuleNXCompat == session.NxCompat || !mi.ModuleOsDll == session.OsDll || !mi.ModuleSafeSEH == session.SafeSeh
-                    || !mi.ModuleRebase == session.Rebase)
-                {
-                    excludes.Add(mi.ModulePath);
-                }
-            }
+            // Shared with the other commands that honour the module switches. What
+            // stood here excluded a module when the switch was *unset* and the module
+            // had the property, so with no switches set - the default - it dropped
+            // every module with ASLR, NXCompat, SafeSEH, rebasing, or that was an OS
+            // DLL. Almost every module in a modern process has NXCompat, so the
+            // gadget scan was running against almost nothing.
+            List<string> excludes = ModuleExcludes(info, session);
 
             bool filtered = session.Bytes.Length > 0 || excludes.Count > 0;
 
