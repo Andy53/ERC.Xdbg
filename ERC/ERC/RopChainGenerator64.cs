@@ -491,62 +491,36 @@ namespace ERC.Utilities
         #endregion
 
         #region GetApiAddresses
+        /// <summary>
+        /// Resolves the addresses of the APIs a chain can be built around.
+        /// </summary>
+        /// <remarks>
+        /// The work is in ERC.Utilities.RopFunctions.ChainApis, which reads the target
+        /// module's own export directory. What stood here passed the target's kernel32
+        /// base to GetProcAddress - which resolves in the calling process, so the
+        /// handle meant nothing to it - and worked around the resulting mismatch on a
+        /// 32-bit target with a table of hard-coded offsets valid for one build of
+        /// Windows. See ChainApis for the whole story.
+        /// </remarks>
         private ErcResult<int> GetApiAddresses(ProcessInfo info)
         {
             ErcResult<int> returnVar = new ErcResult<int>(info.ProcessCore);
             returnVar.ReturnValue = 0;
 
-            IntPtr hModule = IntPtr.Zero;
-            for (int i = 0; i < info.ModulesInfo.Count; i++)
+            var resolved = RopFunctions.ChainApis(info);
+
+            foreach (var api in resolved.ReturnValue)
             {
-                if (info.ModulesInfo[i].ModuleName == "kernel32")
-                {
-                    hModule = info.ModulesInfo[i].ModuleBase;
-                }
+                ApiAddresses[api.Key] = api.Value;
             }
 
-            var virtAllocAddress = RcgInfo.Native.GetProcAddress(hModule, "VirtualAlloc");
-            if (virtAllocAddress == IntPtr.Zero)
+            if (resolved.Error != null)
             {
-                returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
+                // Reported but not fatal: the caller carries on when at least one
+                // address was found, because a chain for one method is still useful
+                // when another cannot be built.
+                returnVar.Error = resolved.Error;
                 returnVar.LogEvent();
-            }
-            else
-            {
-                ApiAddresses.Add("VirtualAlloc", virtAllocAddress);
-            }
-
-            var HeapCreateAddress = RcgInfo.Native.GetProcAddress(hModule, "HeapCreate");
-            if (HeapCreateAddress == IntPtr.Zero)
-            {
-                returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
-                returnVar.LogEvent();
-            }
-            else
-            {
-                ApiAddresses.Add("HeapCreate", HeapCreateAddress);
-            }
-
-            var VirtualProtectAddress = RcgInfo.Native.GetProcAddress(hModule, "VirtualProtect");
-            if (VirtualProtectAddress == IntPtr.Zero)
-            {
-                returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
-                returnVar.LogEvent();
-            }
-            else
-            {
-                ApiAddresses.Add("VirtualProtect", VirtualProtectAddress);
-            }
-
-            var WriteProcessMemoryAddress = RcgInfo.Native.GetProcAddress(hModule, "WriteProcessMemory");
-            if (WriteProcessMemoryAddress == IntPtr.Zero)
-            {
-                returnVar.Error = new ERCException(new Win32Exception(Marshal.GetLastWin32Error()).Message);
-                returnVar.LogEvent();
-            }
-            else
-            {
-                ApiAddresses.Add("WriteProcessMemory", WriteProcessMemoryAddress);
             }
 
             return returnVar;

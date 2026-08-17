@@ -124,6 +124,119 @@ namespace ERC.Utilities
         }
 
         /// <summary>
+        /// The four functions the ROP chain builders construct chains around.
+        /// </summary>
+        public static readonly string[] ChainApiNames =
+        {
+            "VirtualAlloc", "HeapCreate", "VirtualProtect", "WriteProcessMemory"
+        };
+
+        /// <summary>
+        /// Resolves the functions the chain builders call, in the target process.
+        /// </summary>
+        /// <param name="info">The process the chain is being built for.</param>
+        /// <returns>
+        /// Name to address for each function found. The error is set when any could
+        /// not be resolved, but whatever was found is still returned - a chain for one
+        /// method is still useful when another cannot be built.
+        /// </returns>
+        /// <remarks>
+        /// What this replaces asked the wrong process. It took kernel32's base address
+        /// in the target and passed it to GetProcAddress, which resolves exports in the
+        /// *calling* process - so the handle meant nothing to it.
+        ///
+        /// On x64 that went unnoticed, because a module is loaded at the same address
+        /// in every process for the life of a boot, so ERC's own kernel32 base happened
+        /// to match the target's. On a 32-bit target inspected from a 64-bit ERC the
+        /// bases differ, and rather than the call failing it was worked around with a
+        /// table of hard-coded offsets:
+        ///
+        ///     ApiAddresses.Add("VirtualAlloc", hModule + 0x166B0);
+        ///
+        /// Those offsets describe one build of kernel32. On any other Windows version,
+        /// or after any update to it, they point somewhere else in the module - and
+        /// nothing detects that, so the chain is produced, looks entirely plausible,
+        /// and calls into the middle of an unrelated function.
+        ///
+        /// Reading the target module's own export directory answers the question that
+        /// was actually being asked, on every Windows version, for both architectures.
+        /// </remarks>
+        public static ErcResult<Dictionary<string, IntPtr>> ChainApis(ProcessInfo info)
+        {
+            if (info == null)
+            {
+                throw new ArgumentNullException(nameof(info));
+            }
+
+            var result = new ErcResult<Dictionary<string, IntPtr>>(info.ProcessCore);
+            result.ReturnValue = new Dictionary<string, IntPtr>();
+
+            var missing = new List<string>();
+
+            foreach (string name in ChainApiNames)
+            {
+                IntPtr address;
+
+                if (TryResolveInProcess(info, name, out address))
+                {
+                    result.ReturnValue.Add(name, address);
+                }
+                else
+                {
+                    missing.Add(name);
+                }
+            }
+
+            if (missing.Count > 0)
+            {
+                result.Error = new ERCException(
+                    "Could not resolve " + string.Join(", ", missing.ToArray()) +
+                    " in any module loaded by this process. Chains needing them cannot be built.");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Finds a function in whichever loaded module exports it.
+        /// </summary>
+        /// <remarks>
+        /// kernel32 is tried first because that is where all four live on every
+        /// supported Windows version, and preferring it keeps the resolved address
+        /// stable rather than depending on module enumeration order.
+        /// </remarks>
+        private static bool TryResolveInProcess(ProcessInfo info, string name, out IntPtr address)
+        {
+            address = IntPtr.Zero;
+
+            foreach (bool kernel32Only in new[] { true, false })
+            {
+                foreach (ModuleInfo module in info.ModulesInfo)
+                {
+                    if (module.ModuleFailed || !File.Exists(module.ModulePath))
+                    {
+                        continue;
+                    }
+
+                    bool isKernel32 = Path.GetFileName(module.ModulePath)
+                        .Equals("kernel32.dll", StringComparison.OrdinalIgnoreCase);
+
+                    if (kernel32Only != isKernel32)
+                    {
+                        continue;
+                    }
+
+                    if (ExportTable.TryResolve(module.ModulePath, module.ModuleBase, name, out address))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Whether an address contains a byte the target would mangle.
         /// </summary>
         /// <remarks>
