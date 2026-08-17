@@ -261,6 +261,9 @@ namespace ErcXdbg
                 case "--jmp":
                     Jmp(info, parameters, session);
                     return;
+                case "--stackpivot":
+                    StackPivotCommand(info, parameters, session);
+                    return;
                 case "--sehchain":
                     SehChain(info, parameters, session);
                     return;

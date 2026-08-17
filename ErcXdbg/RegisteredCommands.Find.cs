@@ -104,6 +104,49 @@ namespace ErcXdbg
         }
 
         /// <summary>
+        /// Finds instructions that move the stack pointer.
+        /// </summary>
+        private static void StackPivotCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            int minimum = 0;
+            if (parameters.Count > 0 && !int.TryParse(parameters[0], out minimum))
+            {
+                PrintHelp("--StackPivot takes an optional minimum distance in bytes. Example: ERC --stackpivot 200");
+                return;
+            }
+
+            ErcResult<Dictionary<IntPtr, string>> found = StackPivot.Search(
+                info, minimum, 256, ModuleExcludes(info, session), session.Bytes);
+
+            if (found.Error != null)
+            {
+                PrintHelp(found.Error.Message);
+                return;
+            }
+
+            PLog.WriteLine("");
+            PLog.WriteLine("Stack pivots{0}: {1} found",
+                minimum > 0 ? " moving at least " + minimum + " bytes" : "", found.ReturnValue.Count);
+            PLog.WriteLine("----------------------------------------------------------------------");
+
+            if (found.ReturnValue.Count == 0)
+            {
+                PLog.WriteLine("Nothing found. Every module may be excluded by the global switches, or " +
+                               "every address may contain one of the bytes given to -Bytes.");
+                return;
+            }
+
+            string format = info.ProcessMachineType == ERC.MachineType.x64 ? "X16" : "X8";
+
+            foreach (KeyValuePair<IntPtr, string> match in found.ReturnValue.OrderBy(m => (long)m.Key))
+            {
+                PLog.WriteLine("0x{0} | {1}", match.Key.ToString(format), match.Value);
+            }
+        }
+
+        /// <summary>
         /// Displays the structured exception handler chain of each thread.
         /// </summary>
         private static void SehChain(ERC.ProcessInfo info, List<string> parameters, SessionState session)

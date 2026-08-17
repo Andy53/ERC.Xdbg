@@ -38,10 +38,6 @@ namespace ERC.Utilities
         /// </summary>
         public List<Tuple<byte[], string>> VirtualProtectChain = new List<Tuple<byte[], string>>();
 
-        /// <summary>
-        /// Contains a ROP chain which calls the VirtualAlloc method.
-        /// </summary>
-        public List<Tuple<byte[], string>> WriteProcessMemoryChain = new List<Tuple<byte[], string>>();
 
         RopMethod Methods;
         internal X64Lists x64Opcodes;
@@ -1590,9 +1586,12 @@ namespace ERC.Utilities
                     if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdx.ElementAt(i).Value.Contains("invalid"))
                     {
                         byte[] dwSize = { 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
+                        // Gadget then value: the pop consumes the slot after itself. These were
+                        // the other way round, so every register was loaded with whatever
+                        // followed its gadget rather than the value written for it.
                         regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key),
                             usableX64Opcodes.popRdx.ElementAt(i).Value));
+                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
                         regState64 |= Register64.RDX;
                         i = usableX64Opcodes.popRdx.Count;
                     }
@@ -1768,9 +1767,9 @@ namespace ERC.Utilities
                         if (usableX64Opcodes.popR8.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR8.ElementAt(i).Value.Contains("invalid"))
                         {
                             byte[] flAllocationType = { 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
                             regLists64.r8List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key),
                                 usableX64Opcodes.popR8.ElementAt(i).Value));
+                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
                             regState64 |= Register64.R8;
                             i = usableX64Opcodes.popR8.Count;
                         }
@@ -1881,9 +1880,9 @@ namespace ERC.Utilities
                         if (usableX64Opcodes.popR9.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR9.ElementAt(i).Value.Contains("invalid"))
                         {
                             byte[] flProtect = { 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                            regLists64.r9List.Add(Tuple.Create(flProtect, "flProtect"));
                             regLists64.r9List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR9.ElementAt(i).Key),
                                 usableX64Opcodes.popR9.ElementAt(i).Value));
+                            regLists64.r9List.Add(Tuple.Create(flProtect, "flProtect"));
                             regState64 |= Register64.R9;
                             i = usableX64Opcodes.popR9.Count;
                         }
@@ -1946,9 +1945,9 @@ namespace ERC.Utilities
                     if (usableX64Opcodes.popRcx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRcx.ElementAt(i).Value.Contains("invalid"))
                     {
                         byte[] flOptions = new byte[] { 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rcxList.Add(Tuple.Create(flOptions,"flOptions"));
                         regLists64.rcxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRcx.ElementAt(i).Key),
                             usableX64Opcodes.popRcx.ElementAt(i).Value));
+                        regLists64.rcxList.Add(Tuple.Create(flOptions,"flOptions"));
                         regState64 |= Register64.RCX;
                         i = usableX64Opcodes.popRcx.Count;
                     }
@@ -2012,9 +2011,9 @@ namespace ERC.Utilities
                     if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdx.ElementAt(i).Value.Contains("invalid"))
                     {
                         byte[] dwSize = { 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
                         regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key),
                             usableX64Opcodes.popRdx.ElementAt(i).Value));
+                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwInitialSize"));
                         regState64 |= Register64.RDX;
                         i = usableX64Opcodes.popRdx.Count;
                     }
@@ -2191,9 +2190,9 @@ namespace ERC.Utilities
                         if (usableX64Opcodes.popR8.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR8.ElementAt(i).Value.Contains("invalid"))
                         {
                             byte[] flAllocationType = { 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
                             regLists64.r8List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key),
                                 usableX64Opcodes.popR8.ElementAt(i).Value));
+                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "dwMaximumSize"));
                             regState64 |= Register64.R8;
                             i = usableX64Opcodes.popR8.Count;
                         }
@@ -2228,7 +2227,7 @@ namespace ERC.Utilities
             // VirtualProtect Template:                                   //
             // RCX: 0x???????????????? ->  Pointer                        //
             // RDX: 0x0000000000000500 ->  dwSize                         //
-            // R8 : 0x0000000000001000 ->  flNewProtect                   //
+            // R8 : 0x0000000000000040 ->  flNewProtect (PAGE_EXECUTE_READWRITE) //
             // R9 : 0x???????????????? ->  lpflOldProtect                 //
             //                                                            //
             // + place a pointer to VirtualProtect on stack               //
@@ -2310,9 +2309,9 @@ namespace ERC.Utilities
                     if (usableX64Opcodes.popRdx.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popRdx.ElementAt(i).Value.Contains("invalid"))
                     {
                         byte[] dwSize = { 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
                         regLists64.rdxList.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popRdx.ElementAt(i).Key),
                             usableX64Opcodes.popRdx.ElementAt(i).Value));
+                        regLists64.rdxList.Add(Tuple.Create(dwSize, "dwSize"));
                         regState64 |= Register64.RDX;
                         i = usableX64Opcodes.popRdx.Count;
                     }
@@ -2487,10 +2486,10 @@ namespace ERC.Utilities
                     {
                         if (usableX64Opcodes.popR8.ElementAt(i).Value.Length <= 14 && !usableX64Opcodes.popR8.ElementAt(i).Value.Contains("invalid"))
                         {
-                            byte[] flAllocationType = { 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-                            regLists64.r8List.Add(Tuple.Create(flAllocationType, "flAllocationType"));
+                            byte[] flNewProtect = { 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
                             regLists64.r8List.Add(Tuple.Create(BitConverter.GetBytes((long)usableX64Opcodes.popR8.ElementAt(i).Key),
                                 usableX64Opcodes.popR8.ElementAt(i).Value));
+                            regLists64.r8List.Add(Tuple.Create(flNewProtect, "flNewProtect"));
                             regState64 |= Register64.R8;
                             i = usableX64Opcodes.popR8.Count;
                         }
@@ -3690,10 +3689,13 @@ namespace ERC.Utilities
             [Description(" HeapCreate")] HeapCreate = 2,
             /// <summary>Mark the existing region executable with VirtualProtect.</summary>
             [Description(" VirtualProtect")] VirtualProtect = 4,
-            /// <summary>Write the payload over existing executable memory with WriteProcessMemory.</summary>
-            [Description(" WriteProcessMemory")] WriteProcessMemory = 8,
+            // There is deliberately no WriteProcessMemory. It was declared here, was
+            // included in All, and was never built: GenerateWriteProcessMemoryChain64
+            // returned null and nothing ever called it. Advertising a chain type that
+            // cannot be produced is worse than not offering it - a caller asking for
+            // All was silently given three chains and told it had asked for four.
             /// <summary>Attempt every method and return whichever chains could be built.</summary>
-            [Description(" All")] All = 15
+            [Description(" All")] All = 7
         }
     }
 }

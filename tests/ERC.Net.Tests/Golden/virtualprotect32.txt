@@ -4,7 +4,8 @@ C0001111 | xor ebx, ret
 B0011111 | inc ebx, ret
 50001111 | push esp, ret
 30011111 | pop ecx, ret
-00000000 | Unable to find appropriate instruction. EDX must be allocated manually
+40011111 | pop edx, ret
+40000000 | flNewProtect
 60011111 | pop ebp, ret
 90001111 | jmp esp, ret
 70011111 | pop esi, ret

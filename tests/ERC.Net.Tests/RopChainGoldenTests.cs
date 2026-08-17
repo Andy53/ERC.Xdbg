@@ -307,6 +307,85 @@ namespace ERC.Net.Tests
                 method + ": \"" + gadget + "\" should be followed by the value it pops");
         }
 
+        [Theory]
+        [InlineData("VirtualAlloc")]
+        [InlineData("HeapCreate")]
+        [InlineData("VirtualProtect")]
+        public void Every_register_the_template_needs_is_set(string method)
+        {
+            // A register block that fails is supposed to leave a marked gap. What it
+            // must not do is leave nothing at all, which is what happened when the ECX
+            // block wrote its failure into edxList: ECX was marked satisfied, its own
+            // fragment stayed empty, and the chain silently omitted the setup for
+            // flProtect - the permission bits the chain exists to obtain.
+            //
+            // Against a gadget table where every list is populated, nothing should be
+            // missing and nothing should be a gap.
+            Run32((generator, info) =>
+            {
+                var chain = method == "VirtualAlloc" ? generator.GenerateVirtualAllocChain32(info)
+                          : method == "HeapCreate" ? generator.GenerateHeapCreateChain32(info)
+                          : generator.GenerateVirtualProtectChain32(info);
+
+                List<Tuple<byte[], string>> entries = chain.ReturnValue;
+
+                entries.ShouldNotContain(e => e.Item2.Contains("must be allocated manually"),
+                    method + " left a register unset despite every gadget kind being available");
+
+                // Each of the six registers the templates load should appear, either as
+                // a pop into it or as a mov/xor touching it.
+                foreach (string register in new[] { "eax", "ebx", "ecx", "edx", "ebp", "esi", "edi" })
+                {
+                    entries.ShouldContain(e => e.Item2.IndexOf(register, StringComparison.OrdinalIgnoreCase) >= 0,
+                        method + " never touches " + register);
+                }
+            });
+        }
+
+        [Theory]
+        [InlineData("VirtualAlloc")]
+        [InlineData("HeapCreate")]
+        [InlineData("VirtualProtect")]
+        public void A_64_bit_pop_gadget_is_followed_by_the_value_it_pops(string method)
+        {
+            // The 64-bit builders emitted the value before the gadget, so every
+            // register was loaded with whatever followed its gadget rather than the
+            // value written for it. The 32-bit builders had the same defect in the
+            // VirtualAlloc chain only.
+            Run64((generator, info) =>
+            {
+                var chain = method == "VirtualAlloc" ? generator.GenerateVirtualAllocChain64(info)
+                          : method == "HeapCreate" ? generator.GenerateHeapCreateChain64(info)
+                          : generator.GenerateVirtualProtectChain64(info);
+
+                List<Tuple<byte[], string>> entries = chain.ReturnValue;
+
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    if (!entries[i].Item2.StartsWith("pop ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // A pop preceded by a push is a register copy - it takes what the
+                    // push put there, so no literal follows it. RCX and R9 are loaded
+                    // that way, because they hold pointers rather than constants.
+                    if (i > 0 && entries[i - 1].Item2.StartsWith("push ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    (i + 1).ShouldBeLessThan(entries.Count,
+                        method + ": \"" + entries[i].Item2 + "\" is the last entry, so it pops nothing");
+
+                    // A gadget label ends in ", ret"; a value label names an argument.
+                    entries[i + 1].Item2.ShouldNotEndWith(", ret",
+                        method + ": \"" + entries[i].Item2 + "\" at " + i +
+                        " is followed by another gadget rather than the value it pops");
+                }
+            });
+        }
+
         [Fact]
         public void The_chain_uses_the_supplied_rop_nop()
         {

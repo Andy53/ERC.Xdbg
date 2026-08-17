@@ -204,7 +204,7 @@ namespace ERC
                     ropChain.Add("## VirtualAlloc Template:                                     ##");
                     ropChain.Add("## RCX: 0x???????????????? ->  Pointer (copys RSP)            ##");
                     ropChain.Add("## RDX: 0x0000000000000500 ->  dwSize                         ##");
-                    ropChain.Add("## R8 : 0x0000000000001000 ->  flAllocationType               ##");
+                    ropChain.Add("## R8 : 0x0000000000000040 ->  flNewProtect                   ##");
                     ropChain.Add("## R9 : 0x0000000000000040 ->  flProtect                      ##");
                     ropChain.Add("##                                                            ##");
                     ropChain.Add("## + place a pointer to VirtualAlloc on stack                 ##");
@@ -254,8 +254,8 @@ namespace ERC
                     ropChain.Add("## VirtualProtect Template:                                   ##");
                     ropChain.Add("## RCX: 0x???????????????? ->  Pointer (copys RSP)            ##");
                     ropChain.Add("## RDX: 0x0000000000000500 ->  dwSize                         ##");
-                    ropChain.Add("## R8 : 0x0000000000001000 ->  flAllocationType               ##");
-                    ropChain.Add("## R9 : 0x???????????????? ->  flProtect (copys RSP)          ##");
+                    ropChain.Add("## R8 : 0x0000000000000040 ->  flNewProtect                   ##");
+                    ropChain.Add("## R9 : 0x???????????????? ->  lpflOldProtect (copies RSP)    ##");
                     ropChain.Add("##                                                            ##");
                     ropChain.Add("## + place a pointer to VirtualAlloc on stack                 ##");
                     ropChain.Add("## + place ptr to \"jmp rsp\" on stack                          ##");
