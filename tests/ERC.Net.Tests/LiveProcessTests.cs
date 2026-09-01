@@ -226,6 +226,42 @@ namespace ERC.Net.Tests
             }
         }
 
+        [Fact]
+        public void FindWild_finds_the_planted_pop_pop_ret()
+        {
+            SkipIfNoFixture();
+
+            using (var target = TargetProcess.Start())
+            using (var info = new ProcessInfo(Core(), target.Process))
+            {
+                string first = IntPtr.Size == 8 ? "pop rax" : "pop eax";
+                string second = IntPtr.Size == 8 ? "pop rbx" : "pop ebx";
+                InstructionPattern pattern = FindWild.Parse(first + " # " + second + " # ret");
+
+                ErcResult<Dictionary<IntPtr, string>> found = FindWild.Search(info, pattern);
+
+                found.Error.ShouldBeNull();
+                found.ReturnValue.Keys.ShouldContain(target["poppopret"].Address);
+            }
+        }
+
+        [Fact]
+        public void FindWild_finds_the_planted_jmp_through_an_operand_wildcard()
+        {
+            SkipIfNoFixture();
+
+            using (var target = TargetProcess.Start())
+            using (var info = new ProcessInfo(Core(), target.Process))
+            {
+                InstructionPattern pattern = FindWild.Parse("jmp *");
+
+                ErcResult<Dictionary<IntPtr, string>> found = FindWild.Search(info, pattern);
+
+                found.Error.ShouldBeNull();
+                found.ReturnValue.Keys.ShouldContain(target["jmpesp"].Address);
+            }
+        }
+
         // ------------------------------------------------- modules and threads
 
         [Fact]
@@ -264,6 +300,59 @@ namespace ERC.Net.Tests
                 ntdll.ShouldNotBeNull();
                 ntdll.ModuleASLR.ShouldBeTrue("ntdll is always built with ASLR");
                 ntdll.ModuleNXCompat.ShouldBeTrue("ntdll is always built DEP compatible");
+                ntdll.ModuleCFG.ShouldBeTrue("ntdll has been built with CFG since Windows 8.1");
+
+                info.CreateExcludesList().ShouldNotContain(ntdll.ModulePath);
+                info.CreateExcludesList(cfg: true).ShouldContain(ntdll.ModulePath);
+            }
+        }
+
+        [Fact]
+        public void Jop_finds_memory_indirect_transfers_in_kernel32()
+        {
+            SkipIfNoFixture();
+
+            using (var target = TargetProcess.Start())
+            using (var info = new ProcessInfo(Core(), target.Process))
+            {
+                List<string> excludes = info.ModulesInfo
+                    .Where(m => m.ModulePath.IndexOf("kernel32", StringComparison.OrdinalIgnoreCase) < 0)
+                    .Select(m => m.ModulePath)
+                    .ToList();
+
+                ErcResult<Dictionary<IntPtr, string>> found = Jop.Search(info, excludes: excludes);
+
+                found.Error.ShouldBeNull();
+                found.ReturnValue.ShouldNotBeEmpty(
+                    "kernel32's code calls through its IAT, which is jmp/call [mem]");
+                found.ReturnValue.Values.ShouldAllBe(v => Jop.IsGadget(v));
+            }
+        }
+
+        [Fact]
+        public void Iat_slots_of_kernel32_include_ntdll_imports()
+        {
+            SkipIfNoFixture();
+
+            using (var target = TargetProcess.Start())
+            using (var info = new ProcessInfo(Core(), target.Process))
+            {
+                ModuleInfo? kernel32 = info.ModulesInfo
+                    .FirstOrDefault(m => m.ModulePath.IndexOf("kernel32", StringComparison.OrdinalIgnoreCase) >= 0);
+
+                kernel32.ShouldNotBeNull();
+
+                IReadOnlyList<ImportEntry> imports = ImportTable.Read(
+                    kernel32.ModulePath, info.ProcessMachineType == MachineType.x64);
+
+                imports.ShouldNotBeEmpty();
+                imports.Any(i => i.Dll.Equals("ntdll.dll", StringComparison.OrdinalIgnoreCase))
+                       .ShouldBeTrue();
+                imports.Any(i => !i.ByOrdinal && i.Name.Length > 0).ShouldBeTrue();
+
+                ImportEntry first = imports[0];
+                ImportTable.SlotAddress(kernel32.ModuleBase, first.IatRva)
+                           .ShouldNotBe(IntPtr.Zero);
             }
         }
 
@@ -335,6 +424,7 @@ namespace ERC.Net.Tests
 
                     module.ModuleASLR.ShouldBe(headers!.HasAslr, module.ModulePath);
                     module.ModuleNXCompat.ShouldBe(headers.HasNxCompat, module.ModulePath);
+                    module.ModuleCFG.ShouldBe(headers.HasCfg, module.ModulePath);
                     module.ModuleMachineType.ShouldBe(headers.MachineType, module.ModulePath);
                     module.ModuleSize.ShouldBe((int)headers.SizeOfImage, module.ModulePath);
                     ((ulong)module.ModuleImageBase).ShouldBe(headers.ImageBase, module.ModulePath);

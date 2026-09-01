@@ -106,7 +106,7 @@ namespace ERC
             }
 
             output += "------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
-            output += " Base          | Entry point   | Size      | Rebase   | SafeSEH  | ASLR    | NXCompat | OS DLL  | Version, Name and Path" + Environment.NewLine;
+            output += " Base          | Entry point   | Size      | Rebase   | SafeSEH  | ASLR    | NXCompat | CFG     | OS DLL  | Version, Name and Path" + Environment.NewLine;
             output += "------------------------------------------------------------------------------------------------------------------------" + Environment.NewLine;
             foreach (ModuleInfo module in info.ModulesInfo)
             {
@@ -171,6 +171,16 @@ namespace ERC
                     nxElement += "False    ";
                 }
 
+                string cfgElement = "  ";
+                if (module.ModuleCFG == true)
+                {
+                    cfgElement += "True     ";
+                }
+                else
+                {
+                    cfgElement += "False    ";
+                }
+
                 string osElement = "  ";
                 if (module.ModuleOsDll == true)
                 {
@@ -195,7 +205,7 @@ namespace ERC
                     fileElement += module.ModulePath;
                 }
                 output += baseElement + entryElement + sizeElement + rebaseElement +
-                    sehElement + aslrElement + nxElement + osElement + fileElement + Environment.NewLine;
+                    sehElement + aslrElement + nxElement + cfgElement + osElement + fileElement + Environment.NewLine;
             }
             return output;
         }

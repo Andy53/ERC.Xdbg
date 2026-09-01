@@ -19,6 +19,7 @@ namespace ERC.Net.Tests
         private const ushort IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE = 0x0040;
         private const ushort IMAGE_DLLCHARACTERISTICS_NX_COMPAT = 0x0100;
         private const ushort IMAGE_DLLCHARACTERISTICS_NO_SEH = 0x0400;
+        private const ushort IMAGE_DLLCHARACTERISTICS_GUARD_CF = 0x4000;
         private const ushort IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA = 0x0020;
         private const ushort IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY = 0x0080;
         private const ushort IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE = 0x8000;
@@ -29,6 +30,7 @@ namespace ERC.Net.Tests
             PeCharacteristics.DynamicBase.ShouldBe(IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE);
             PeCharacteristics.NxCompat.ShouldBe(IMAGE_DLLCHARACTERISTICS_NX_COMPAT);
             PeCharacteristics.NoSeh.ShouldBe(IMAGE_DLLCHARACTERISTICS_NO_SEH);
+            PeCharacteristics.GuardCf.ShouldBe(IMAGE_DLLCHARACTERISTICS_GUARD_CF);
         }
 
         // ------------------------------------------------- the defect
@@ -102,6 +104,8 @@ namespace ERC.Net.Tests
             // ASLR without DEP, and DEP without ASLR, are both real configurations.
             PeCharacteristics.HasAslr(IMAGE_DLLCHARACTERISTICS_NX_COMPAT).ShouldBeFalse();
             PeCharacteristics.HasNxCompat(IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE).ShouldBeFalse();
+            PeCharacteristics.HasCfg(IMAGE_DLLCHARACTERISTICS_GUARD_CF).ShouldBeTrue();
+            PeCharacteristics.HasCfg(IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE).ShouldBeFalse();
         }
 
         [Fact]
@@ -119,6 +123,7 @@ namespace ERC.Net.Tests
             PeCharacteristics.HasAslr(0xFFFF).ShouldBeTrue();
             PeCharacteristics.HasNxCompat(0xFFFF).ShouldBeTrue();
             PeCharacteristics.HasNoSeh(0xFFFF).ShouldBeTrue();
+            PeCharacteristics.HasCfg(0xFFFF).ShouldBeTrue();
         }
 
         [Fact]

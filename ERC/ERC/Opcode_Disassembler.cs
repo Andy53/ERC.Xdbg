@@ -1,9 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using Iced.Intel;
 
 namespace ERC.Utilities
 {
+    /// <summary>
+    /// One instruction as the disassembler sees it: where it sits in the buffer,
+    /// how long it is, and the text the rest of the library matches against.
+    /// </summary>
+    public sealed class DecodedInstruction
+    {
+        internal DecodedInstruction(int offset, int length, string text)
+        {
+            Offset = offset;
+            Length = length;
+            Text = text;
+        }
+
+        /// <summary>Byte offset from the start of the buffer.</summary>
+        public int Offset { get; }
+
+        /// <summary>Size of the instruction in bytes.</summary>
+        public int Length { get; }
+
+        /// <summary>Disassembly, lower case, space after the comma.</summary>
+        public string Text { get; }
+    }
+
     /// <summary>
     /// Disassembles opcodes into instructions. Can be constructed from a ProcessInfo
     /// to take the architecture of the attached process, or called statically.
@@ -64,10 +88,46 @@ namespace ERC.Utilities
         }
 
         /// <summary>
+        /// Disassembles a buffer into individual instructions, with offsets.
+        /// </summary>
+        /// <param name="opcodes">The bytes to disassemble.</param>
+        /// <param name="machineType">Architecture of the bytes.</param>
+        /// <returns>One entry per instruction, in order.</returns>
+        public static ErcResult<IReadOnlyList<DecodedInstruction>> Decode(byte[] opcodes, MachineType machineType)
+        {
+            var result = new ErcResult<IReadOnlyList<DecodedInstruction>>(new ErcCore());
+            result.ReturnValue = DecodeCore(opcodes, machineType, result)
+                                 ?? (IReadOnlyList<DecodedInstruction>)new DecodedInstruction[0];
+            return result;
+        }
+
+        /// <summary>
         /// The single implementation behind all three overloads, which previously
         /// carried three near-identical copies of this logic.
         /// </summary>
         private static ErcResult<string> Run(byte[] opcodes, MachineType machineType, ErcResult<string> result)
+        {
+            IReadOnlyList<DecodedInstruction>? decoded = DecodeCore(opcodes, machineType, result);
+            if (result.Error != null)
+            {
+                return result;
+            }
+
+            var text = new StringBuilder();
+            if (decoded != null)
+            {
+                foreach (DecodedInstruction instruction in decoded)
+                {
+                    text.Append(instruction.Text).Append(Environment.NewLine);
+                }
+            }
+
+            result.ReturnValue = text.ToString();
+            return result;
+        }
+
+        private static IReadOnlyList<DecodedInstruction>? DecodeCore<T>(
+            byte[]? opcodes, MachineType machineType, ErcResult<T> result)
         {
             int bitness;
             if (machineType == MachineType.I386)
@@ -83,21 +143,19 @@ namespace ERC.Utilities
                 result.Error = new ERCException(
                     "User input error: Machine Type is invalid, must be ERC.MachineType.x64 or ERC.MachineType.I386");
                 result.LogEvent();
-                return result;
+                return null;
             }
 
             if (opcodes == null)
             {
                 result.Error = new ERCException("User input error: No opcodes supplied.");
                 result.LogEvent();
-                return result;
+                return null;
             }
-
-            result.ReturnValue = string.Empty;
 
             if (opcodes.Length == 0)
             {
-                return result;
+                return new DecodedInstruction[0];
             }
 
             try
@@ -108,24 +166,30 @@ namespace ERC.Utilities
 
                 Formatter formatter = CreateFormatter();
                 var output = new StringOutput();
-                var text = new StringBuilder();
+                var instructions = new List<DecodedInstruction>();
 
                 while (decoder.IP < (ulong)opcodes.Length)
                 {
+                    ulong ip = decoder.IP;
                     Instruction instruction = decoder.Decode();
+                    int length = instruction.Length;
+                    if (length <= 0)
+                    {
+                        break;
+                    }
+
                     formatter.Format(instruction, output);
-                    text.Append(output.ToStringAndReset()).Append(Environment.NewLine);
+                    instructions.Add(new DecodedInstruction((int)ip, length, output.ToStringAndReset()));
                 }
 
-                result.ReturnValue = text.ToString();
+                return instructions;
             }
             catch (Exception e)
             {
                 result.Error = e;
                 result.LogEvent(e);
+                return null;
             }
-
-            return result;
         }
 
         /// <summary>

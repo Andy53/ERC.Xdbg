@@ -572,7 +572,7 @@ namespace ERC
         /// Creates a list of modules to exclude from a search of memory.
         /// </summary>
         /// <returns>Returns an ErcResult containing a list of stringss</returns>
-        public List<string> CreateExcludesList(bool aslr = false, bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false)
+        public List<string> CreateExcludesList(bool aslr = false, bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false, bool cfg = false)
         {
             List<string> excludedModules = new List<string>();
             for(int i = 0; i < ModulesInfo.Count; i++)
@@ -595,6 +595,10 @@ namespace ERC
                     add = true;
                 }
                 if (osdll == true && ModulesInfo[i].ModuleOsDll == true)
+                {
+                    add = true;
+                }
+                if (cfg == true && ModulesInfo[i].ModuleCFG == true)
                 {
                     add = true;
                 }

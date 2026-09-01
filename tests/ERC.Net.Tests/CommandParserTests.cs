@@ -31,7 +31,9 @@ namespace ERC.Net.Tests
             "--convert", "--assemble", "--disassemble", "--searchmemory", "--searchmodules",
             "--dump", "--listprocesses", "--processinfo", "--moduleinfo", "--threadinfo",
             "--seh", "--egghunters", "--findnrp", "--heapinfo", "--rop", "--ropgadgets",
-            "--reset", "--jmp", "--sehchain", "--ropfunc", "--gadget", "--stackpivot"
+            "--reset", "--jmp", "--sehchain", "--ropfunc", "--gadget", "--stackpivot",
+            "--encode", "--getpc", "--unicodealign", "--findwild",
+            "--jop", "--iat", "--eat", "--suggest", "--fwptr"
         };
 
         public static TheoryData<string> AllDocumentedOptions()
@@ -138,6 +140,33 @@ namespace ERC.Net.Tests
         }
 
         [Fact]
+        public void Example_encode_xor()
+        {
+            ErcCommand parsed = CommandParser.Parse("ERC --Encode xor 9090CC", new SessionState());
+
+            parsed.Option.ShouldBe("--encode");
+            parsed.Arguments.ShouldBe(new[] { "xor", "9090CC" });
+        }
+
+        [Fact]
+        public void Example_getpc()
+        {
+            ErcCommand parsed = CommandParser.Parse("ERC --GetPc eax", new SessionState());
+
+            parsed.Option.ShouldBe("--getpc");
+            parsed.Arguments.ShouldBe(new[] { "eax" });
+        }
+
+        [Fact]
+        public void Example_unicode_align()
+        {
+            ErcCommand parsed = CommandParser.Parse("ERC --UnicodeAlign 32 eax leak", new SessionState());
+
+            parsed.Option.ShouldBe("--unicodealign");
+            parsed.Arguments.ShouldBe(new[] { "32", "eax", "leak" });
+        }
+
+        [Fact]
         public void Example_convert()
         {
             ErcCommand parsed = CommandParser.Parse("ERC --convert 7 A%$3", new SessionState());
@@ -231,6 +260,7 @@ namespace ERC.Net.Tests
         [InlineData("-rebase")]
         [InlineData("-nxcompat")]
         [InlineData("-osdll")]
+        [InlineData("-cfg")]
         [InlineData("-extended")]
         public void Every_boolean_switch_accepts_an_explicit_value(string @switch)
         {
@@ -254,6 +284,7 @@ namespace ERC.Net.Tests
                 case "-rebase": return state.Rebase;
                 case "-nxcompat": return state.NxCompat;
                 case "-osdll": return state.OsDll;
+                case "-cfg": return state.Cfg;
                 case "-extended": return state.Extended;
                 default: throw new ArgumentOutOfRangeException(nameof(@switch), @switch, null);
             }
@@ -289,7 +320,7 @@ namespace ERC.Net.Tests
             // the same forward-loop-with-removal mistake that was fixed in the ROP
             // gadget filter would silently skip every second switch here.
             ErcCommand parsed = CommandParser.Parse(
-                "ERC --moduleinfo -aslr -safeseh -rebase -nxcompat -osdll -extended",
+                "ERC --moduleinfo -aslr -safeseh -rebase -nxcompat -osdll -cfg -extended",
                 new SessionState());
 
             parsed.Session.Aslr.ShouldBeTrue();
@@ -297,6 +328,7 @@ namespace ERC.Net.Tests
             parsed.Session.Rebase.ShouldBeTrue();
             parsed.Session.NxCompat.ShouldBeTrue();
             parsed.Session.OsDll.ShouldBeTrue();
+            parsed.Session.Cfg.ShouldBeTrue();
             parsed.Session.Extended.ShouldBeTrue();
         }
 
@@ -499,6 +531,99 @@ namespace ERC.Net.Tests
             parsed.IsValid.ShouldBeFalse();
         }
 
+        // ------------------------------------------------------------------------ -cp
+
+        [Theory]
+        [InlineData("nonull", ERC.Utilities.PointerCriteria.NoNull)]
+        [InlineData("alphanum", ERC.Utilities.PointerCriteria.AlphaNum)]
+        [InlineData("unicode", ERC.Utilities.PointerCriteria.Unicode)]
+        [InlineData("ascii,nonull", ERC.Utilities.PointerCriteria.Ascii | ERC.Utilities.PointerCriteria.NoNull)]
+        public void The_documented_pointer_shape_names_are_accepted(string value, ERC.Utilities.PointerCriteria expected)
+        {
+            ErcCommand parsed = CommandParser.Parse("ERC --jmp -cp " + value, new SessionState());
+
+            parsed.IsValid.ShouldBeTrue(parsed.Error);
+            parsed.Session.Shape.ShouldBe(expected);
+            parsed.Arguments.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public void A_bare_cp_switch_clears_the_shape()
+        {
+            var session = new SessionState { Shape = ERC.Utilities.PointerCriteria.AlphaNum };
+
+            ErcCommand parsed = CommandParser.Parse("ERC --jmp -cp", session);
+
+            parsed.IsValid.ShouldBeTrue(parsed.Error);
+            parsed.Session.Shape.ShouldBe(ERC.Utilities.PointerCriteria.None);
+        }
+
+        [Fact]
+        public void An_unknown_pointer_shape_rejects_the_line()
+        {
+            ErcCommand parsed = CommandParser.Parse("ERC --jmp -cp rwx", new SessionState());
+
+            parsed.IsValid.ShouldBeFalse();
+            parsed.Error!.ShouldContain("alphanum");
+        }
+
+        [Fact]
+        public void Example_findwild()
+        {
+            ErcCommand parsed = CommandParser.Parse(
+                "ERC --FindWild pop eax # pop ebx # ret", new SessionState());
+
+            parsed.Option.ShouldBe("--findwild");
+            parsed.Arguments.ShouldBe(new[] { "pop", "eax", "#", "pop", "ebx", "#", "ret" });
+        }
+
+        [Fact]
+        public void Example_jop()
+        {
+            CommandParser.Parse("ERC --Jop eax", new SessionState()).Arguments.ShouldBe(new[] { "eax" });
+        }
+
+        [Fact]
+        public void Example_iat()
+        {
+            CommandParser.Parse("ERC --Iat kernel32 VirtualProtect", new SessionState())
+                         .Arguments.ShouldBe(new[] { "kernel32", "VirtualProtect" });
+        }
+
+        [Fact]
+        public void Example_egghunters_with_startreg()
+        {
+            CommandParser.Parse("ERC --EggHunters ABCD startreg eax", new SessionState())
+                         .Arguments.ShouldBe(new[] { "ABCD", "startreg", "eax" });
+        }
+
+        [Fact]
+        public void Example_suggest()
+        {
+            CommandParser.Parse("ERC --Suggest", new SessionState()).Option.ShouldBe("--suggest");
+        }
+
+        [Fact]
+        public void Module_filter_is_consumed_and_split_on_commas()
+        {
+            ErcCommand parsed = CommandParser.Parse(
+                "ERC --jmp -m kernel32,ntdll esp", new SessionState());
+
+            parsed.IsValid.ShouldBeTrue();
+            parsed.Arguments.ShouldBe(new[] { "esp" });
+            parsed.Session.Modules.ShouldBe(new[] { "kernel32", "ntdll" });
+        }
+
+        [Fact]
+        public void Module_filter_clears_when_passed_alone()
+        {
+            var session = new SessionState { Modules = new[] { "kernel32" } };
+            ErcCommand parsed = CommandParser.Parse("ERC --jmp -m", session);
+
+            parsed.Session.Modules.ShouldBeEmpty();
+            session.Modules.ShouldBe(new[] { "kernel32" });
+        }
+
         // -------------------------------------------------------------- session state
 
         [Fact]
@@ -513,10 +638,13 @@ namespace ERC.Net.Tests
             session.Rebase.ShouldBeFalse();
             session.NxCompat.ShouldBeFalse();
             session.OsDll.ShouldBeFalse();
+            session.Cfg.ShouldBeFalse();
             session.Extended.ShouldBeFalse();
             session.Bytes.ShouldBeEmpty();
             session.Encode.ShouldBe(SearchEncoding.ASCII);
             session.Protection.ShouldBe("read,write");
+            session.Shape.ShouldBe(ERC.Utilities.PointerCriteria.None);
+            session.Modules.ShouldBeEmpty();
         }
 
         [Fact]
@@ -532,10 +660,13 @@ namespace ERC.Net.Tests
                 Rebase = true,
                 NxCompat = true,
                 OsDll = true,
+                Cfg = true,
                 Extended = true,
                 Encode = SearchEncoding.UTF32,
                 Bytes = new byte[] { 0x00 },
-                Protection = "all"
+                Protection = "all",
+                Shape = ERC.Utilities.PointerCriteria.AlphaNum,
+                Modules = new[] { "kernel32" }
             };
 
             session.Reset();
@@ -550,6 +681,10 @@ namespace ERC.Net.Tests
                 {
                     actualBytes.ShouldBe((byte[])expected!, property.Name);
                 }
+                else if (actual is string[] actualStrings)
+                {
+                    actualStrings.ShouldBe((string[])expected!, property.Name);
+                }
                 else
                 {
                     actual.ShouldBe(expected, property.Name);
@@ -562,13 +697,19 @@ namespace ERC.Net.Tests
         {
             // Parse() clones, so a mutable array leaking through would let a rejected
             // command still change the session.
-            var session = new SessionState { Bytes = new byte[] { 0x00, 0x0A } };
+            var session = new SessionState
+            {
+                Bytes = new byte[] { 0x00, 0x0A },
+                Modules = new[] { "kernel32" }
+            };
 
             SessionState clone = session.Clone();
             clone.Bytes[0] = 0xFF;
+            clone.Modules[0] = "ntdll";
             clone.Aslr = true;
 
             session.Bytes[0].ShouldBe((byte)0x00);
+            session.Modules[0].ShouldBe("kernel32");
             session.Aslr.ShouldBeFalse();
         }
 
@@ -582,6 +723,7 @@ namespace ERC.Net.Tests
                 Rebase = true,
                 NxCompat = true,
                 OsDll = true,
+                Cfg = true,
                 Extended = true,
                 Encode = SearchEncoding.UTF7,
                 Bytes = new byte[] { 0x0D },
@@ -598,6 +740,10 @@ namespace ERC.Net.Tests
                 if (original is byte[] originalBytes)
                 {
                     ((byte[])copied!).ShouldBe(originalBytes, property.Name);
+                }
+                else if (original is string[] originalStrings)
+                {
+                    ((string[])copied!).ShouldBe(originalStrings, property.Name);
                 }
                 else
                 {

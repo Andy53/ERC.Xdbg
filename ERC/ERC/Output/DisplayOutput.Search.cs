@@ -1,4 +1,5 @@
 ﻿using ERC.Utilities;
+using ERC.Structures;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,9 +33,14 @@ namespace ERC
         /// <returns></returns>
         public static string[] SearchMemory(ProcessInfo info, int searchType, string searchString, bool aslr = false, 
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false, 
-            byte[]? unwantedBytes = null, string protection = "exec")
+            byte[]? unwantedBytes = null, string protection = "exec",
+            PointerCriteria shape = PointerCriteria.None, bool cfg = false,
+            List<string>? modules = null)
         {
-            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            bool restrict = modules != null && modules.Count > 0;
+            List<string> excludedModules = restrict
+                ? new List<string>()
+                : info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll, cfg);
             Dictionary<IntPtr, string> result = new Dictionary<IntPtr, string>();
 
             if (searchType == 0)
@@ -47,6 +53,17 @@ namespace ERC
                 result = info.SearchMemory(searchType, searchString: searchString, excludes: excludedModules).ReturnValue;
             }
 
+            if (restrict && !ModuleFilter.IsAll(modules))
+            {
+                foreach (KeyValuePair<IntPtr, string> k in result.ToList())
+                {
+                    if (!ModuleFilter.Matches(System.IO.Path.GetFileName(k.Value), k.Value, modules))
+                    {
+                        result.Remove(k.Key);
+                    }
+                }
+            }
+
             if (unwantedBytes != null)
             {
                 List<IntPtr> p = new List<IntPtr>();
@@ -57,6 +74,7 @@ namespace ERC
                 List<string> outText = new List<string>();
 
                 var pt = PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
+                pt = PointerShape.Filter(info.ProcessMachineType, pt, shape);
                 pt = PtrRemover.RemovePointersProtection(info, pt, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
@@ -74,6 +92,7 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
+                p = PointerShape.Filter(info.ProcessMachineType, p, shape);
                 var pt = PtrRemover.RemovePointersProtection(info, p, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
@@ -146,9 +165,13 @@ namespace ERC
         /// <returns></returns>
         public static string[] SearchModules(ProcessInfo info, int searchType, string searchString, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[]? unwantedBytes = null, List<string>? modules = null, string protection = "exec")
+            byte[]? unwantedBytes = null, List<string>? modules = null, string protection = "exec",
+            PointerCriteria shape = PointerCriteria.None, bool cfg = false)
         {
-            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            bool restrict = modules != null && modules.Count > 0;
+            List<string> excludedModules = restrict
+                ? new List<string>()
+                : info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll, cfg);
             Dictionary<IntPtr, string> result = new Dictionary<IntPtr, string>();
 
             if (searchType == 0)
@@ -171,6 +194,7 @@ namespace ERC
                     p.Add(k.Key);
                 }
                 var pt = PtrRemover.RemovePointers(info.ProcessMachineType, p, unwantedBytes);
+                pt = PointerShape.Filter(info.ProcessMachineType, pt, shape);
                 pt = PtrRemover.RemovePointersProtection(info, pt, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
@@ -188,6 +212,7 @@ namespace ERC
                 {
                     p.Add(k.Key);
                 }
+                p = PointerShape.Filter(info.ProcessMachineType, p, shape);
                 var pt = PtrRemover.RemovePointersProtection(info, p, protection);
 
                 foreach (KeyValuePair<IntPtr, string> k in result.ToList())
@@ -259,10 +284,10 @@ namespace ERC
         /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         public static string[] GetSEHJumps(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[]? unwantedBytes = null, string protection = "exec")
+            byte[]? unwantedBytes = null, string protection = "exec", bool cfg = false)
         {
             List<string> ret = new List<string>();
-            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll, cfg);
             ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes: excludedModules);
 
             if (unwantedBytes != null)
@@ -516,10 +541,10 @@ namespace ERC
         /// <returns>Returns an array of strings detailing the pointers, opcodes and base files of suitable instruction sets.</returns>
         public static string[] GetSEHJumpsUnicode(ProcessInfo info, bool aslr = false,
             bool safeseh = false, bool rebase = false, bool nxcompat = false, bool osdll = false,
-            byte[]? unwantedBytes = null, string protection = "exec")
+            byte[]? unwantedBytes = null, string protection = "exec", bool cfg = false)
         {
             List<string> ret = new List<string>();
-            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll);
+            List<string> excludedModules = info.CreateExcludesList(aslr, safeseh, rebase, nxcompat, osdll, cfg);
             ErcResult<Dictionary<IntPtr, string>> ptrs = info.SearchAllMemoryPPR(excludes: excludedModules);
 
             if (unwantedBytes != null)
@@ -741,6 +766,58 @@ namespace ERC
             output = output.Distinct().ToList();
             info.Output.WriteLines(fnrpFilename, output);
             return output.ToArray();
+        }
+        #endregion
+
+        #region Suggest
+        /// <summary>
+        /// Turns a FindNRP table into a buffer layout: junk, jump or SEH record, payload.
+        /// </summary>
+        public static string GenerateSuggest(
+            ProcessInfo info, int searchType = 0, bool extended = false,
+            List<string>? excludes = null, byte[]? unwantedBytes = null,
+            PointerCriteria shape = PointerCriteria.None)
+        {
+            ErcResult<List<RegisterInfo>> nrp = info.FindNRP(searchType, extended);
+            var output = new StringBuilder();
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine("Process Name: " + info.ProcessName + " Suggest generated at: " + DateTime.Now);
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine();
+
+            if (nrp.Error != null)
+            {
+                output.AppendLine(nrp.Error.ToString());
+                WriteSuggest(info, output.ToString());
+                return output.ToString();
+            }
+
+            IReadOnlyList<BufferSuggestion> suggestions = Suggest.FromProcess(
+                info, nrp.ReturnValue, excludes, unwantedBytes, shape);
+
+            if (suggestions.Count == 0)
+            {
+                output.AppendLine(
+                    "No layout to suggest. EIP/RIP is not overwritten with the cyclic pattern, " +
+                    "and no SEH record is. Crash the process with a pattern from ERC --pattern first, " +
+                    "then ERC --findnrp to confirm.");
+                WriteSuggest(info, output.ToString());
+                return output.ToString();
+            }
+
+            foreach (BufferSuggestion suggestion in suggestions)
+            {
+                output.AppendLine(suggestion.Text);
+            }
+
+            string text = output.ToString();
+            WriteSuggest(info, text);
+            return text;
+        }
+
+        private static void WriteSuggest(ProcessInfo info, string text)
+        {
+            info.Output.WriteText(GetFilePath(info.WorkingDirectory, "Suggest_", ".txt"), text);
         }
         #endregion
     }

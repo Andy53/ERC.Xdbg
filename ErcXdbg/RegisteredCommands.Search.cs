@@ -10,6 +10,7 @@ using Managed.x64dbg.SDK;
 using System.Management;
 using System.Threading;
 using ERC.Cli;
+using ERC.Utilities;
 
 namespace ErcXdbg
 {
@@ -52,8 +53,9 @@ namespace ErcXdbg
 
             searchString = string.Join("", parameters);
 
+            List<string>? modules = session.Modules.Length > 0 ? new List<string>(session.Modules) : null;
             var output = ERC.DisplayOutput.SearchMemory(info, searchType, searchString, session.Aslr, session.SafeSeh, session.Rebase, session.NxCompat,
-                session.OsDll, session.Bytes, session.Protection);
+                session.OsDll, session.Bytes, session.Protection, session.Shape, session.Cfg, modules);
             foreach(string s in output)
             {
                 PLog.WriteLine(s);
@@ -110,9 +112,21 @@ namespace ErcXdbg
                 includedModules = null;
             }
 
+            if (session.Modules.Length > 0)
+            {
+                if (includedModules == null)
+                {
+                    includedModules = new List<string>(session.Modules);
+                }
+                else
+                {
+                    includedModules.AddRange(session.Modules);
+                }
+            }
+
             searchString = string.Join("", parameters);
             var output = ERC.DisplayOutput.SearchModules(info, searchType, searchString, session.Aslr, session.SafeSeh, session.Rebase, session.NxCompat,
-                session.OsDll, session.Bytes, includedModules, session.Protection);
+                session.OsDll, session.Bytes, includedModules, session.Protection, session.Shape, session.Cfg);
             foreach (string s in output)
             {
                 PLog.WriteLine(s);
@@ -169,31 +183,20 @@ namespace ErcXdbg
                 PLog.WriteLine("WARNING: This function will find pop pop ret instructions however please be aware that SEH overflows will not work on the 64bit architecture.");
             }
 
-            List<string> sehJumpAddresses = new List<string>();
+            List<string> sehJumpAddresses;
+            List<string> excludes = ModuleExcludes(info, session);
+            byte[] bytes = session.Bytes.Length > 0 ? session.Bytes : new byte[0];
 
-            bool aslr = session.Aslr, safeseh = session.SafeSeh, rebase = session.Rebase, nxcompat = session.NxCompat, osdll = session.OsDll;
-
-            if(session.Bytes.Length > 0)
+            if (session.Encode == SearchEncoding.Unicode && session.Modules.Length == 0)
             {
-                if(session.Encode == SearchEncoding.Unicode)
-                {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, session.Bytes, session.Protection).ToList();
-                }
-                else
-                {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, session.Bytes, session.Protection).ToList();
-                }
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(
+                    info, session.Aslr, session.SafeSeh, session.Rebase, session.NxCompat,
+                    session.OsDll, session.Bytes.Length > 0 ? session.Bytes : null,
+                    session.Protection, session.Cfg).ToList();
             }
             else
             {
-                if (session.Encode == SearchEncoding.Unicode)
-                {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumpsUnicode(info, aslr, safeseh, rebase, nxcompat, osdll, null, session.Protection).ToList();
-                }
-                else
-                {
-                    sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, aslr, safeseh, rebase, nxcompat, osdll, null, session.Protection).ToList();
-                } 
+                sehJumpAddresses = ERC.DisplayOutput.GetSEHJumps(info, bytes, excludes).ToList();
             }
 
             foreach(string s in sehJumpAddresses)
@@ -205,10 +208,26 @@ namespace ErcXdbg
             return;
         }
 
-        private static void EggHunters(SessionState session, ERC.ErcCore? core = null, string? tag = null)
+        private static void EggHunters(List<string> parameters, ERC.ErcCore? core)
         {
-            string holder = ERC.DisplayOutput.GenerateEggHunters(core, tag);
-            Plugins._plugin_logputs(holder);
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            string? error;
+            EggHunterRequest? request = EggHunter.TryParse(parameters, out error);
+            if (request == null)
+            {
+                PrintHelp(error);
+                return;
+            }
+
+            try
+            {
+                PLog.WriteLine(ERC.DisplayOutput.GenerateEggHunters(request, core));
+            }
+            catch (Exception e)
+            {
+                PrintHelp(e.Message);
+            }
         }
     }
 }

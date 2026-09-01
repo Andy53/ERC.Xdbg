@@ -1,4 +1,5 @@
 ﻿using System;
+using ERC.Utilities;
 
 namespace ERC.Cli
 {
@@ -29,6 +30,9 @@ namespace ERC.Cli
         /// <summary>Exclude operating system DLLs from search results.</summary>
         public bool OsDll { get; set; }
 
+        /// <summary>Exclude modules built with Control Flow Guard from search results.</summary>
+        public bool Cfg { get; set; }
+
         /// <summary>Use the extended character set for patterns and FindNRP.</summary>
         public bool Extended { get; set; }
 
@@ -47,6 +51,18 @@ namespace ERC.Cli
         public string Protection { get; set; } = "read,write";
 
         /// <summary>
+        /// Shape a pointer's bytes must have to appear in search results.
+        /// </summary>
+        public PointerCriteria Shape { get; set; }
+
+        /// <summary>
+        /// Module-name patterns to search, mona's <c>-m</c>. Empty means every
+        /// module (minus the exclude switches). A single <c>*</c> means every
+        /// module including those the exclude switches would drop.
+        /// </summary>
+        public string[] Modules { get; set; } = new string[0];
+
+        /// <summary>
         /// A copy, so handing the state to a command cannot let it change the session
         /// by accident.
         /// </summary>
@@ -54,6 +70,7 @@ namespace ERC.Cli
         {
             var copy = (SessionState)MemberwiseClone();
             copy.Bytes = (byte[])Bytes.Clone();
+            copy.Modules = (string[])Modules.Clone();
             return copy;
         }
 
@@ -67,10 +84,13 @@ namespace ERC.Cli
             Rebase = false;
             NxCompat = false;
             OsDll = false;
+            Cfg = false;
             Extended = false;
             Encode = SearchEncoding.ASCII;
             Bytes = new byte[0];
             Protection = "read,write";
+            Shape = PointerCriteria.None;
+            Modules = new string[0];
         }
     }
 }

@@ -35,6 +35,12 @@ namespace ERC.Utilities
         public const ushort NoSeh = 0x0400;
 
         /// <summary>
+        /// IMAGE_DLLCHARACTERISTICS_GUARD_CF: the module was built with Control Flow
+        /// Guard. Indirect calls have to land on a registered target.
+        /// </summary>
+        public const ushort GuardCf = 0x4000;
+
+        /// <summary>
         /// Whether the module opts in to ASLR.
         /// </summary>
         /// <param name="dllCharacteristics">The PE optional header's DllCharacteristics.</param>
@@ -59,6 +65,15 @@ namespace ERC.Utilities
         public static bool HasNoSeh(ushort dllCharacteristics)
         {
             return (dllCharacteristics & NoSeh) != 0;
+        }
+
+        /// <summary>
+        /// Whether the module was built with Control Flow Guard.
+        /// </summary>
+        /// <param name="dllCharacteristics">The PE optional header's DllCharacteristics.</param>
+        public static bool HasCfg(ushort dllCharacteristics)
+        {
+            return (dllCharacteristics & GuardCf) != 0;
         }
 
         /// <summary>

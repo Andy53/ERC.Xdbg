@@ -42,6 +42,26 @@ namespace ErcXdbg
         {
             var excludes = new List<string>();
 
+            if (session.Modules.Length > 0)
+            {
+                // -m names the modules to search and, as in mona, ignores the other
+                // module switches. -m * means every module.
+                if (ModuleFilter.IsAll(session.Modules))
+                {
+                    return excludes;
+                }
+
+                foreach (ERC.ModuleInfo module in info.ModulesInfo)
+                {
+                    if (!ModuleFilter.Matches(module.ModuleName, module.ModulePath, session.Modules))
+                    {
+                        excludes.Add(module.ModulePath);
+                    }
+                }
+
+                return excludes;
+            }
+
             foreach (ERC.ModuleInfo module in info.ModulesInfo)
             {
                 bool excluded =
@@ -49,7 +69,8 @@ namespace ErcXdbg
                     (session.SafeSeh && module.ModuleSafeSEH) ||
                     (session.Rebase && module.ModuleRebase) ||
                     (session.NxCompat && module.ModuleNXCompat) ||
-                    (session.OsDll && module.ModuleOsDll);
+                    (session.OsDll && module.ModuleOsDll) ||
+                    (session.Cfg && module.ModuleCFG);
 
                 if (excluded)
                 {
@@ -84,6 +105,8 @@ namespace ErcXdbg
                 PrintHelp(found.Error.Message);
                 return;
             }
+
+            found.ReturnValue = ApplyShape(info, found.ReturnValue, session);
 
             PLog.WriteLine("\nJumps to {0}: {1} found", parameters[0].ToLowerInvariant(), found.ReturnValue.Count);
             PLog.WriteLine("----------------------------------------------------------------------");
@@ -125,6 +148,8 @@ namespace ErcXdbg
                 PrintHelp(found.Error.Message);
                 return;
             }
+
+            found.ReturnValue = ApplyShape(info, found.ReturnValue, session);
 
             PLog.WriteLine("");
             PLog.WriteLine("Stack pivots{0}: {1} found",
@@ -212,6 +237,12 @@ namespace ErcXdbg
                 return;
             }
 
+            if (session.Shape != PointerCriteria.None)
+            {
+                found.ReturnValue.RemoveAll(f =>
+                    !PointerShape.Matches(f.Address, info.ProcessMachineType, session.Shape));
+            }
+
             PLog.WriteLine("\nROP functions: {0} found", found.ReturnValue.Count);
             PLog.WriteLine("----------------------------------------------------------------------");
 
@@ -226,8 +257,9 @@ namespace ErcXdbg
 
             foreach (RopFunction function in found.ReturnValue)
             {
-                PLog.WriteLine("0x{0} | {1,-24} {2,-16} {3}",
-                    function.Address.ToString(format), function.Name, function.Module, function.Purpose);
+                PLog.WriteLine("0x{0} | {1,-24} {2,-16} {3}{4}",
+                    function.Address.ToString(format), function.Name, function.Module, function.Purpose,
+                    function.Iat ? "  [IAT]" : "");
             }
         }
 
@@ -271,6 +303,8 @@ namespace ErcXdbg
                 return;
             }
 
+            found.ReturnValue = ApplyShape(info, found.ReturnValue, session);
+
             PLog.WriteLine("\n{0}: {1} found", instruction, found.ReturnValue.Count);
             PLog.WriteLine("----------------------------------------------------------------------");
 
@@ -280,6 +314,300 @@ namespace ErcXdbg
             {
                 PLog.WriteLine("0x{0} | {1}", gadget.Key.ToString(format), gadget.Value);
             }
+        }
+
+        /// <summary>
+        /// Finds an instruction sequence, with wildcards.
+        /// </summary>
+        private static void FindWildCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            if (parameters.Count == 0)
+            {
+                PrintHelp("--FindWild takes an instruction sequence. Separate instructions with # or ;. " +
+                          "* matches any instruction, jmp * matches any jump. " +
+                          "Example: ERC --findwild pop eax # pop ebx # ret");
+                return;
+            }
+
+            string text = string.Join(" ", parameters.ToArray());
+            InstructionPattern pattern;
+            try
+            {
+                pattern = FindWild.Parse(text);
+            }
+            catch (Exception e)
+            {
+                PrintHelp(e.Message);
+                return;
+            }
+
+            PLog.WriteLine("Searching for \"{0}\". This disassembles every readable page and may take a while.", text);
+
+            ErcResult<Dictionary<IntPtr, string>> found = FindWild.Search(
+                info, pattern, ModuleExcludes(info, session), session.Bytes, session.Shape);
+
+            if (found.Error != null)
+            {
+                PrintHelp(found.Error.Message);
+                return;
+            }
+
+            PLog.WriteLine("\n{0}: {1} found", text, found.ReturnValue.Count);
+            PLog.WriteLine("----------------------------------------------------------------------");
+
+            if (found.ReturnValue.Count == 0)
+            {
+                PLog.WriteLine("Nothing found. Every module may be excluded by the global switches, " +
+                               "every address may contain a byte given to -Bytes, or -cp may have filtered them all out.");
+                return;
+            }
+
+            string format = info.ProcessMachineType == ERC.MachineType.x64 ? "X16" : "X8";
+
+            foreach (KeyValuePair<IntPtr, string> match in found.ReturnValue.OrderBy(m => (long)m.Key))
+            {
+                PLog.WriteLine("0x{0} | {1}", match.Key.ToString(format), match.Value);
+            }
+        }
+
+        private static Dictionary<IntPtr, string> ApplyShape(
+            ERC.ProcessInfo info, Dictionary<IntPtr, string> found, SessionState session)
+        {
+            return PointerShape.Filter(info.ProcessMachineType, found, session.Shape);
+        }
+
+        /// <summary>
+        /// Finds jump-oriented-programming gadgets: jmp/call through a memory operand.
+        /// </summary>
+        private static void JopCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+            parameters.RemoveAll(p => p.Equals("-r", StringComparison.OrdinalIgnoreCase));
+
+            string? register = null;
+            if (parameters.Count > 1)
+            {
+                PrintHelp("--Jop takes an optional register. Example: ERC --jop eax");
+                return;
+            }
+
+            if (parameters.Count == 1)
+            {
+                register = parameters[0];
+            }
+
+            PLog.WriteLine("Searching for JOP gadgets{0}. This reads every loaded module and may take a while.",
+                register == null ? "" : " using " + register);
+
+            ErcResult<Dictionary<IntPtr, string>> found = Jop.Search(
+                info, register, ModuleExcludes(info, session), session.Bytes, session.Shape);
+
+            if (found.Error != null)
+            {
+                PrintHelp(found.Error.Message);
+                return;
+            }
+
+            PLog.WriteLine("\nJOP gadgets: {0} found", found.ReturnValue.Count);
+            PLog.WriteLine("----------------------------------------------------------------------");
+
+            if (found.ReturnValue.Count == 0)
+            {
+                PLog.WriteLine("Nothing found. Every module may be excluded by the global switches, " +
+                               "every address may contain a byte given to -Bytes, or -cp may have filtered them all out.");
+                return;
+            }
+
+            string format = info.ProcessMachineType == ERC.MachineType.x64 ? "X16" : "X8";
+
+            foreach (KeyValuePair<IntPtr, string> match in found.ReturnValue.OrderBy(m => (long)m.Key))
+            {
+                PLog.WriteLine("0x{0} | {1}", match.Key.ToString(format), match.Value);
+            }
+        }
+
+        /// <summary>
+        /// Finds calls and jumps through a pointer in writable memory.
+        /// </summary>
+        private static void FwptrCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            PLog.WriteLine("Searching for calls/jumps through writable pointers. This reads executable pages and may take a while.");
+
+            ErcResult<List<FwptrHit>> found = Fwptr.Search(
+                info, ModuleExcludes(info, session), session.Bytes, session.Shape);
+
+            if (found.Error != null)
+            {
+                PrintHelp(found.Error.Message);
+                return;
+            }
+
+            PLog.WriteLine("\nWritable call/jump pointers: {0} found", found.ReturnValue.Count);
+            PLog.WriteLine("----------------------------------------------------------------------");
+
+            if (found.ReturnValue.Count == 0)
+            {
+                PLog.WriteLine("Nothing found. The call target may not be writable, every module may be excluded, or -cp/-Bytes may have filtered them all out.");
+                return;
+            }
+
+            string format = info.ProcessMachineType == ERC.MachineType.x64 ? "X16" : "X8";
+
+            foreach (FwptrHit hit in found.ReturnValue)
+            {
+                PLog.WriteLine("0x{0} | {1}  ptr=0x{2}  ({3})",
+                    hit.Call.ToString(format), hit.Instruction, hit.Pointer.ToString(format), hit.Module);
+            }
+        }
+
+        /// <summary>
+        /// Lists IAT slots: pointers to pointers a ROP chain can reuse.
+        /// </summary>
+        private static void IatCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            string? moduleFilter = parameters.Count > 0 ? parameters[0] : null;
+            string? nameFilter = parameters.Count > 1 ? parameters[1] : null;
+            List<string> excludes = ModuleExcludes(info, session);
+            string format = info.ProcessMachineType == ERC.MachineType.x64 ? "X16" : "X8";
+            int count = 0;
+
+            PLog.WriteLine("\nIAT slots");
+            PLog.WriteLine("----------------------------------------------------------------------");
+
+            foreach (ERC.ModuleInfo module in info.ModulesInfo)
+            {
+                if (module.ModuleFailed)
+                {
+                    continue;
+                }
+
+                if (IsModuleExcluded(module, excludes, moduleFilter))
+                {
+                    continue;
+                }
+
+                foreach (ImportEntry entry in ImportTable.Read(module.ModulePath, info.ProcessMachineType == ERC.MachineType.x64))
+                {
+                    if (!string.IsNullOrEmpty(nameFilter) &&
+                        entry.DisplayName.IndexOf(nameFilter, StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        continue;
+                    }
+
+                    IntPtr slot = ImportTable.SlotAddress(module.ModuleBase, entry.IatRva);
+                    if (!PointerShape.Matches(slot, info.ProcessMachineType, session.Shape))
+                    {
+                        continue;
+                    }
+
+                    if (session.Bytes.Length > 0)
+                    {
+                        var one = new Dictionary<IntPtr, string> { { slot, entry.DisplayName } };
+                        if (PtrRemover.RemovePointers(info.ProcessMachineType, one, session.Bytes).Count == 0)
+                        {
+                            continue;
+                        }
+                    }
+
+                    PLog.WriteLine("0x{0} | {1,-24} {2}",
+                        slot.ToString(format), entry.DisplayName, entry.Dll);
+                    count++;
+                }
+            }
+
+            PLog.WriteLine("----------------------------------------------------------------------");
+            PLog.WriteLine("{0} slot(s).", count);
+        }
+
+        /// <summary>
+        /// Lists exported functions. --RopFunc lists IAT slots for the same APIs.
+        /// </summary>
+        private static void EatCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            string? moduleFilter = parameters.Count > 0 ? parameters[0] : null;
+            string? nameFilter = parameters.Count > 1 ? parameters[1] : null;
+            List<string> excludes = ModuleExcludes(info, session);
+            string format = info.ProcessMachineType == ERC.MachineType.x64 ? "X16" : "X8";
+            int count = 0;
+
+            PLog.WriteLine("\nExports");
+            PLog.WriteLine("----------------------------------------------------------------------");
+
+            foreach (ERC.ModuleInfo module in info.ModulesInfo)
+            {
+                if (module.ModuleFailed)
+                {
+                    continue;
+                }
+
+                if (IsModuleExcluded(module, excludes, moduleFilter))
+                {
+                    continue;
+                }
+
+                foreach (KeyValuePair<string, uint> export in ExportTable.Read(module.ModulePath))
+                {
+                    if (!string.IsNullOrEmpty(nameFilter) &&
+                        export.Key.IndexOf(nameFilter, StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        continue;
+                    }
+
+                    IntPtr address = new IntPtr(module.ModuleBase.ToInt64() + export.Value);
+                    if (!PointerShape.Matches(address, info.ProcessMachineType, session.Shape))
+                    {
+                        continue;
+                    }
+
+                    if (session.Bytes.Length > 0)
+                    {
+                        var one = new Dictionary<IntPtr, string> { { address, export.Key } };
+                        if (PtrRemover.RemovePointers(info.ProcessMachineType, one, session.Bytes).Count == 0)
+                        {
+                            continue;
+                        }
+                    }
+
+                    PLog.WriteLine("0x{0} | {1,-32} {2}",
+                        address.ToString(format), export.Key, module.ModuleName);
+                    count++;
+                }
+            }
+
+            PLog.WriteLine("----------------------------------------------------------------------");
+            PLog.WriteLine("{0} export(s).", count);
+        }
+
+        private static bool IsModuleExcluded(ERC.ModuleInfo module, List<string> excludes, string? moduleFilter)
+        {
+            if (!string.IsNullOrEmpty(moduleFilter))
+            {
+                bool matches =
+                    module.ModuleName.IndexOf(moduleFilter, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    module.ModulePath.IndexOf(moduleFilter, StringComparison.OrdinalIgnoreCase) >= 0;
+                if (!matches)
+                {
+                    return true;
+                }
+            }
+
+            foreach (string exclude in excludes)
+            {
+                if (module.ModulePath.Equals(exclude, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

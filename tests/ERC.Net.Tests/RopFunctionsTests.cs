@@ -169,6 +169,7 @@ namespace ERC.Net.Tests
 
                 found.ShouldNotBeEmpty();
                 found.Select(f => f.Name).ShouldContain("VirtualProtect");
+                found.ShouldContain(f => f.Iat && f.Name == "VirtualProtect");
 
                 foreach (RopFunction function in found)
                 {
@@ -176,6 +177,12 @@ namespace ERC.Net.Tests
                     function.Purpose.ShouldNotBeNullOrWhiteSpace();
                     function.Module.ShouldNotBeNullOrWhiteSpace();
                 }
+
+                // An IAT slot is a pointer to a pointer, not the export itself.
+                IntPtr kernel32 = GetModuleHandle("kernel32.dll");
+                IntPtr exported = GetProcAddress(kernel32, "VirtualProtect");
+                found.Where(f => f.Iat && f.Name == "VirtualProtect")
+                     .ShouldAllBe(f => f.Address != exported);
             }
         }
     }

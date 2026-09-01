@@ -103,6 +103,16 @@ namespace ERC.Net.Tests
         }
 
         [Fact]
+        public void Cfg_is_read_from_the_guard_cf_bit()
+        {
+            PeHeaders.Parse(PeBuilder.X86().With(PeBuilder.GuardCf).Build())
+                .HasCfg.ShouldBeTrue();
+
+            PeHeaders.Parse(PeBuilder.X86().Build())
+                .HasCfg.ShouldBeFalse();
+        }
+
+        [Fact]
         public void Each_mitigation_bit_is_read_independently_of_the_others()
         {
             // The bit walk this replaces assigned inside a plain "else", so every
@@ -116,6 +126,7 @@ namespace ERC.Net.Tests
             headers.HasAslr.ShouldBeTrue();
             headers.HasNxCompat.ShouldBeTrue();
             headers.HasNoSeh.ShouldBeTrue();
+            headers.HasCfg.ShouldBeFalse();
         }
 
         [Fact]
@@ -127,6 +138,7 @@ namespace ERC.Net.Tests
             headers.HasAslr.ShouldBeFalse();
             headers.HasNxCompat.ShouldBeFalse();
             headers.HasNoSeh.ShouldBeFalse();
+            headers.HasCfg.ShouldBeFalse();
         }
 
         [Theory]

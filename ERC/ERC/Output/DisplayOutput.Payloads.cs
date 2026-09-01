@@ -188,60 +188,213 @@ namespace ERC
         /// <returns>Returns a string containing all EggHunters </returns>
         public static string GenerateEggHunters(ErcCore? core = null, string? tag = null)
         {
-            var eggHunters = Payloads.EggHunterConstructor(tag);
-            string eggFilename = "";
-            if (core != null)
-            {
-                eggFilename = GetFilePath(core.WorkingDirectory, "Egg_Hunters_", ".txt");
-            }
-
-            string eggTag = "";
-            if (tag != null)
-            {
-                eggTag = tag;
-            }
-            else
-            {
-                eggTag = "ERCD";
-            }
-
-            string outputString = "";
-            outputString = "---------------------------------------------------------------------------------------" + Environment.NewLine;
-            outputString += "EggHunters generated at:" + DateTime.Now + " Tag: " + eggTag + Environment.NewLine;
-            outputString += "---------------------------------------------------------------------------------------" + Environment.NewLine;
-            outputString += Environment.NewLine;
-            foreach (KeyValuePair<string, byte[]> k in eggHunters)
-            {
-                outputString += k.Key + Environment.NewLine;
-                outputString += "Raw:" + Environment.NewLine;
-                string raw = "\\x" + BitConverter.ToString(k.Value).Replace("-", "\\x");
-                var rawlist = Enumerable
-                    .Range(0, raw.Length / 48)
-                    .Select(i => raw.Substring(i * 48, 48))
-                    .ToList();
-                raw = string.Join(Environment.NewLine, rawlist);
-                outputString += raw;
-
-                outputString += Environment.NewLine + Environment.NewLine + "C#:" + Environment.NewLine;
-                string CSharp = "byte[] buf = new byte[]" + Environment.NewLine + "{" + Environment.NewLine;
-                string CSharpTemp = "0x" + BitConverter.ToString(k.Value).Replace("-", ", 0x");
-                var list = Enumerable
-                    .Range(0, CSharpTemp.Length / 48)
-                    .Select(i => CSharpTemp.Substring(i * 48, 48))
-                    .ToList();
-                for (int i = 0; i < list.Count; i++)
-                {
-                    list[i] = "    " + list[i];
-                }
-                CSharp += string.Join(Environment.NewLine, list) + Environment.NewLine + "}" + Environment.NewLine + Environment.NewLine;
-                outputString += CSharp;
-            }
-            if (core != null)
-            {
-                core.Output.WriteText(eggFilename, outputString);
-            }
-            return outputString;
+            return GenerateEggHunters(new EggHunterRequest { Tag = tag ?? Payloads.DefaultEgg }, core);
         }
+
+        /// <summary>
+        /// Generates egg hunters with checksum, start-register, WOW64 and DEP options.
+        /// </summary>
+        public static string GenerateEggHunters(EggHunterRequest request, ErcCore? core = null)
+        {
+            IReadOnlyList<EggHunterStub> hunters = EggHunter.Generate(request);
+            string eggTag = string.IsNullOrEmpty(request.Tag) ? Payloads.DefaultEgg : request.Tag;
+
+            var output = new StringBuilder();
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine("EggHunters generated at:" + DateTime.Now + " Tag: " + eggTag);
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine();
+            output.AppendLine("Put this tag in front of your shellcode: " + eggTag + eggTag);
+
+            byte? checksum = null;
+            foreach (EggHunterStub hunter in hunters)
+            {
+                if (hunter.ChecksumByte.HasValue)
+                {
+                    checksum = hunter.ChecksumByte;
+                    break;
+                }
+            }
+
+            if (checksum.HasValue)
+            {
+                output.AppendLine("Append checksum byte 0x" + checksum.Value.ToString("X2") +
+                                  " after the payload so a truncated copy is skipped.");
+            }
+
+            output.AppendLine();
+
+            foreach (EggHunterStub hunter in hunters)
+            {
+                output.AppendLine(hunter.Name + " Egg Hunter (" + hunter.Opcodes.Length + " bytes):");
+                output.AppendLine(hunter.Description);
+                output.AppendLine(FormatPayloadBytes(hunter.Opcodes));
+                output.AppendLine();
+            }
+
+            string text = output.ToString();
+            if (core != null)
+            {
+                core.Output.WriteText(GetFilePath(core.WorkingDirectory, "Egg_Hunters_", ".txt"), text);
+            }
+
+            return text;
+        }
+        #endregion
+
+        #region GetPC, encode, unicode align
+
+        /// <summary>
+        /// Formats bytes as a raw <c>\x</c> string, a C# array and a Python bytes
+        /// literal, the three forms an exploit script actually pastes.
+        /// </summary>
+        public static string FormatPayloadBytes(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                return "(empty)";
+            }
+
+            string raw = "\\x" + BitConverter.ToString(bytes).Replace("-", "\\x");
+            var wrapped = new StringBuilder();
+            for (int i = 0; i < raw.Length; i++)
+            {
+                if (i > 0 && i % 64 == 0)
+                {
+                    wrapped.Append(Environment.NewLine);
+                }
+
+                wrapped.Append(raw[i]);
+            }
+
+            string csharp = "byte[] buf = new byte[] { 0x" +
+                            BitConverter.ToString(bytes).Replace("-", ", 0x") + " };";
+            string python = "buf = b\"" + raw + "\"";
+
+            return "Raw:" + Environment.NewLine + wrapped + Environment.NewLine +
+                   Environment.NewLine + "C#:" + Environment.NewLine + csharp + Environment.NewLine +
+                   Environment.NewLine + "Python:" + Environment.NewLine + python;
+        }
+
+        /// <summary>
+        /// Builds the GetPC stubs for a register and formats them for the log.
+        /// </summary>
+        /// <param name="register">Register the stubs should leave the instruction pointer in.</param>
+        /// <param name="machineType">Architecture of the stubs.</param>
+        /// <param name="core">If set, the text is also written to the working directory.</param>
+        /// <returns>The formatted stubs.</returns>
+        public static string GenerateGetPc(string register, MachineType machineType, ErcCore? core = null)
+        {
+            IReadOnlyList<GetPcRoutine> routines = GetPc.For(register, machineType);
+            var output = new StringBuilder();
+            string arch = machineType == MachineType.x64 ? "x64" : "x86";
+
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine("GetPC routines for " + register.Trim().ToLowerInvariant() +
+                              " (" + arch + ") generated at " + DateTime.Now);
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine();
+
+            foreach (GetPcRoutine routine in routines)
+            {
+                output.AppendLine(routine.Name + ": " + routine.Description);
+                output.AppendLine(FormatPayloadBytes(routine.Opcodes));
+                output.AppendLine();
+            }
+
+            string text = output.ToString();
+            if (core != null)
+            {
+                core.Output.WriteText(GetFilePath(core.WorkingDirectory, "GetPC_", ".txt"), text);
+            }
+
+            return text;
+        }
+
+        /// <summary>
+        /// Encodes a payload and formats the result for the log.
+        /// </summary>
+        /// <param name="payload">The bytes to encode.</param>
+        /// <param name="encoding">Which encoder to use.</param>
+        /// <param name="machineType">Architecture of the decoder stub.</param>
+        /// <param name="badBytes">Bytes the result must not contain.</param>
+        /// <param name="core">If set, the text is also written to the working directory.</param>
+        /// <returns>The formatted encoded payload.</returns>
+        public static string GenerateEncodedPayload(
+            byte[] payload,
+            PayloadEncoding encoding,
+            MachineType machineType,
+            byte[]? badBytes = null,
+            ErcCore? core = null)
+        {
+            EncodedPayload encoded = PayloadEncoder.Encode(payload, encoding, machineType, badBytes);
+            var output = new StringBuilder();
+
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine(encoded.Description + " Generated at " + DateTime.Now);
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine();
+            foreach (string note in encoded.Notes)
+            {
+                output.AppendLine(note);
+            }
+
+            output.AppendLine();
+            output.AppendLine(FormatPayloadBytes(encoded.Bytes));
+
+            string text = output.ToString();
+            if (core != null)
+            {
+                string prefix = encoding == PayloadEncoding.Xor ? "Encoded_XOR_" : "Encoded_Alphanum_";
+                core.Output.WriteText(GetFilePath(core.WorkingDirectory, prefix, ".txt"), text);
+                string bin = GetFilePath(core.WorkingDirectory, prefix, ".bin");
+                System.IO.File.WriteAllBytes(bin, encoded.Bytes);
+            }
+
+            return text;
+        }
+
+        /// <summary>
+        /// Builds a Venetian alignment stub and formats it for the log.
+        /// </summary>
+        /// <param name="alignment">The stub to print.</param>
+        /// <param name="core">If set, the text is also written to the working directory.</param>
+        /// <returns>The formatted stub.</returns>
+        public static string GenerateUnicodeAlign(UnicodeAlignment alignment, ErcCore? core = null)
+        {
+            var output = new StringBuilder();
+
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine("Venetian alignment generated at " + DateTime.Now);
+            output.AppendLine("---------------------------------------------------------------------------------------");
+            output.AppendLine();
+            output.AppendLine(alignment.Description);
+            output.AppendLine();
+            output.AppendLine("Buffer register: " + alignment.BufferRegister +
+                              "  Delta: " + alignment.Delta);
+            output.AppendLine();
+            output.AppendLine("Expanded instructions (what executes after UTF-16 widening):");
+            foreach (string instruction in alignment.Instructions)
+            {
+                output.AppendLine("    " + instruction);
+            }
+
+            output.AppendLine();
+            output.AppendLine("ASCII bytes to inject (the target widens these with 0x00):");
+            output.AppendLine(FormatPayloadBytes(alignment.AsciiBytes));
+            output.AppendLine();
+            output.AppendLine("Expanded bytes (as they appear in memory):");
+            output.AppendLine(FormatPayloadBytes(alignment.ExpandedBytes));
+
+            string text = output.ToString();
+            if (core != null)
+            {
+                core.Output.WriteText(GetFilePath(core.WorkingDirectory, "UnicodeAlign_", ".txt"), text);
+            }
+
+            return text;
+        }
+
         #endregion
 
         #region Assemble Opcodes

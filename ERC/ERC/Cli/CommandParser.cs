@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using ERC.Utilities;
 
 namespace ERC.Cli
 {
@@ -61,7 +62,7 @@ namespace ERC.Cli
         /// </summary>
         private static readonly string[] BooleanSwitches =
         {
-            "-aslr", "-safeseh", "-rebase", "-nxcompat", "-osdll", "-extended"
+            "-aslr", "-safeseh", "-rebase", "-nxcompat", "-osdll", "-cfg", "-extended"
         };
 
         /// <summary>
@@ -215,6 +216,51 @@ namespace ERC.Cli
                     i--;
                     continue;
                 }
+
+                if (token == "-cp")
+                {
+                    // "-cp" on its own clears the restriction; otherwise the next
+                    // token is a comma-separated list of pointer-shape names.
+                    if (i + 1 < tokens.Count && !tokens[i + 1].StartsWith("-", StringComparison.Ordinal))
+                    {
+                        PointerCriteria shape;
+                        string? error;
+                        if (!PointerShape.TryParse(tokens[i + 1], out shape, out error))
+                        {
+                            return error;
+                        }
+
+                        state.Shape = shape;
+                        tokens.RemoveRange(i, 2);
+                    }
+                    else
+                    {
+                        state.Shape = PointerCriteria.None;
+                        tokens.RemoveAt(i);
+                    }
+
+                    i--;
+                    continue;
+                }
+
+                if (token == "-m")
+                {
+                    // "-m" on its own clears the restriction; otherwise the next
+                    // token is a comma-separated list of module-name patterns.
+                    if (i + 1 < tokens.Count && !tokens[i + 1].StartsWith("-", StringComparison.Ordinal))
+                    {
+                        state.Modules = ModuleFilter.Parse(tokens[i + 1]);
+                        tokens.RemoveRange(i, 2);
+                    }
+                    else
+                    {
+                        state.Modules = new string[0];
+                        tokens.RemoveAt(i);
+                    }
+
+                    i--;
+                    continue;
+                }
             }
 
             return null;
@@ -229,6 +275,7 @@ namespace ERC.Cli
                 case "-rebase": state.Rebase = value; break;
                 case "-nxcompat": state.NxCompat = value; break;
                 case "-osdll": state.OsDll = value; break;
+                case "-cfg": state.Cfg = value; break;
                 case "-extended": state.Extended = value; break;
             }
         }

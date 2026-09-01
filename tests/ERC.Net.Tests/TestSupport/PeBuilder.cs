@@ -32,6 +32,9 @@ namespace ERC.Net.Tests.TestSupport
         /// <summary>DLL characteristic: image uses no structured exception handling.</summary>
         public const ushort NoSeh = 0x0400;
 
+        /// <summary>DLL characteristic: image was built with Control Flow Guard.</summary>
+        public const ushort GuardCf = 0x4000;
+
         private const int DosHeaderSize = 64;
         private const int FileHeaderSize = 20;
         private const int SectionHeaderSize = 40;
@@ -55,6 +58,8 @@ namespace ERC.Net.Tests.TestSupport
         private uint _sizeOfImage = 0x4000;
         private uint _loadConfigRva;
         private uint _loadConfigSize;
+        private uint _importRva;
+        private uint _importSize;
         private uint _numberOfRvaAndSizes = DataDirectoryCount;
         private int _lfanew = DosHeaderSize;
         private ushort _dosSignature = 0x5A4D;
@@ -118,6 +123,14 @@ namespace ERC.Net.Tests.TestSupport
         {
             _loadConfigRva = rva;
             _loadConfigSize = size;
+            return this;
+        }
+
+        /// <summary>Points the import data directory at an address.</summary>
+        public PeBuilder WithImportDirectory(uint rva, uint size)
+        {
+            _importRva = rva;
+            _importSize = size;
             return this;
         }
 
@@ -274,10 +287,15 @@ namespace ERC.Net.Tests.TestSupport
                 w.Write((uint)0);                                   // LoaderFlags
                 w.Write(_numberOfRvaAndSizes);
 
-                // ---- Data directory. Index 10 is the load config.
+                // ---- Data directory. Index 1 is imports, index 10 is load config.
                 for (int i = 0; i < DataDirectoryCount; i++)
                 {
-                    if (i == 10)
+                    if (i == 1)
+                    {
+                        w.Write(_importRva);
+                        w.Write(_importSize);
+                    }
+                    else if (i == 10)
                     {
                         w.Write(_loadConfigRva);
                         w.Write(_loadConfigSize);

@@ -9,25 +9,38 @@ namespace ERC.Utilities
     /// </summary>
     public sealed class RopFunction
     {
-        internal RopFunction(string name, string module, IntPtr address, string purpose)
+        internal RopFunction(string name, string module, IntPtr address, string purpose, bool iat)
         {
             Name = name;
             Module = module;
             Address = address;
             Purpose = purpose;
+            Iat = iat;
         }
 
-        /// <summary>The exported function name, for example "VirtualProtect".</summary>
+        /// <summary>The function name, for example "VirtualProtect".</summary>
         public string Name { get; }
 
-        /// <summary>The module exporting it.</summary>
+        /// <summary>
+        /// The module that holds this pointer: the importer for an IAT slot, the
+        /// exporter for an EAT address.
+        /// </summary>
         public string Module { get; }
 
-        /// <summary>Its address in the target process.</summary>
+        /// <summary>
+        /// For an IAT slot, the address of the slot (a pointer to a pointer). For
+        /// an export, the function itself.
+        /// </summary>
         public IntPtr Address { get; }
 
         /// <summary>Why a chain would want it.</summary>
         public string Purpose { get; }
+
+        /// <summary>
+        /// True when <see cref="Address"/> is an IAT slot. A ROP chain dereferences
+        /// this; the export address is not a substitute under ASLR.
+        /// </summary>
+        public bool Iat { get; }
     }
 
     /// <summary>
@@ -38,9 +51,10 @@ namespace ERC.Utilities
     /// or allocate memory that already is, so the first thing wanted after a gadget
     /// list is the address of those functions in this process.
     ///
-    /// The addresses come from each module's export directory rather than from
-    /// GetProcAddress, which resolves in the calling process and cannot answer for
-    /// somebody else's - see ExportTable.
+    /// --RopFunc lists IAT slots: the pointer-to-pointer a chain actually
+    /// dereferences. Export addresses live in the exporting module, which is almost
+    /// always ASLR, so they cannot be hardcoded. An IAT slot in a non-ASLR importer
+    /// can. --Iat lists every slot; this is the interesting subset.
     /// </remarks>
     public static class RopFunctions
     {
@@ -90,37 +104,55 @@ namespace ERC.Utilities
             var result = new ErcResult<List<RopFunction>>(info.ProcessCore);
             result.ReturnValue = new List<RopFunction>();
 
-            foreach ((string name, string purpose) in Wanted)
+            bool wide = info.ProcessMachineType == MachineType.x64;
+
+            foreach (ModuleInfo module in info.ModulesInfo)
             {
-                foreach (ModuleInfo module in info.ModulesInfo)
+                if (module.ModuleFailed || !File.Exists(module.ModulePath))
                 {
-                    if (module.ModuleFailed || !File.Exists(module.ModulePath))
+                    continue;
+                }
+
+                if (excludes != null && excludes.Contains(module.ModulePath))
+                {
+                    continue;
+                }
+
+                string moduleName = Path.GetFileName(module.ModulePath);
+
+                foreach (ImportEntry entry in ImportTable.Read(module.ModulePath, wide))
+                {
+                    string? purpose = PurposeOf(entry.Name);
+                    if (purpose == null)
                     {
                         continue;
                     }
 
-                    if (excludes != null && excludes.Contains(module.ModulePath))
-                    {
-                        continue;
-                    }
-
-                    IntPtr address;
-                    if (!ExportTable.TryResolve(module.ModulePath, module.ModuleBase, name, out address))
-                    {
-                        continue;
-                    }
-
-                    if (ptrsToExclude != null && ContainsExcludedByte(address, info.ProcessMachineType, ptrsToExclude))
+                    IntPtr slot = ImportTable.SlotAddress(module.ModuleBase, entry.IatRva);
+                    if (ptrsToExclude != null && ContainsExcludedByte(slot, info.ProcessMachineType, ptrsToExclude))
                     {
                         continue;
                     }
 
                     result.ReturnValue.Add(new RopFunction(
-                        name, Path.GetFileName(module.ModulePath), address, purpose));
+                        entry.Name, moduleName, slot, purpose, true));
                 }
             }
 
             return result;
+        }
+
+        private static string? PurposeOf(string name)
+        {
+            foreach ((string wanted, string purpose) in Wanted)
+            {
+                if (name.Equals(wanted, StringComparison.OrdinalIgnoreCase))
+                {
+                    return purpose;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

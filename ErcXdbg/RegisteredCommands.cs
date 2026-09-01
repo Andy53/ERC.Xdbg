@@ -52,62 +52,50 @@ namespace ErcXdbg
                     return true;
                 }
 
-                //Check a process is attached.
+                // Check a process is attached. Payload generators (encode, GetPC,
+                // Venetian alignment) and the housekeeping commands do not inspect
+                // the debuggee, so they run without one.
                 if (hProcess == IntPtr.Zero)
                 {
-                    bool exitWithError = true;
-                    bool update = false;
-                    bool config = false;
-                    bool debug = false;
-                    ERC.ErcCore coreTemp = new ERC.ErcCore();
-
-                    foreach (string s in argv[0].Split(' '))
+                    ErcCommand parsed = CommandParser.Parse(argv[0], Session);
+                    if (parsed.IsValid && DoesNotNeedAProcess(parsed.Option))
                     {
-                        if (s.Contains("--"))
+                        Session = parsed.Session;
+                        ERC.ErcCore coreTemp = new ERC.ErcCore();
+                        var parameters = new List<string>(parsed.Arguments);
+                        switch (parsed.Option)
                         {
-                            switch (s.ToLower())
-                            {
-                                case "--update":
-                                    exitWithError = false;
-                                    if (update == false)
-                                    {
-                                        update = true;
-                                        List<string> args = argv[0].Split(' ').ToList<string>();
-                                        args.RemoveAt(0);
-                                        Update(args, Session);
-                                    }
-                                    break;
-                                case "--config":
-                                    exitWithError = false;
-                                    if (config == false)
-                                    {
-                                        config = true;
-                                        List<string> args = argv[0].Split(' ').ToList<string>();
-                                        args.RemoveAt(0);
-                                        Config(args, coreTemp, Session);
-                                    }
-                                    break;
-                                case "--debug":
-                                    exitWithError = false;
-                                    if (debug == false)
-                                    {
-                                        debug = true;
-                                        List<string> args = argv[0].Split(' ').ToList<string>();
-                                        args.RemoveAt(0);
-                                        Debug(args, Session);
-                                    }
-                                    break;
-                                default:
-                                    break;
-                            }
+                            case "--help":
+                                PrintHelp();
+                                break;
+                            case "--update":
+                                Update(parameters, Session);
+                                break;
+                            case "--config":
+                                Config(parameters, coreTemp, Session);
+                                break;
+                            case "--debug":
+                                Debug(parameters, Session);
+                                break;
+                            case "--reset":
+                                Reset(Session);
+                                break;
+                            case "--encode":
+                                EncodePayload(coreTemp, null, parameters, Session);
+                                break;
+                            case "--getpc":
+                                GetPcCommand(coreTemp, null, parameters);
+                                break;
+                            case "--unicodealign":
+                                UnicodeAlignCommand(coreTemp, parameters);
+                                break;
                         }
                     }
-
-                    if(exitWithError == true)
+                    else
                     {
                         PrintHelp("The debugger must be attached to a process to use ERC");
                     }
-                    
+
                     ErcXdbg.PluginStart();
                     return true;
                 }
@@ -273,21 +261,38 @@ namespace ErcXdbg
                 case "--gadget":
                     Gadget(info, parameters, session);
                     return;
+                case "--findwild":
+                    FindWildCommand(info, parameters, session);
+                    return;
+                case "--jop":
+                    JopCommand(info, parameters, session);
+                    return;
+                case "--fwptr":
+                    FwptrCommand(info, parameters, session);
+                    return;
+                case "--iat":
+                    IatCommand(info, parameters, session);
+                    return;
+                case "--eat":
+                    EatCommand(info, parameters, session);
+                    return;
                 case "--egghunters":
-                    if(parameters.Count <= 2)
-                    {
-                        if(parameters.Count == 1)
-                        {
-                            EggHunters(session, core);
-                        }
-                        else
-                        {
-                            EggHunters(session, core, parameters[1]);
-                        }
-                    }
+                    EggHunters(parameters, core);
+                    return;
+                case "--encode":
+                    EncodePayload(core, info, parameters, session);
+                    return;
+                case "--getpc":
+                    GetPcCommand(core, info, parameters);
+                    return;
+                case "--unicodealign":
+                    UnicodeAlignCommand(core, parameters);
                     return;
                 case "--findnrp":
                     FindNRP(info, parameters, session);
+                    return;
+                case "--suggest":
+                    SuggestCommand(info, parameters, session);
                     return;
                 case "--heapinfo":
                     HeapInfo(info, parameters, session);

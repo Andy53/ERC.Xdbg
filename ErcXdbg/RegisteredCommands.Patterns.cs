@@ -404,6 +404,24 @@ namespace ErcXdbg
             return;
         }
 
+        /// <summary>
+        /// Turns a FindNRP table into junk / jump / payload (or nseh / ppr / payload).
+        /// </summary>
+        private static void SuggestCommand(ERC.ProcessInfo info, List<string> parameters, SessionState session)
+        {
+            parameters.RemoveAll(p => p.Contains("--"));
+
+            if ((int)session.Encode < 0 || (int)session.Encode > 5)
+            {
+                session.Encode = SearchEncoding.ASCII;
+            }
+
+            string text = ERC.DisplayOutput.GenerateSuggest(
+                info, (int)session.Encode, session.Extended,
+                ModuleExcludes(info, session), session.Bytes, session.Shape);
+            PLog.WriteLine(text);
+        }
+
         private static byte[] StringToByteArray(string hex)
         {
             return Enumerable.Range(0, hex.Length)

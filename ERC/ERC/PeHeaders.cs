@@ -78,6 +78,7 @@ namespace ERC.Utilities
 
         // Indexes into the data directory.
         private const int ExportDirectoryIndex = 0;
+        private const int ImportDirectoryIndex = 1;
         private const int LoadConfigDirectoryIndex = 10;
         private const int DataDirectoryEntrySize = 8;
 
@@ -114,6 +115,12 @@ namespace ERC.Utilities
 
         /// <summary>Size of the export directory, or 0 when the image exports nothing.</summary>
         public uint ExportTableSize { get; private set; }
+
+        /// <summary>RVA of the import directory, or 0 when the image imports nothing.</summary>
+        public uint ImportTableRva { get; private set; }
+
+        /// <summary>Size of the import directory, or 0 when the image imports nothing.</summary>
+        public uint ImportTableSize { get; private set; }
 
         /// <summary>The image's sections, in the order the section table lists them.</summary>
         public IReadOnlyList<PeSection> Sections { get; private set; } = new PeSection[0];
@@ -177,6 +184,9 @@ namespace ERC.Utilities
 
         /// <summary>Whether the image declares that it uses no structured exception handling.</summary>
         public bool HasNoSeh { get { return PeCharacteristics.HasNoSeh(DllCharacteristics); } }
+
+        /// <summary>Whether the image was built with Control Flow Guard.</summary>
+        public bool HasCfg { get { return PeCharacteristics.HasCfg(DllCharacteristics); } }
 
         /// <summary>
         /// Reads the headers of a PE image.
@@ -317,6 +327,15 @@ namespace ERC.Utilities
             {
                 result.ExportTableRva = exportRva;
                 result.ExportTableSize = exportSize;
+            }
+
+            uint importRva, importSize;
+            if (TryReadDirectory(image, optionalHeader, dataDirectoryOffset, sizeOfOptionalHeader,
+                                 numberOfRvaAndSizes, ImportDirectoryIndex,
+                                 out importRva, out importSize))
+            {
+                result.ImportTableRva = importRva;
+                result.ImportTableSize = importSize;
             }
 
             result.Sections = ReadSections(image, fileHeader, optionalHeader + sizeOfOptionalHeader);

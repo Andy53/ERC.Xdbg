@@ -605,23 +605,14 @@ namespace ERC
             List<ModuleInfo> modules = new List<ModuleInfo>();
             for (int i = 0; i < ModulesInfo.Count; i++)
             {
-                if (includedModules != null)
+                if (!Utilities.ModuleFilter.Keep(
+                        ModulesInfo[i].ModuleName, ModulesInfo[i].ModulePath,
+                        includedModules, excludedModules))
                 {
-                    if (includedModules.Contains(ModulesInfo[i].ModuleName) || includedModules.Contains(ModulesInfo[i].ModulePath))
-                    {
-                        if(excludedModules != null)
-                        {
-                            if(!excludedModules.Contains(ModulesInfo[i].ModuleName) && !excludedModules.Contains(ModulesInfo[i].ModulePath))
-                            {
-                                modules.Add(ModulesInfo[i]);
-                            }
-                        }
-                    }
+                    continue;
                 }
-                else
-                {
-                    modules.Add(ModulesInfo[i]);
-                }
+
+                modules.Add(ModulesInfo[i]);
             }
             for (int i = 0; i < modules.Count; i++)
             {

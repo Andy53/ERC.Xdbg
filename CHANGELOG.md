@@ -133,6 +133,38 @@ Fixed, so an existing user's muscle memory still works.
 
 ### Added
 
+- **`--Encode`.** XOR-encodes a payload with a position-independent decoder, or
+  emits the printable AND/SUB/PUSH sequence mona calls alphanum. Bytes given to
+  `-Bytes` are excluded from the result. Runs without a process attached.
+- **`--GetPc`.** The three x86 GetPC stubs mona emits for a register, plus a
+  RIP-relative `lea` on x64. Runs without a process attached.
+- **`--UnicodeAlign`.** A Venetian alignment stub for Unicode overflows: pairs of
+  `inc`/`dec` of the buffer register with `0x6D`, which becomes `add [ebp], ch`
+  after UTF-16 widening. Runs without a process attached.
+- **`--FindWild`.** Instruction-sequence search with wildcards: `pop eax # pop ebx
+  # ret`, `jmp *`. Disassembles readable memory and matches the sequence.
+- **`-Cp`.** Pointer-shape filter (mona `-cp`): `nonull`, `startswithnull`,
+  `ascii`, `asciiprint`, `upper`, `lower`, `uppernum`, `lowernum`, `numeric`,
+  `alphanum`, `unicode`, `unicoderev`. Applied to search, jmp, gadget, stack
+  pivot and findwild results.
+- **`-Cfg`.** Excludes modules built with Control Flow Guard. The module table
+  now has a CFG column.
+- **`--Jop`.** Finds `jmp`/`call` through a memory operand. Gadgets in CFG
+  modules that are not 16-byte aligned are marked `[cfg-unaligned]`.
+- **`--Iat`.** Lists import address table slots (pointers to pointers).
+- **`--Eat`.** Lists exported functions.
+- **`--EggHunters`.** Checksum over the found egg, start-register, WOW64 stubs per
+  OS (Windows 7 syscall 0x26, Windows 10 syscall 0x29), DEP bypass
+  (`virtualprotect` / `copy` / `copy_size`), and an SEH hunter that does not
+  use a syscall.
+- **`--Suggest`.** After a crash with a cyclic pattern, turns the FindNRP table
+  into a buffer layout: junk, jump (or nseh / pop-pop-ret), payload.
+- **`--RopFunc`.** Lists IAT slots (pointers to pointers) for VirtualProtect,
+  VirtualAlloc and the other APIs a chain is built around, not export addresses.
+- **`--Fwptr`.** Finds `call`/`jmp` through a pointer in writable memory, the
+  four-byte-write primitive.
+- **`-M`.** Restricts searches to named modules (`kernel32`, `*dll`, comma lists).
+  When set, the other module switches are ignored. `-M *` searches every module.
 - A test suite: 542 tests across both architectures and both target frameworks,
   including tests that inspect a real running process.
 - `build.ps1`, `test.ps1` and `package.ps1`, and GitHub Actions workflows that

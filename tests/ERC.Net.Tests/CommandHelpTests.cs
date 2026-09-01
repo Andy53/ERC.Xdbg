@@ -66,7 +66,7 @@ namespace ERC.Net.Tests
             foreach (string @switch in SwitchesDocumentedInHelp())
             {
                 string line = "ERC --searchmemory " + @switch +
-                              (@switch == "-protection" ? " read" : @switch == "-bytes" ? " 00" : string.Empty);
+                              (@switch == "-protection" ? " read" : @switch == "-bytes" ? " 00" : @switch == "-cp" ? " alphanum" : @switch == "-m" ? " kernel32" : string.Empty);
 
                 ErcCommand parsed = CommandParser.Parse(line, new SessionState());
 
@@ -81,8 +81,8 @@ namespace ERC.Net.Tests
             SwitchesDocumentedInHelp().ShouldBe(
                 new[]
                 {
-                    "-aslr", "-safeseh", "-rebase", "-nxcompat", "-osdll",
-                    "-bytes", "-protection", "-unicode", "-ascii", "-utf7", "-utf8", "-utf32",
+                    "-aslr", "-safeseh", "-rebase", "-nxcompat", "-osdll", "-cfg",
+                    "-bytes", "-protection", "-cp", "-m", "-unicode", "-ascii", "-utf7", "-utf8", "-utf32",
                     "-extended"
                 },
                 ignoreOrder: true);

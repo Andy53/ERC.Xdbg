@@ -72,6 +72,10 @@ namespace ERC
         /// </summary>
         public bool ModuleNXCompat { get; private set; }
         /// <summary>
+        /// Module was built with Control Flow Guard.
+        /// </summary>
+        public bool ModuleCFG { get; private set; }
+        /// <summary>
         /// Module is an OS dll.
         /// </summary>
         public bool ModuleOsDll { get; private set; }
@@ -153,6 +157,7 @@ namespace ERC
                 // case for this tool - ASLR and NXCompat always read as false.
                 ModuleASLR = Utilities.PeCharacteristics.HasAslr(ModuleDllCharacteristics);
                 ModuleNXCompat = Utilities.PeCharacteristics.HasNxCompat(ModuleDllCharacteristics);
+                ModuleCFG = Utilities.PeCharacteristics.HasCfg(ModuleDllCharacteristics);
 
                 ModuleSafeSEH = ModuleMachineType == MachineType.I386
                     ? Utilities.PeCharacteristics.HasSafeSeh(
